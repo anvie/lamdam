@@ -1,0 +1,325 @@
+import { Button } from "@nextui-org/button";
+import {
+  Dispatch,
+  FC,
+  SetStateAction,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { DocumentPlus } from "./icon/DocumentPlus";
+import { CheckIcon } from "./icon/CheckIcon";
+import { XMarkIcon } from "./icon/XMarkIcon";
+import { GearIcon } from "./icon/GearIcon";
+import CollectionSelector from "@/components/CollectionSelector";
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  useDisclosure,
+} from "@nextui-org/modal";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AddRecordSchema } from "@/lib/schema";
+import { post } from "@/lib/FetchWrapper";
+import { __debug, __error } from "@/lib/logger";
+import { ErrorLabel } from "./ErrorLabel";
+import {
+  CollectionContext,
+  GlobalContext,
+  NeedUpdateContext,
+  SelectedRecordContext,
+} from "@/app/page";
+import CInput from "./CInput";
+import CTextarea from "./CTextarea";
+import { DataRecord } from "@/types";
+import { errorMessage } from "@/lib/errorutil";
+
+const RecordOps: FC = () => {
+  const [error, setError] = useState("");
+  let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
+  const modalState = useDisclosure();
+
+  const onAddClick = () => {
+    if (currentRecord && currentRecord.id != "") {
+      // apabila sudah exists, kasih konfirmasi apakah mau buat duplikat dari current record?
+      modalState.onOpen();
+    } else {
+      setError("");
+
+      if (!currentRecord) {
+        alert("Please specify record first");
+        return;
+      }
+      const rec: DataRecord = currentRecord!;
+
+      post("/api/addRecord", {
+        prompt: rec.prompt,
+        response: rec.response,
+        history: rec.history,
+        collectionId: rec.collectionId,
+      })
+        .then((data) => {
+          const doc = data.result as DataRecord;
+          __debug("doc:", doc);
+          setCurrentRecord!(doc);
+        })
+        .catch((err) => {
+          if (err) {
+            __error(typeof err);
+            alert("Cannot add record :(. " + errorMessage(err));
+          }
+        });
+    }
+  };
+
+  const onSaveClick = () => {
+    setError("");
+
+    if (!currentRecord) {
+      alert("Please specify record first");
+      return;
+    }
+    const rec: DataRecord = currentRecord!;
+
+    if (!rec.id) {
+      alert("Please specify record first");
+      return;
+    }
+
+    post("/api/updateRecord", {
+      id: rec.id,
+      prompt: rec.prompt,
+      response: rec.response,
+      history: rec.history,
+      collectionId: rec.collectionId,
+    })
+      .then((data) => {
+        __debug("data:", data);
+        const doc = currentRecord!;
+        doc.dirty = false;
+        setCurrentRecord!({
+          ...doc,
+          prompt: rec.prompt,
+          response: rec.response,
+          history: rec.history,
+          collectionId: rec.collectionId,
+          dirty: false,
+        });
+      })
+      .catch((err) => {
+        if (err) {
+          __error(typeof err);
+          alert("Cannot update record :(. " + errorMessage(err));
+        }
+      });
+  };
+
+  return (
+    <div className="border">
+      <div className="flex flex-col p-2 items-start justify-start gap-3">
+        {error && <ErrorLabel message={error} />}
+        <Button
+          size="md"
+          startContent={<DocumentPlus width="1.2em" />}
+          onClick={onAddClick}
+        >
+          Add New Record
+        </Button>
+        <Button size="md" startContent={<CheckIcon />} onClick={onSaveClick}>
+          Save Record
+        </Button>
+        <Button size="md" startContent={<XMarkIcon />}>
+          Delete Record
+        </Button>
+        <div className="p-2 border-b-1 w-full"></div>
+        <Button size="md">Get GPT Response</Button>
+      </div>
+
+      <ConfirmModal
+        currentRecord={currentRecord}
+        onUpdate={setCurrentRecord}
+        {...modalState}
+      />
+    </div>
+  );
+};
+
+export default RecordOps;
+
+interface Props {
+  isOpen: boolean;
+  onOpen: () => void;
+  onOpenChange: (open: boolean) => void;
+  currentRecord: DataRecord | null;
+  onUpdate: any;
+}
+
+const ConfirmModal: FC<Props> = ({
+  isOpen,
+  onOpen,
+  onOpenChange,
+  currentRecord,
+  onUpdate,
+}) => {
+  let { globalState, setGlobalState } = useContext(GlobalContext);
+  
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(AddRecordSchema),
+  });
+
+  const theForm = useRef(null);
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+      <ModalContent>
+        {(onClose) => {
+          const onSubmit = async () => {
+            if (!currentRecord) {
+              alert("Please specify record first");
+              return;
+            }
+            const rec = currentRecord;
+            __debug("currentRecord:", currentRecord);
+            await post("/api/addRecord", {
+              prompt: rec.prompt,
+              response: rec.response,
+              history: rec.history,
+              collectionId: rec.collectionId,
+            })
+              .then((data) => {
+                __debug("data:", data);
+                setGlobalState({
+                  ...globalState,
+                  newRecord: data.result as DataRecord,
+                })
+                onClose();
+                onUpdate(data.result as DataRecord);
+              })
+              .catch((err) => {
+                if (err) {
+                  __error(err);
+                  setError("Cannot add collection :(");
+                }
+              });
+          };
+
+          return (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Confirmation
+              </ModalHeader>
+              <ModalBody>
+                <p>Record already exists, wanna duplicate?</p>
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button color="primary" onClick={onSubmit}>
+                  Duplicate
+                </Button>
+              </ModalFooter>
+            </>
+          );
+        }}
+      </ModalContent>
+    </Modal>
+  );
+};
+
+// const AddRecordModal: FC<any> = ({ isOpen, onOpen, onOpenChange }) => {
+//   const { currentCollection, setCurrentCollection } =
+//     useContext(CollectionContext);
+//   let { globalState, setGlobalState } = useContext(GlobalContext);
+//   const { needUpdate, setNeedUpdate } = useContext(NeedUpdateContext);
+//   const {
+//     register,
+//     handleSubmit,
+//     control,
+//     formState: { errors },
+//   } = useForm({
+//     resolver: zodResolver(AddRecordSchema),
+//   });
+//   const theForm = useRef(null);
+//   const [error, setError] = useState<string | null>(null);
+
+//   const onSubmit = (onClose: any) => {
+//     setError("");
+//     return (data: any) => {
+//       post("/api/addRecord", data)
+//         .then((data) => {
+//           __debug("data:", data);
+//           // if (data.result && data.result.length > 0){
+//           setNeedUpdate(true);
+//           setGlobalState({
+//             ...globalState,
+//             newRecord: data.result as DataRecord,
+//           })
+//           onClose();
+//           // }
+//         })
+//         .catch((err) => {
+//           if (err) {
+//             __error(err);
+//             setError("Cannot add collection :(");
+//           }
+//         });
+//     };
+//   };
+
+//   return (
+//     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+//       <ModalContent>
+//         {(onClose) => (
+//           <>
+//             <ModalHeader className="flex flex-col gap-1">
+//               Create new collection
+//             </ModalHeader>
+//             <ModalBody>
+//               <form
+//                 onSubmit={handleSubmit(onSubmit)}
+//                 className="flex flex-col gap-3"
+//                 ref={theForm}
+//               >
+//                 <CInput control={control} name="name" errors={errors} />
+//                 <CInput control={control} name="creator" errors={errors} />
+//                 <CTextarea
+//                   control={control}
+//                   name="description"
+//                   errors={errors}
+//                 />
+//                 {error && <ErrorLabel message={error} />}
+//                 {/* <code>
+//                   <pre>{JSON.stringify(errors, null, 2)}</pre>
+//                 </code> */}
+//               </form>
+//             </ModalBody>
+//             <ModalFooter>
+//               <Button color="danger" variant="light" onClick={onClose}>
+//                 Close
+//               </Button>
+//               <Button
+//                 color="primary"
+//                 onPress={(e) => {
+//                   handleSubmit(onSubmit(onClose))(theForm as any);
+//                 }}
+//               >
+//                 Submit
+//               </Button>
+//             </ModalFooter>
+//           </>
+//         )}
+//       </ModalContent>
+//     </Modal>
+//   );
+// };
