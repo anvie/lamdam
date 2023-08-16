@@ -1,6 +1,6 @@
-# Lamdam (LLM Data Manager)
+# Lamdam (Language Model Data Manager)
 
-Lamdam (LLM Data Manager) is a web UI tool designed to facilitate the easy management of datasets for LLM (Language Model) training. Built with Next.js 13, NextUI, and Tailwind, Lamdam offers a user-friendly interface with powerful features to streamline dataset management tasks.
+Lamdam (Language Model Data Manager) is a web UI tool designed to facilitate the easy management of datasets for LLM (Language Model) training. Built with Next.js 13, NextUI, and Tailwind, Lamdam offers a user-friendly interface with powerful features to streamline dataset management tasks.
 
 ## Features
 
