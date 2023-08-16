@@ -89,7 +89,8 @@ We would like to express our gratitude to all the contributors of these projects
 
 ## Contact
 
-For further information or inquiries, please contact our team at lamdam@example.com.
+For further information or inquiries, please contact me at [@anvie](https://twitter.com/anvie).
+
 ## License
 
 Licensed under the [MIT license](https://github.com/anvie/lamdam/blob/main/LICENSE).
