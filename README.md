@@ -11,6 +11,11 @@ Lamdam (Language Model Dataset Manager) is a web UI tool designed to facilitate 
 - **Export & Import**: You can export or import dataset into various format (soon).
 - **Revision History**: View the modifications to the data and who made them (soon).
 
+## Requirements
+
+* NodeJS
+* MongoDB
+
 ## Installation
 
 To get started with Lamdam, follow the steps below:
