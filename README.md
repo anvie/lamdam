@@ -13,8 +13,8 @@ Lamdam (Language Model Dataset Manager) is a web UI tool designed to facilitate 
 
 ## Requirements
 
-* NodeJS
-* MongoDB
+* [NodeJS](https://nodejs.org)
+* [MongoDB](https://www.mongodb.com/)
 
 ## Installation
 
