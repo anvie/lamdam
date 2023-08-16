@@ -6,9 +6,10 @@ Lamdam (Language Model Dataset Manager) is a web UI tool designed to facilitate 
 
 - **User-friendly Interface**: Lamdam provides an intuitive and easy-to-use interface for managing datasets, allowing users to effortlessly organize and manipulate their data.
 - **Dataset Management**: Easily upload, delete, and update datasets with Lamdam. The tool offers seamless navigation and a smooth data management workflow.
-- **Next.js 13**: Powered by Next.js 13, Lamdam ensures superior performance and scalability. It leverages the latest features and improvements offered by Next.js.
-- **NextUI**: Lamdam utilizes NextUI, a UI framework built for Next.js, to deliver a polished and responsive user experience. NextUI provides a wide range of pre-designed components to expedite development.
-- **Tailwind**: With Tailwind, Lamdam boasts a comprehensive utility-first CSS framework that enables rapid styling adjustments and customization. Tailwind ensures a consistent and visually appealing UI.
+- **Fast Search**: Quickly navigate through vast amounts of data.
+- **Duplicate & Modify Record**: Use existing data to build more variative data.
+- **Export & Import**: You can export or import dataset into various format (soon).
+- **Revision History**: View the modifications to the data and who made them (soon).
 
 ## Installation
 
