@@ -45,6 +45,7 @@ const PromptEditor: FC = () => {
           id: "",
           prompt: "",
           response: "",
+          instruction: "",
           history: [],
           creator: "",
           createdAt: 0,
@@ -95,13 +96,26 @@ const PromptEditor: FC = () => {
         />
       </div>
 
-      {/* HISTORY / CONTEXT */}
+      {/* INSTRUCTION / CONTEXT */}
 
       <div className="px-4">
         <Textarea
-          label="History: (context)"
+          label="Instruction: (context)"
           labelPlacement="outside"
-          placeholder="Enter histories separated by comma, or context"
+          placeholder="Enter instruction or context"
+          className="w-full"
+          value={currentRecord && currentRecord.instruction || ""}
+          onValueChange={throttledSaveChanges("instruction")}
+        />
+      </div>
+
+      {/* HISTORY */}
+
+      <div className="px-4">
+        <Textarea
+          label="History: (separated by new line)"
+          labelPlacement="outside"
+          placeholder="Enter histories separated by new lines"
           className="w-full"
           value={(currentRecord && currentRecord.history.join("\n")) || ""}
           onValueChange={throttledSaveChanges("history")}

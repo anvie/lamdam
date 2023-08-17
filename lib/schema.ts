@@ -8,9 +8,15 @@ export const AddCollectionSchema = z.object({
 });
 
 
+export const DumpCollectionSchema = z.object({
+    id: z.string()
+});
+
+
 export const AddRecordSchema = z.object({
     prompt: z.string().min(3),
     response: z.string().min(10),
+    instruction: z.string().default(""),
     // creator: z.string().min(3),
     history: z.array(z.string()),
     collectionId: z.string()
@@ -21,6 +27,7 @@ export const UpdateRecordSchema = z.object({
     id: z.string(),
     prompt: z.string().min(3),
     response: z.string().min(10),
+    instruction: z.string().default(""),
     // creator: z.string().min(3),
     history: z.array(z.string()),
     collectionId: z.string().optional()

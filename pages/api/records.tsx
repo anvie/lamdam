@@ -40,7 +40,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     .limit(15)
     .toArray()
     .then((docs: any[]) => {
-      return res.json({ result: docs.map(toApiRespDoc) });
+      return res.json({ result: docs.map(toApiRespDoc).map((rec) => {
+        rec.history = rec.history.filter((t:string) => t.length > 0);
+        return rec
+      }) });
     }).catch((err:any) => {
       __error('err:', err)
      return res.status(404).json({ result: [] });

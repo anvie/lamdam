@@ -37,6 +37,7 @@ import CInput from "./CInput";
 import CTextarea from "./CTextarea";
 import { DataRecord } from "@/types";
 import { errorMessage } from "@/lib/errorutil";
+import {Notify} from "notiflix/build/notiflix-notify-aio";
 
 const RecordOps: FC = () => {
   const [error, setError] = useState("");
@@ -77,7 +78,7 @@ const RecordOps: FC = () => {
     }
   };
 
-  const onSaveClick = () => {
+  const onUpdateClick = () => {
     setError("");
 
     if (!currentRecord) {
@@ -94,6 +95,7 @@ const RecordOps: FC = () => {
     post("/api/updateRecord", {
       id: rec.id,
       prompt: rec.prompt,
+      instruction: rec.instruction,
       response: rec.response,
       history: rec.history,
       collectionId: currentCollection!.id,
@@ -106,10 +108,12 @@ const RecordOps: FC = () => {
           ...doc,
           prompt: rec.prompt,
           response: rec.response,
+          instruction: rec.instruction,
           history: rec.history,
           collectionId: rec.collectionId,
           dirty: false,
         });
+        Notify.success("Record has been updated", { position: "center-top" });
       })
       .catch((err) => {
         if (err) {
@@ -130,13 +134,18 @@ const RecordOps: FC = () => {
         >
           Add New Record
         </Button>
-        <Button size="md" startContent={<CheckIcon />} onClick={onSaveClick}>
-          Save Record
+        <Button size="md" startContent={<CheckIcon />} onClick={onUpdateClick}>
+          Update Record
         </Button>
-        <Button size="md" startContent={<XMarkIcon />}>
+        
+        <div className="p-2 border-b-1 w-full"></div>
+
+        <Button size="md" className="bg-red-500 text-white" startContent={<XMarkIcon />}>
           Delete Record
         </Button>
+        
         <div className="p-2 border-b-1 w-full"></div>
+        
         <Button size="md">Get GPT Response</Button>
       </div>
 
@@ -197,6 +206,7 @@ const ConfirmModal: FC<Props> = ({
             await post("/api/addRecord", {
               prompt: rec.prompt,
               response: rec.response,
+              instruction: rec.instruction,
               history: rec.history,
               collectionId
             })
@@ -208,6 +218,7 @@ const ConfirmModal: FC<Props> = ({
                 })
                 onClose();
                 onUpdate(data.result as DataRecord);
+                Notify.success("New record was created", { position: "center-top" })
               })
               .catch((err) => {
                 if (err) {

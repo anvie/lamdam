@@ -10,9 +10,7 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@nextui-org/modal";
-import {
-  useForm,
-} from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AddCollectionSchema } from "@/lib/schema";
 import { post } from "@/lib/FetchWrapper";
@@ -26,9 +24,7 @@ const CollectionOps: FC = () => {
   return (
     <div className="border grid grid-cols-3 gap-3 p-5">
       <CollectionSelector />
-
       <RecordsStats />
-
       <CollectionOpsButtons />
     </div>
   );
@@ -43,9 +39,30 @@ const CollectionOpsButtons = () => {
     onOpenChange: onAddCollectionModalOpenChange,
   } = useDisclosure();
 
+  const { currentCollection, setCurrentCollection } =
+    useContext(CollectionContext);
+
+  const onDumpClick = () => {
+    if (!currentCollection) {
+      return;
+    }
+    post(`/api/dumpCollection`, {
+      collectionId: currentCollection.id,
+    })
+      .then((resp: any) => {})
+      .catch((err: any) => {
+        __error(err.message);
+        alert("Cannot dump collection");
+      });
+  };
+
   return (
     <>
       <div className="flex items-end justify-end gap-3">
+        <Button size="sm" onClick={onDumpClick}>
+          Dump
+        </Button>
+        <div className="border-l-1 h-full bg-slate-300"></div>
         <Button size="sm" onClick={onAddCollectionModalOpen}>
           Add
         </Button>
@@ -66,9 +83,12 @@ const CollectionOpsButtons = () => {
 };
 
 const RecordsStats = () => {
-  const { currentCollection, setCurrentCollection } = useContext(CollectionContext);
-  return (
-    currentCollection ? <div>{currentCollection.count} total</div> : <div></div>
+  const { currentCollection, setCurrentCollection } =
+    useContext(CollectionContext);
+  return currentCollection ? (
+    <div>{currentCollection.count} total</div>
+  ) : (
+    <div></div>
   );
 };
 
@@ -77,7 +97,8 @@ const AddCollectionModal: FC<any> = ({
   onAddCollectionModal,
   onAddCollectionModalOpenChange,
 }) => {
-  const { currentCollection, setCurrentCollection } = useContext(CollectionContext);
+  const { currentCollection, setCurrentCollection } =
+    useContext(CollectionContext);
   const { needUpdate, setNeedUpdate } = useContext(NeedUpdateContext);
   const {
     register,
@@ -90,24 +111,24 @@ const AddCollectionModal: FC<any> = ({
   const theForm = useRef(null);
   const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = (onClose:any) => {
+  const onSubmit = (onClose: any) => {
     setError("");
-    return (data:any) => {
+    return (data: any) => {
       post("/api/addCollection", data)
-      .then((data) => {
-        __debug("data:", data);
-        // if (data.result && data.result.length > 0){
+        .then((data) => {
+          __debug("data:", data);
+          // if (data.result && data.result.length > 0){
           setNeedUpdate(true);
           onClose();
-        // }
-      })
-      .catch((err) => {
-        if (err) {
-          __error(err);
-          setError("Cannot add collection :(");
-        }
-      });
-    }
+          // }
+        })
+        .catch((err) => {
+          if (err) {
+            __error(err);
+            setError("Cannot add collection :(");
+          }
+        });
+    };
   };
 
   return (

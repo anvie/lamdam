@@ -15,7 +15,7 @@ type Data = {
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>){
-  const { prompt, response, history, collectionId } = AddRecordSchema.parse(
+  const { prompt, response, instruction, history, collectionId } = AddRecordSchema.parse(
     req.body
   );
 
@@ -31,11 +31,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>){
     }
 
     const col = mongoose.connection.db.collection(colDoc.name);
-    __debug('col:', col)
 
     return col.insertOne({
         prompt,
         response,
+        instruction,
         history,
         createdAt: getCurrentTimeMillis(),
         lastUpdated: getCurrentTimeMillis(),

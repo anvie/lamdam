@@ -6,6 +6,7 @@ import { UpdateHistory } from "@/types";
 const DataRecordModel = new Schema({
   prompt: { type: String, required: true },
   response: { type: String, default: "" },
+  instruction: { type: String, required: true, default: "" },
   history: { type: Array<String>, default: [] },
   creator: { type: String, default: "" },
   createdAt: { type: Number, required: true },

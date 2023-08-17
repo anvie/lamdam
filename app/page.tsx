@@ -62,7 +62,7 @@ export default function Home() {
   });
 
   return (
-    <section className="flex flex-col gap-4 py-8 px-8 md:py-10">
+    <section className="flex flex-col gap-4 md:py-4">
       <GlobalContext.Provider value={{ globalState, setGlobalState }}>
         <NeedUpdateContext.Provider value={needUpdateState}>
           <SelectedRecordContext.Provider
