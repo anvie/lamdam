@@ -12,6 +12,7 @@ import {
   SelectedRecordContext,
 } from "@/app/page";
 import { get } from "@/lib/FetchWrapper";
+import { __debug } from "@/lib/logger";
 
 const RecordsExplorer: FC = () => {
   const { currentCollection, setCurrentCollection } =
@@ -24,9 +25,7 @@ const RecordsExplorer: FC = () => {
     if (!currentCollection) {
       return;
     }
-    get(`/api/records?collectionId=${currentCollection?.id || "0"}`).then(
-      (data) => setData(data.result)
-    );
+    refreshData(currentCollection?.id || "0");
   }, [currentCollection]);
 
   useEffect(() => {
@@ -37,7 +36,17 @@ const RecordsExplorer: FC = () => {
       setData([globalState.newRecord].concat(data));
       setGlobalState({ ...globalState, newRecord: null });
     }
+    if (globalState.deleteRecord) {
+      refreshData(currentCollection?.id || "0");
+    }
   }, [globalState]);
+
+  const refreshData = (id: string) => {
+    return get(`/api/records?collectionId=${id}`).then((data) => {
+      __debug("data:", data);
+      setData(data.result);
+    });
+  };
 
   return (
     <div className="border min-h-screen w-full">
@@ -71,7 +80,7 @@ const DataRecordRow: FC<{ data: DataRecord }> = ({ data }) => {
       return;
     }
     if (currentRecord.dirty) {
-      setRec({...data, dirty: true});
+      setRec({ ...data, dirty: true });
       return;
     }
     if (data.id === currentRecord.id) {
@@ -89,7 +98,11 @@ const DataRecordRow: FC<{ data: DataRecord }> = ({ data }) => {
     <div
       className={`border-b-1 pb-1 cursor-pointer hover:bg-slate-50 border-l-8 pl-2 ${
         currentRecord && currentRecord!.id === rec.id
-          ? `${rec.dirty ? "border-l-orange-400" : "border-l-green-600 bg-slate-100"}`
+          ? `${
+              rec.dirty
+                ? "border-l-orange-400"
+                : "border-l-green-600 bg-slate-100"
+            }`
           : "border-gray-100 "
       }`}
       onClick={onClick}

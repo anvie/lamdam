@@ -49,7 +49,12 @@ const CollectionOpsButtons = () => {
     post(`/api/dumpCollection`, {
       collectionId: currentCollection.id,
     })
-      .then((resp: any) => {})
+      .then((resp: any) => {
+        __debug("resp:", resp);
+        if (resp.result) {
+          alert("Collection dumped");
+        }
+      })
       .catch((err: any) => {
         __error(err.message);
         alert("Cannot dump collection");

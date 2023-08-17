@@ -33,3 +33,10 @@ export const UpdateRecordSchema = z.object({
     collectionId: z.string().optional()
 });
 
+
+export const MoveRecordSchema = z.object({
+    id: z.string().min(3),
+    colSrcId: z.string(),
+    colDstId: z.string()
+});
+

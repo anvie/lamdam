@@ -14,6 +14,7 @@ import PromptEditor from "@/components/PromptEditor";
 import RecordOps from "@/components/RecordOps";
 import { Dispatch, SetStateAction, createContext, useState } from "react";
 import { DataRecord, Collection } from "@/types";
+import { Notify } from "notiflix";
 
 export const SelectedRecordContext = createContext<{
   currentRecord: DataRecord | null;
@@ -34,6 +35,7 @@ export interface GlobalState {
   currentCollection: Collection | null;
   currentRecord: DataRecord | null;
   newRecord: DataRecord | null;
+  deleteRecord: DataRecord | null;
 }
 
 export const GlobalContext = createContext<{
@@ -43,10 +45,13 @@ export const GlobalContext = createContext<{
   globalState: {
     currentCollection: null,
     currentRecord: null,
-    newRecord: null
+    newRecord: null,
+    deleteRecord: null
   },
   setGlobalState: () => {},
 });
+
+Notify.init({ position: "center-top" });
 
 export default function Home() {
   const [currentRecord, setCurrentRecord] = useState<DataRecord | null>(null);
@@ -58,8 +63,10 @@ export default function Home() {
   const [globalState, setGlobalState] = useState<GlobalState>({
     currentCollection: null,
     currentRecord: null,
-    newRecord: null
+    newRecord: null,
+    deleteRecord: null,
   });
+  
 
   return (
     <section className="flex flex-col gap-4 md:py-4">

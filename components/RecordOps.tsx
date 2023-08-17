@@ -1,8 +1,7 @@
 import { Button } from "@nextui-org/button";
 import {
-  Dispatch,
   FC,
-  SetStateAction,
+  Key,
   useContext,
   useEffect,
   useRef,
@@ -11,8 +10,7 @@ import {
 import { DocumentPlus } from "./icon/DocumentPlus";
 import { CheckIcon } from "./icon/CheckIcon";
 import { XMarkIcon } from "./icon/XMarkIcon";
-import { GearIcon } from "./icon/GearIcon";
-import CollectionSelector from "@/components/CollectionSelector";
+import { ArrowRightIcon } from "./icon/ArrowRightIcon";
 import {
   Modal,
   ModalBody,
@@ -24,26 +22,39 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AddRecordSchema } from "@/lib/schema";
-import { post } from "@/lib/FetchWrapper";
+import { get, post } from "@/lib/FetchWrapper";
 import { __debug, __error } from "@/lib/logger";
 import { ErrorLabel } from "./ErrorLabel";
 import {
   CollectionContext,
   GlobalContext,
-  NeedUpdateContext,
   SelectedRecordContext,
 } from "@/app/page";
-import CInput from "./CInput";
-import CTextarea from "./CTextarea";
-import { DataRecord } from "@/types";
+import { Collection, DataRecord } from "@/types";
 import { errorMessage } from "@/lib/errorutil";
-import {Notify} from "notiflix/build/notiflix-notify-aio";
+import { Notify } from "notiflix/build/notiflix-notify-aio";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+} from "@nextui-org/dropdown";
+
+Notify.init({ position: "center-top" });
 
 const RecordOps: FC = () => {
   const [error, setError] = useState("");
-  const { currentCollection, setCurrentCollection } = useContext(CollectionContext);
+  let { globalState, setGlobalState } = useContext(GlobalContext);
+  const { currentCollection, setCurrentCollection } =
+    useContext(CollectionContext);
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   const modalState = useDisclosure();
+
+  const [enableOps, setEnableOps] = useState(false);
+
+  useEffect(() => {
+    setEnableOps(currentRecord !== null && currentRecord.id !== "");
+  }, [currentRecord]);
 
   const onAddClick = () => {
     if (currentRecord && currentRecord.id != "") {
@@ -134,32 +145,130 @@ const RecordOps: FC = () => {
         >
           Add New Record
         </Button>
-        <Button size="md" startContent={<CheckIcon />} onClick={onUpdateClick}>
+        <Button
+          size="md"
+          disabled={!enableOps}
+          startContent={<CheckIcon />}
+          onClick={onUpdateClick}
+        >
           Update Record
         </Button>
-        
+
+        <MoveRecordButton
+          disabled={!enableOps}
+          currentRecord={currentRecord}
+          onMoveSuccess={() => {
+            setGlobalState({
+              ...globalState,
+              deleteRecord: currentRecord
+            })
+            setCurrentRecord!(null);
+          }}
+        />
+
         <div className="p-2 border-b-1 w-full"></div>
 
-        <Button size="md" className="bg-red-500 text-white" startContent={<XMarkIcon />}>
+        <Button size="md">Get GPT Response</Button>
+
+        <div className="p-2 border-b-1 w-full"></div>
+
+        <Button
+          size="md"
+          className="bg-red-500 text-white"
+          startContent={<XMarkIcon />}
+          disabled={!enableOps}
+        >
           Delete Record
         </Button>
-        
-        <div className="p-2 border-b-1 w-full"></div>
-        
-        <Button size="md">Get GPT Response</Button>
       </div>
 
-      { currentCollection && <ConfirmModal
-        currentRecord={currentRecord}
-        onUpdate={setCurrentRecord}
-        collectionId={currentCollection.id}
-        {...modalState}
-      /> }
+      {currentCollection && (
+        <ConfirmModal
+          currentRecord={currentRecord}
+          onUpdate={setCurrentRecord}
+          collectionId={currentCollection.id}
+          {...modalState}
+        />
+      )}
     </div>
   );
 };
 
 export default RecordOps;
+
+const MoveRecordButton: FC<{
+  disabled: boolean;
+  currentRecord: DataRecord | null;
+  onMoveSuccess: () => void;
+}> = ({ disabled, currentRecord, onMoveSuccess }) => {
+  const { currentCollection, setCurrentCollection } =
+    useContext(CollectionContext);
+  const [data, setData] = useState<Collection[]>([]);
+  useEffect(() => {
+    get("/api/collections")
+      .then((data) => {
+        __debug("data:", data);
+        let cols = data.result;
+
+        if (currentCollection) {
+          cols = cols.filter((col: any) => col.id !== currentCollection.id);
+        }
+
+        setData(cols);
+      })
+      .catch((error) => {
+        __error("Cannot get collections.", error);
+      });
+  }, [currentCollection]);
+
+  const onAction = (key: Key) => {
+    if (!currentRecord) {
+      return;
+    }
+
+    post("/api/moveRecord", {
+      id: currentRecord.id,
+      colSrcId: currentCollection?.id,
+      colDstId: key as string,
+    })
+      .then((response) => {
+        onMoveSuccess();
+        Notify.success("Move record success" );
+      })
+      .catch((err) => {
+        __error("Cannot move record.", err);
+        Notify.failure("Cannot move record");
+      });
+  };
+
+  return (
+    <Dropdown>
+      <DropdownTrigger disabled={disabled}>
+        <Button
+          variant="bordered"
+          startContent={<ArrowRightIcon />}
+          disabled={disabled}
+        >
+          Move Record to
+        </Button>
+      </DropdownTrigger>
+      <DropdownMenu
+        aria-label="Static Actions"
+        disabledKeys={disabled ? data.map((d) => d.id) : []}
+        onAction={onAction}
+      >
+        {data.map((col) => {
+          return <DropdownItem key={col.id}>{col.name}</DropdownItem>;
+        })}
+        {/* <DropdownItem key="copy">Copy link</DropdownItem>
+        <DropdownItem key="edit">Edit file</DropdownItem>
+        <DropdownItem key="delete" className="text-danger" color="danger">
+          Delete file
+        </DropdownItem> */}
+      </DropdownMenu>
+    </Dropdown>
+  );
+};
 
 interface Props {
   isOpen: boolean;
@@ -176,10 +285,10 @@ const ConfirmModal: FC<Props> = ({
   onOpenChange,
   currentRecord,
   onUpdate,
-  collectionId
+  collectionId,
 }) => {
   let { globalState, setGlobalState } = useContext(GlobalContext);
-  
+
   const {
     register,
     handleSubmit,
@@ -208,17 +317,19 @@ const ConfirmModal: FC<Props> = ({
               response: rec.response,
               instruction: rec.instruction,
               history: rec.history,
-              collectionId
+              collectionId,
             })
               .then((data) => {
                 __debug("data:", data);
                 setGlobalState({
                   ...globalState,
                   newRecord: data.result as DataRecord,
-                })
+                });
                 onClose();
                 onUpdate(data.result as DataRecord);
-                Notify.success("New record was created", { position: "center-top" })
+                Notify.success("New record was created", {
+                  position: "center-top",
+                });
               })
               .catch((err) => {
                 if (err) {

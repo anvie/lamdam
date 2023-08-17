@@ -13,16 +13,16 @@ const CollectionSelector = () => {
   const [fresh, setFresh] = useState<boolean>(true);
 
   useEffect(() => {
-    if (!(needUpdate || fresh)){
+    if (!(needUpdate || fresh)) {
       return;
     }
-    setFresh(true)
+    setFresh(true);
     get("/api/collections")
       .then((data) => {
-        __debug('data:', data)
-        setData(data.result)
-        if (!currentCollection){
-          setCurrentCollection && setCurrentCollection(data.result[0])
+        __debug("data:", data);
+        setData(data.result);
+        if (!currentCollection) {
+          setCurrentCollection && setCurrentCollection(data.result[0]);
         }
       })
       .catch((error) => {
@@ -41,9 +41,9 @@ const CollectionSelector = () => {
         name="collection"
         value={currentCollection ? currentCollection.id : undefined}
         defaultValue={currentCollection ? currentCollection.id : undefined}
-        onChange={(e:any) => {
+        onChange={(e: any) => {
           const doc = data[e.target.selectedIndex];
-          if (doc){
+          if (doc) {
             setCurrentCollection && setCurrentCollection(doc);
           }
         }}
