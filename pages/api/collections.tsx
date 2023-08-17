@@ -3,6 +3,8 @@ import { toApiRespDoc } from "@/lib/docutil";
 import { Collection } from "@/models/Collection";
 import type { NextApiRequest, NextApiResponse } from "next/types";
 
+const db = require("../../lib/db");
+
 type Data = {
   error?: string;
   result?: Object[];

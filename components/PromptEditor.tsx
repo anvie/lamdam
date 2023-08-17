@@ -7,6 +7,20 @@ const PromptEditor: FC = () => {
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   const { currentCollection, setCurrentCollection } = useContext(CollectionContext);
 
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (currentRecord && dirty && !currentRecord.dirty) {
+      setDirty(false);
+    }
+  }, [currentRecord])
+
+  useEffect(() => {
+    if (currentCollection && currentRecord && currentRecord.collectionId != currentCollection.id) {
+      setCurrentRecord && setCurrentRecord(null);
+    }
+  }, [currentCollection])
+
   const throttledSaveChanges = (name: string) => {
     return (value: string) => {
       if (!currentCollection){
@@ -18,6 +32,7 @@ const PromptEditor: FC = () => {
         _value = value.split("\n")
       }
       if (currentRecord) {
+        setDirty(true);
         setCurrentRecord &&
           setCurrentRecord({
             ...currentRecord,
@@ -50,7 +65,7 @@ const PromptEditor: FC = () => {
       <div className="border-b p-4">
         id:{" "}
         {currentRecord && (
-          <span className="font-semibold">{currentRecord.id}</span>
+          <span className={`font-semibold ${dirty ? 'text-orange-500' : ''}`}>{currentRecord.id}</span>
         )}
       </div>
 

@@ -4,6 +4,13 @@ import { DataRecordRow } from "@/models/DataRecordRow";
 import { DataRecord } from "@/types";
 import type { NextApiRequest, NextApiResponse } from "next/types";
 
+// import db from "@/lib/db";
+const db = require("../../lib/db");
+const mongoose = require("mongoose");
+
+import { Collection } from "@/models/Collection";
+import { __debug, __error } from "@/lib/logger";
+
 type Data = {
   error?: string;
   result?: DataRecord[];
@@ -11,15 +18,7 @@ type Data = {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   const {
-    body: {
-      name,
-      description,
-      days,
-      availableForGrades,
-      showTime,
-      beginTs,
-      endTs,
-    },
+    query: { collectionId },
     method,
   } = req;
 
@@ -28,32 +27,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     return;
   }
 
-  return await DataRecordRow.find({}).sort({createdAt:-1}).then((docs: any[]) => {
-    return res.json({ result: docs.map(toApiRespDoc) });
-  });
+  const colDoc = await Collection.findOne({ _id: collectionId });
+  __debug('colDoc:', colDoc)
 
-  // return res.json({
-  //   result: [
-  //       {
-  //           id: "123",
-  //           prompt: "Hello",
-  //           response: "Hello, how are you?",
-  //           history: [],
-  //           createdAt: 0,
-  //           lastUpdated: 0,
-  //           updateHistory: []
-  //       },
-  //       {
-  //           id: "456",
-  //           prompt: "Bagaimana kabar?",
-  //           response: "Aku baik-baik saja",
-  //           history: [],
-  //           createdAt: 0,
-  //           lastUpdated: 0,
-  //           updateHistory: []
-  //       }
-  //   ]
-  // })
+  if (!colDoc) {
+    return res.status(404).end();
+  }
+  const col = mongoose.connection.db.collection(colDoc.name);
+
+  return await col.find({})
+    .sort({ createdAt: -1 })
+    .limit(15)
+    .toArray()
+    .then((docs: any[]) => {
+      return res.json({ result: docs.map(toApiRespDoc) });
+    }).catch((err:any) => {
+      __error('err:', err)
+     return res.status(404).json({ result: [] });
+    })
+
+  // return await DataRecordRow.find({}).sort({createdAt:-1}).then((docs: any[]) => {
+  //   return res.json({ result: docs.map(toApiRespDoc) });
+  // });
 }
 
 export default apiHandler(handler);

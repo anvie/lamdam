@@ -47,11 +47,11 @@ function errorHandler(err: any, res: NextApiResponse) {
   return res.status(500).json({ message: err.message });
 }
 
-function apiHandler(
+function apiHandler<T>(
   handler: (
     req: NextApiRequest,
     res: NextApiResponse
-  ) => NextApiResponse | Promise<void>
+  ) => NextApiResponse | Promise<T>
 ) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     try {

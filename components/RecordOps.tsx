@@ -40,6 +40,7 @@ import { errorMessage } from "@/lib/errorutil";
 
 const RecordOps: FC = () => {
   const [error, setError] = useState("");
+  const { currentCollection, setCurrentCollection } = useContext(CollectionContext);
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   const modalState = useDisclosure();
 
@@ -60,7 +61,7 @@ const RecordOps: FC = () => {
         prompt: rec.prompt,
         response: rec.response,
         history: rec.history,
-        collectionId: rec.collectionId,
+        collectionId: currentCollection!.id,
       })
         .then((data) => {
           const doc = data.result as DataRecord;
@@ -95,7 +96,7 @@ const RecordOps: FC = () => {
       prompt: rec.prompt,
       response: rec.response,
       history: rec.history,
-      collectionId: rec.collectionId,
+      collectionId: currentCollection!.id,
     })
       .then((data) => {
         __debug("data:", data);
@@ -139,11 +140,12 @@ const RecordOps: FC = () => {
         <Button size="md">Get GPT Response</Button>
       </div>
 
-      <ConfirmModal
+      { currentCollection && <ConfirmModal
         currentRecord={currentRecord}
         onUpdate={setCurrentRecord}
+        collectionId={currentCollection.id}
         {...modalState}
-      />
+      /> }
     </div>
   );
 };
@@ -156,6 +158,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   currentRecord: DataRecord | null;
   onUpdate: any;
+  collectionId: string;
 }
 
 const ConfirmModal: FC<Props> = ({
@@ -164,6 +167,7 @@ const ConfirmModal: FC<Props> = ({
   onOpenChange,
   currentRecord,
   onUpdate,
+  collectionId
 }) => {
   let { globalState, setGlobalState } = useContext(GlobalContext);
   
@@ -194,7 +198,7 @@ const ConfirmModal: FC<Props> = ({
               prompt: rec.prompt,
               response: rec.response,
               history: rec.history,
-              collectionId: rec.collectionId,
+              collectionId
             })
               .then((data) => {
                 __debug("data:", data);

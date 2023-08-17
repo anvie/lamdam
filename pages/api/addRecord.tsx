@@ -1,11 +1,12 @@
 import { apiHandler } from "@/lib/ApiHandler";
 import { toApiRespDoc } from "@/lib/docutil";
+import { __debug, __error } from "@/lib/logger";
 import { AddRecordSchema } from "@/lib/schema";
 import { getCurrentTimeMillis } from "@/lib/timeutil";
 import { Collection } from "@/models/Collection";
 import { DataRecordRow } from "@/models/DataRecordRow";
 import type { NextApiRequest, NextApiResponse } from "next/types";
-
+import mongoose from "mongoose";
 const db = require("../../lib/db");
 
 type Data = {
@@ -13,35 +14,61 @@ type Data = {
   result?: Object[];
 };
 
-async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
-  const { prompt, response, history, collectionId } = AddRecordSchema.parse(req.body);
+async function handler(req: NextApiRequest, res: NextApiResponse<Data>){
+  const { prompt, response, history, collectionId } = AddRecordSchema.parse(
+    req.body
+  );
 
   if (req.method !== "POST") {
-    res.status(405).end();
-    return;
+    return res.status(405).end();
   }
 
-  return DataRecordRow({
-    prompt, response, history,
-    createdAt: getCurrentTimeMillis(),
-    lastUpdated: getCurrentTimeMillis(),
-    collectionId
-  })
-    .save()
-    .then(async (doc: any) => {
+  try {
+    const colDoc = await Collection.findOne({ _id: collectionId });
 
-      // increase collection count
-      await Collection.updateOne({ _id: doc.collectionId }, {$inc: {count: 1}})
+    if (!colDoc) {
+      return res.status(404).end();
+    }
 
-      return res.json({
-        result: toApiRespDoc(doc),
+    const col = mongoose.connection.db.collection(colDoc.name);
+    __debug('col:', col)
+
+    return col.insertOne({
+        prompt,
+        response,
+        history,
+        createdAt: getCurrentTimeMillis(),
+        lastUpdated: getCurrentTimeMillis(),
+        meta: {},
+      })
+      .then(async (resp: any) => {
+      __debug('resp:', resp)
+
+        // increase collection count
+        await Collection.updateOne(
+          { _id: collectionId },
+          { $inc: { count: 1 } }
+        );
+
+        const doc = await col.findOne({_id: resp.insertedId })
+        __debug('doc:', doc)
+
+        return res.json({
+          result: toApiRespDoc(doc),
+        });
+      })
+      .catch((err: any) => {
+        __error('err:', err)
+        return res.status(500).json({
+          error: err,
+        });
       });
-    })
-    .catch((err: any) => {
-      res.status(500).json({
-        error: err,
-      });
+
+  } catch (err: any) {
+    return res.status(500).json({
+      error: err.message,
     });
+  }
 }
 
 export default apiHandler(handler);

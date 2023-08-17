@@ -10,7 +10,7 @@ const DataRecordModel = new Schema({
   creator: { type: String, default: "" },
   createdAt: { type: Number, required: true },
   lastUpdated: { type: Number, required: true },
-  collectionId: { type: String, required: true },
+  // collectionId: { type: String, required: true },
   meta: { type: Object, default: {} },
 })
 

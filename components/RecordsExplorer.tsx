@@ -71,6 +71,7 @@ const DataRecordRow: FC<{ data: DataRecord }> = ({ data }) => {
       return;
     }
     if (currentRecord.dirty) {
+      setRec({...data, dirty: true});
       return;
     }
     if (data.id === currentRecord.id) {
@@ -88,7 +89,7 @@ const DataRecordRow: FC<{ data: DataRecord }> = ({ data }) => {
     <div
       className={`border-b-1 pb-1 cursor-pointer hover:bg-slate-50 border-l-8 pl-2 ${
         currentRecord && currentRecord!.id === rec.id
-          ? `border-l-${rec.dirty ? "yellow-500" : "green-600"}`
+          ? `${rec.dirty ? "border-l-orange-400" : "border-l-green-600 bg-slate-100"}`
           : "border-gray-100 "
       }`}
       onClick={onClick}
