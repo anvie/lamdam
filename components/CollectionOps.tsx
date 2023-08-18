@@ -19,6 +19,7 @@ import { ErrorLabel } from "./ErrorLabel";
 import { CollectionContext, NeedUpdateContext } from "@/app/page";
 import CInput from "./CInput";
 import CTextarea from "./CTextarea";
+import { ThemeSwitch } from "./theme-switch";
 
 const CollectionOps: FC = () => {
   return (
@@ -76,6 +77,9 @@ const CollectionOpsButtons = () => {
         <Button size="sm">Import</Button>
         <Button size="sm" isIconOnly>
           <GearIcon width="2em" />
+        </Button>
+        <Button size="sm" isIconOnly>
+        <ThemeSwitch />
         </Button>
       </div>
       <AddCollectionModal

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:import": "ts-node --require tsconfig-paths/register --project tsconfig.script.json etc/script/importdata.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.2.0",
@@ -47,6 +48,7 @@
     "typescript": "5.0.4"
   },
   "devDependencies": {
-    "@types/mongoose": "^5.11.97"
+    "@types/mongoose": "^5.11.97",
+    "yargs": "^17.7.2"
   }
 }

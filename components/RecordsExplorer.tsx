@@ -2,7 +2,6 @@
 
 import { Input } from "@nextui-org/input";
 import { FC, useContext, useEffect, useState } from "react";
-import { MailFilledIcon } from "./icon/MailFilledIcon";
 import { SearchIcon } from "./icon/SearchIcon";
 import { DataRecord } from "@/types";
 import { truncate } from "@/lib/stringutil";
@@ -43,7 +42,6 @@ const RecordsExplorer: FC = () => {
 
   const refreshData = (id: string) => {
     return get(`/api/records?collectionId=${id}`).then((data) => {
-      __debug("data:", data);
       setData(data.result);
     });
   };
@@ -96,12 +94,12 @@ const DataRecordRow: FC<{ data: DataRecord }> = ({ data }) => {
 
   return rec ? (
     <div
-      className={`border-b-1 pb-1 cursor-pointer hover:bg-slate-50 border-l-8 pl-2 ${
+      className={`border-b-1 pb-1 cursor-pointer hover:bg-slate-50 dark:hover:dark:text-black border-l-8 pl-2 ${
         currentRecord && currentRecord!.id === rec.id
           ? `${
               rec.dirty
                 ? "border-l-orange-400"
-                : "border-l-green-600 bg-slate-100"
+                : "border-l-green-600 bg-slate-100 dark:text-black"
             }`
           : "border-gray-100 "
       }`}
