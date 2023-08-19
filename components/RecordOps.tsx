@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@nextui-org/button";
 import {
   FC,
@@ -40,7 +42,6 @@ import {
   DropdownTrigger,
 } from "@nextui-org/dropdown";
 
-Notify.init({ position: "center-top" });
 
 const RecordOps: FC = () => {
   const [error, setError] = useState("");

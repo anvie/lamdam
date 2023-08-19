@@ -14,10 +14,9 @@ type Data = {
   result?: Object[];
 };
 
-async function handler(req: NextApiRequest, res: NextApiResponse<Data>){
-  const { prompt, response, instruction, history, collectionId } = AddRecordSchema.parse(
-    req.body
-  );
+async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
+  const { prompt, response, instruction, history, collectionId } =
+    AddRecordSchema.parse(req.body);
 
   if (req.method !== "POST") {
     return res.status(405).end();
@@ -32,7 +31,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>){
 
     const col = mongoose.connection.db.collection(colDoc.name);
 
-    return col.insertOne({
+    return col
+      .insertOne({
         prompt,
         response,
         instruction,
@@ -42,7 +42,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>){
         meta: {},
       })
       .then(async (resp: any) => {
-      __debug('resp:', resp)
+        // __debug("resp:", resp);
 
         // increase collection count
         await Collection.updateOne(
@@ -50,20 +50,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>){
           { $inc: { count: 1 } }
         );
 
-        const doc = await col.findOne({_id: resp.insertedId })
-        __debug('doc:', doc)
+        const doc = await col.findOne({ _id: resp.insertedId });
+        // __debug("doc:", doc);
 
         return res.json({
           result: toApiRespDoc(doc),
         });
       })
       .catch((err: any) => {
-        __error('err:', err)
+        __error("err:", err);
         return res.status(500).json({
           error: err,
         });
       });
-
   } catch (err: any) {
     return res.status(500).json({
       error: err.message,

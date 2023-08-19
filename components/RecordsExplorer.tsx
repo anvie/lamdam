@@ -19,12 +19,13 @@ const RecordsExplorer: FC = () => {
 
   let { globalState, setGlobalState } = useContext(GlobalContext);
   const [data, setData] = useState<DataRecord[]>([]);
+  const [query, setQuery] = useState<string>("");
 
   useEffect(() => {
     if (!currentCollection) {
       return;
     }
-    refreshData(currentCollection?.id || "0");
+    void refreshData(currentCollection?.id || "0");
   }, [currentCollection]);
 
   useEffect(() => {
@@ -36,12 +37,32 @@ const RecordsExplorer: FC = () => {
       setGlobalState({ ...globalState, newRecord: null });
     }
     if (globalState.deleteRecord) {
-      refreshData(currentCollection?.id || "0");
+      void refreshData(currentCollection?.id || "0");
     }
   }, [globalState]);
 
-  const refreshData = (id: string) => {
-    return get(`/api/records?collectionId=${id}`).then((data) => {
+  const doSearch = () => {
+    if (!currentCollection){
+      return;
+    }
+    let uri = `/api/records?collectionId=${currentCollection?.id}`
+    if (query) {
+      uri = `/api/records?collectionId=${currentCollection?.id}&q=${query}`
+    }
+    void get(uri)
+      .then((data) => {
+        setData(data.result);
+      })
+      .catch((err) => {
+        __debug("error", err);
+      });
+  };
+
+  const refreshData = async (id: string) => {
+    if (!id){
+      return;
+    }
+    return await get(`/api/records?collectionId=${id}`).then((data) => {
       setData(data.result);
     });
   };
@@ -56,6 +77,21 @@ const RecordsExplorer: FC = () => {
         startContent={
           <SearchIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
         }
+        isClearable
+        value={query}
+        onClear={() => {
+          setQuery("");
+        }}
+        onKeyUp={(e) => {
+          // setQuery(e.currentTarget.value);
+          // if enter pressed then search
+          if (e.key === "Enter") {
+            void doSearch();
+          }
+        }}
+        onChange={(e) => {
+          setQuery(e.currentTarget.value);
+        }}
       />
 
       {data &&

@@ -18,7 +18,7 @@ type Data = {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   const {
-    query: { collectionId },
+    query: { collectionId, q },
     method,
   } = req;
 
@@ -35,7 +35,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   }
   const col = mongoose.connection.db.collection(colDoc.name);
 
-  return await col.find({})
+  let query:any = {};
+
+  if (q) {
+    query = { ...query, prompt: { $regex: q, $options: "i" } };
+  }
+
+  __debug('query:', query)
+
+  return await col.find(query)
     .sort({ createdAt: -1 })
     .limit(15)
     .toArray()

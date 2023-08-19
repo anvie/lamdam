@@ -51,8 +51,6 @@ export const GlobalContext = createContext<{
   setGlobalState: () => {},
 });
 
-Notify.init({ position: "center-top" });
-
 export default function Home() {
   const [currentRecord, setCurrentRecord] = useState<DataRecord | null>(null);
   const [currentCollection, setCurrentCollection] = useState<Collection | null>(
@@ -66,6 +64,8 @@ export default function Home() {
     newRecord: null,
     deleteRecord: null,
   });
+
+  Notify.init({ position: "center-top" });
   
 
   return (
