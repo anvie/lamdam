@@ -12,7 +12,7 @@ import CollectionOps from "@/components/CollectionOps";
 import RecordsExplorer from "@/components/RecordsExplorer";
 import PromptEditor from "@/components/PromptEditor";
 import RecordOps from "@/components/RecordOps";
-import { Dispatch, SetStateAction, createContext, useState } from "react";
+import { Dispatch, SetStateAction, createContext, useEffect, useState } from "react";
 import { DataRecord, Collection } from "@/types";
 import { Notify } from "notiflix";
 
@@ -65,8 +65,9 @@ export default function Home() {
     deleteRecord: null,
   });
 
-  Notify.init({ position: "center-top" });
-  
+  useEffect(() => {
+    Notify.init({ position: "center-top" });
+  }, []);
 
   return (
     <section className="flex flex-col gap-4 md:py-4">

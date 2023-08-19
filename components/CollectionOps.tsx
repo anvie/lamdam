@@ -1,5 +1,5 @@
 import { Button } from "@nextui-org/button";
-import { FC, useContext, useRef, useState } from "react";
+import { FC, useContext, useEffect, useRef, useState } from "react";
 import { GearIcon } from "./icon/GearIcon";
 import CollectionSelector from "@/components/CollectionSelector";
 import {
@@ -16,17 +16,25 @@ import { AddCollectionSchema } from "@/lib/schema";
 import { post } from "@/lib/FetchWrapper";
 import { __debug, __error } from "@/lib/logger";
 import { ErrorLabel } from "./ErrorLabel";
-import { CollectionContext, NeedUpdateContext } from "@/app/page";
+import {
+  CollectionContext,
+  GlobalContext,
+  NeedUpdateContext,
+} from "@/app/page";
 import CInput from "./CInput";
 import CTextarea from "./CTextarea";
 import { ThemeSwitch } from "./theme-switch";
 
 const CollectionOps: FC = () => {
   return (
-    <div className="border grid grid-cols-3 gap-3 p-5">
+    <div className="border grid grid-cols-2 gap-3 p-5">
+      <div>
       <CollectionSelector />
       <RecordsStats />
-      <CollectionOpsButtons />
+      </div>
+      
+        <CollectionOpsButtons />
+      
     </div>
   );
 };
@@ -79,7 +87,7 @@ const CollectionOpsButtons = () => {
           <GearIcon width="2em" />
         </Button>
         <Button size="sm" isIconOnly>
-        <ThemeSwitch />
+          <ThemeSwitch />
         </Button>
       </div>
       <AddCollectionModal
@@ -92,13 +100,37 @@ const CollectionOpsButtons = () => {
 };
 
 const RecordsStats = () => {
-  const { currentCollection, setCurrentCollection } =
+  const { currentCollection } =
     useContext(CollectionContext);
-  return currentCollection ? (
-    <div>{currentCollection.count} total</div>
-  ) : (
-    <div></div>
-  );
+
+
+  let { globalState, setGlobalState } = useContext(GlobalContext);
+
+
+  const [recordsCount, setRecordsCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (!currentCollection) {
+      return;
+    }
+    setRecordsCount(currentCollection.count);
+  }, [currentCollection]);
+
+  useEffect(() => {
+    if (!currentCollection) {
+      return;
+    }
+    // setRecordsCount(currentCollection.count);
+    if (globalState.newRecord) {
+      setRecordsCount(recordsCount + 1);
+      setGlobalState({ ...globalState, newRecord: null });
+    }
+    if (globalState.deleteRecord) {
+      setRecordsCount(recordsCount - 1);
+    }
+  }, [globalState]);
+
+  return currentCollection ? <div className="text-sm">{recordsCount} total</div> : <div></div>;
 };
 
 const AddCollectionModal: FC<any> = ({
