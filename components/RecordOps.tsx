@@ -1,14 +1,7 @@
 "use client";
 
 import { Button } from "@nextui-org/button";
-import {
-  FC,
-  Key,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { FC, Key, useContext, useEffect, useRef, useState } from "react";
 import { DocumentPlus } from "./icon/DocumentPlus";
 import { CheckIcon } from "./icon/CheckIcon";
 import { XMarkIcon } from "./icon/XMarkIcon";
@@ -35,13 +28,13 @@ import {
 import { Collection, DataRecord } from "@/types";
 import { errorMessage } from "@/lib/errorutil";
 import { Notify } from "notiflix/build/notiflix-notify-aio";
+import { Confirm } from "notiflix/build/notiflix-confirm-aio";
 import {
   Dropdown,
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
 } from "@nextui-org/dropdown";
-
 
 const RecordOps: FC = () => {
   const [error, setError] = useState("");
@@ -52,6 +45,10 @@ const RecordOps: FC = () => {
   const modalState = useDisclosure();
 
   const [enableOps, setEnableOps] = useState(false);
+
+  useEffect(() => {
+    Notify.init({ position: "center-top" });
+  }, []);
 
   useEffect(() => {
     setEnableOps(currentRecord !== null && currentRecord.id !== "");
@@ -135,6 +132,48 @@ const RecordOps: FC = () => {
       });
   };
 
+  const onDeleteClick = () => {
+    setError("");
+
+    if (!currentRecord) {
+      alert("Please specify record first");
+      return;
+    }
+
+    const rec: DataRecord = currentRecord!;
+
+    if (!rec.id) {
+      alert("Please specify record first");
+      return;
+    }
+
+    Confirm.show("Confirmation", `Are you sure you want to delete record "${rec.prompt}"?`,"Yes", "No", ()=>{
+      
+
+        post("/api/deleteRecord", {
+          id: rec.id,
+          collectionId: currentCollection?.id,
+        })
+          .then((data) => {
+            __debug("data:", data);
+            setGlobalState({
+              ...globalState,
+              deleteRecord: currentRecord,
+            });
+            setCurrentRecord!(null);
+            Notify.success("Record has been deleted");
+          })
+          .catch((err) => {
+            if (err) {
+              __error(typeof err);
+              Notify.failure("Cannot update record :(. " + errorMessage(err));
+            }
+          });
+      
+    });
+
+  };
+
   return (
     <div className="border">
       <div className="flex flex-col p-2 items-start justify-start gap-3">
@@ -161,8 +200,8 @@ const RecordOps: FC = () => {
           onMoveSuccess={() => {
             setGlobalState({
               ...globalState,
-              deleteRecord: currentRecord
-            })
+              deleteRecord: currentRecord,
+            });
             setCurrentRecord!(null);
           }}
         />
@@ -178,6 +217,7 @@ const RecordOps: FC = () => {
           className="bg-red-500 text-white"
           startContent={<XMarkIcon />}
           disabled={!enableOps}
+          onClick={onDeleteClick}
         >
           Delete Record
         </Button>
@@ -234,7 +274,7 @@ const MoveRecordButton: FC<{
     })
       .then((response) => {
         onMoveSuccess();
-        Notify.success("Move record success" );
+        Notify.success("Move record success");
       })
       .catch((err) => {
         __error("Cannot move record.", err);

@@ -40,3 +40,9 @@ export const MoveRecordSchema = z.object({
     colDstId: z.string()
 });
 
+
+export const DeleteRecordSchema = z.object({
+    id: z.string(),
+    collectionId: z.string()
+});
+
