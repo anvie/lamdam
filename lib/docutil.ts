@@ -7,5 +7,6 @@ export function toApiRespDoc(doc: any): any {
     }
     _doc.id = _doc['_id']
     delete _doc['_id']
+    delete _doc['__v']
     return _doc;
 }

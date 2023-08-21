@@ -18,6 +18,7 @@ const RecordsExplorer: FC = () => {
     useContext(CollectionContext);
 
   let { globalState, setGlobalState } = useContext(GlobalContext);
+  let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   const [data, setData] = useState<DataRecord[]>([]);
   const [query, setQuery] = useState<string>("");
 
@@ -29,10 +30,12 @@ const RecordsExplorer: FC = () => {
   }, [currentCollection]);
 
   useEffect(() => {
+    __debug("in RecordsExplorer globalState effect")
     if (!globalState) {
       return;
     }
     if (globalState.newRecord) {
+      __debug("globalState.newRecord changed. New record:", globalState.newRecord)
       setData([globalState.newRecord].concat(data));
       setGlobalState({ ...globalState, newRecord: null });
     }
@@ -40,6 +43,23 @@ const RecordsExplorer: FC = () => {
       void refreshData(currentCollection?.id || "0", query);
     }
   }, [globalState]);
+
+  useEffect(() => {
+    if (!currentRecord){
+      return;
+    }
+    const records = data.map((rec)=> {
+      if (!currentRecord){
+        return rec;
+      }
+      if (rec.id === currentRecord.id){
+        return currentRecord;
+      }else{
+        return rec;
+      }
+    });
+    setData(records);
+  }, [currentRecord]);
 
   const doSearch = () => {
     if (!currentCollection){

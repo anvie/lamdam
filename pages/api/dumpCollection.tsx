@@ -104,7 +104,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
           "prompt": "instruction",
           "response": "response",
           "history": "history",
-          "input": "input"
+          "query": "input"
         }
       }
 

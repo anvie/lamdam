@@ -33,6 +33,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
 
     const rv = await col.deleteOne({ _id: new Types.ObjectId(id) });
 
+    // decrease count
+    await Collection.updateOne({ _id: collectionId }, { $set: { count: await col.countDocuments() } });
+
     return res.json({
       result: {
         deletedCount: rv.deletedCount,

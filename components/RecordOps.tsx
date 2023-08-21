@@ -70,6 +70,7 @@ const RecordOps: FC = () => {
       post("/api/addRecord", {
         prompt: rec.prompt,
         response: rec.response,
+        input: rec.input,
         history: rec.history,
         collectionId: currentCollection!.id,
       })
@@ -77,6 +78,10 @@ const RecordOps: FC = () => {
           const doc = data.result as DataRecord;
           __debug("doc:", doc);
           setCurrentRecord!(doc);
+          setGlobalState({
+            ...globalState,
+            newRecord: doc,
+          });
         })
         .catch((err) => {
           if (err) {

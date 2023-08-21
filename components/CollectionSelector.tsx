@@ -22,7 +22,18 @@ const CollectionSelector = () => {
         __debug("data:", data);
         setData(data.result);
         if (!currentCollection) {
-          setCurrentCollection && setCurrentCollection(data.result[0]);
+          if (setCurrentCollection){
+            if (localStorage.getItem("currentCollectionId")) {
+              const col = data.result.find((col:any) => col.id === localStorage.getItem("currentCollectionId"));
+              if (!col){
+                setCurrentCollection(data.result[0])
+                return;
+              }
+              setCurrentCollection(col);
+            }else{
+              setCurrentCollection(data.result[0])
+            }
+          }
         }
       })
       .catch((error) => {
@@ -42,9 +53,12 @@ const CollectionSelector = () => {
         value={currentCollection ? currentCollection.id : undefined}
         defaultValue={currentCollection ? currentCollection.id : undefined}
         onChange={(e: any) => {
-          const doc = data[e.target.selectedIndex];
-          if (doc) {
-            setCurrentCollection && setCurrentCollection(doc);
+          const col = data[e.target.selectedIndex];
+          if (col) {
+            setCurrentCollection && setCurrentCollection(col);
+
+            // save to local storage
+            localStorage.setItem("currentCollectionId", col.id);
           }
         }}
       >
