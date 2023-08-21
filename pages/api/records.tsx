@@ -49,7 +49,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     .toArray()
     .then((docs: any[]) => {
       return res.json({ result: docs.map(toApiRespDoc).map((rec) => {
-        rec.history = rec.history ? rec.history.filter((t:string) => t.length > 0) : [];
+        rec.history = rec.history ? rec.history : [];
         return rec
       }) });
     }).catch((err:any) => {

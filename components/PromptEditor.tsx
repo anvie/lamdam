@@ -113,7 +113,7 @@ const PromptEditor: FC = () => {
 
       <div className="px-4">
         <Textarea
-          label="History: (separated by new line)"
+          label="History: (separated by 2 new lines)"
           labelPlacement="outside"
           placeholder="Enter histories separated by new lines"
           className="w-full"
