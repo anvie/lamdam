@@ -1,6 +1,6 @@
 "use client";
 
-import { CollectionContext, NeedUpdateContext } from "@/app/page";
+import { CollectionContext, NeedUpdateContext } from "@/lib/context";
 import { Collection } from "@/types";
 import { useContext, useEffect, useState } from "react";
 import { get } from "@/lib/FetchWrapper";

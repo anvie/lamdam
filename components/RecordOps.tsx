@@ -24,7 +24,7 @@ import {
   CollectionContext,
   GlobalContext,
   SelectedRecordContext,
-} from "@/app/page";
+} from "@/lib/context";
 import { Collection, DataRecord } from "@/types";
 import { errorMessage } from "@/lib/errorutil";
 import { Notify } from "notiflix/build/notiflix-notify-aio";

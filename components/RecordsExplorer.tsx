@@ -9,7 +9,7 @@ import {
   CollectionContext,
   GlobalContext,
   SelectedRecordContext,
-} from "@/app/page";
+} from "@/lib/context";
 import { get } from "@/lib/FetchWrapper";
 import { __debug } from "@/lib/logger";
 

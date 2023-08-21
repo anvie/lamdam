@@ -1,4 +1,4 @@
-import { CollectionContext, SelectedRecordContext } from "@/app/page";
+import { CollectionContext, SelectedRecordContext } from "@/lib/context";
 import { __debug, __error } from "@/lib/logger";
 import { Textarea } from "@nextui-org/input";
 import { FC, useContext, useEffect, useState } from "react";

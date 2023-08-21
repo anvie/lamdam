@@ -20,11 +20,10 @@ import {
   CollectionContext,
   GlobalContext,
   NeedUpdateContext,
-} from "@/app/page";
+} from "@/lib/context";
 import CInput from "./CInput";
 import CTextarea from "./CTextarea";
 import { ThemeSwitch } from "./theme-switch";
-import { Notify } from "notiflix";
 import { Report } from "notiflix/build/notiflix-report-aio";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
