@@ -2,34 +2,70 @@ import { CollectionContext, SelectedRecordContext } from "@/app/page";
 import { __debug, __error } from "@/lib/logger";
 import { Textarea } from "@nextui-org/input";
 import { FC, useContext, useEffect, useState } from "react";
+import ArrowRightCircleIcon from "./icon/ArrowRightCircleIcon";
+import { Button } from "@nextui-org/button";
+import { Confirm, Notify } from "notiflix";
+import { get } from "@/lib/FetchWrapper";
+import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
+import GoExternalIcon from "./icon/GoExternalIcon";
 
 const PromptEditor: FC = () => {
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
-  const { currentCollection, setCurrentCollection } = useContext(CollectionContext);
+  const { currentCollection, setCurrentCollection } =
+    useContext(CollectionContext);
 
   const [dirty, setDirty] = useState(false);
+  const [rawHistory, setRawHistory] = useState("");
 
   useEffect(() => {
     if (currentRecord && dirty && !currentRecord.dirty) {
       setDirty(false);
     }
-  }, [currentRecord])
+    if (currentRecord && currentRecord.rawHistory != rawHistory) {
+      let lines = [];
+      for (let i = 0; i < currentRecord.history.length; i++) {
+        const item = currentRecord.history[i];
+        __debug('item:', item)
+        lines.push(`a: ${item[0]}`);
+        lines.push(`b: ${item[1]}`);
+        if (currentRecord.history[i + 1]) {
+          lines.push("-----");
+        }
+      }
+      setRawHistory(lines.join("\n"));
+      setCurrentRecord && setCurrentRecord({...currentRecord, rawHistory: lines.join("\n")})
+    }
+  }, [currentRecord]);
 
   useEffect(() => {
-    if (currentCollection && currentRecord && currentRecord.collectionId != currentCollection.id) {
+    if (
+      currentCollection &&
+      currentRecord &&
+      currentRecord.collectionId != currentCollection.id
+    ) {
       setCurrentRecord && setCurrentRecord(null);
     }
-  }, [currentCollection])
+  }, [currentCollection]);
 
   const throttledSaveChanges = (name: string) => {
     return (value: string) => {
-      if (!currentCollection){
+      if (!currentCollection) {
         __error("currentCollection is null");
         return;
       }
-      let _value:string | string[] = value;
-      if (name == "history"){
-        _value = value.split("\n")
+      let _value: any = value;
+      if (name == "history") {
+        setRawHistory(value);
+        setDirty(true);
+        if (currentRecord) {
+          setCurrentRecord &&
+            setCurrentRecord({
+              ...currentRecord,
+              dirty: true,
+              rawHistory: _value,
+            });
+        }
+        return;
       }
       if (currentRecord) {
         setDirty(true);
@@ -52,22 +88,72 @@ const PromptEditor: FC = () => {
           lastUpdated: 0,
           updateHistory: [],
           collectionId: currentCollection.id,
-          [name]: _value
+          rawHistory: "",
+          [name]: _value,
         };
         setCurrentRecord && setCurrentRecord(doc);
       }
     };
   };
 
+  const showJumpToRecordDialog = () => {
+    if (!currentCollection) {
+      return;
+    }
+    Confirm.prompt(
+      "Goto Record",
+      "record id",
+      "",
+      "Ok",
+      "Cancel",
+      (answer: string) => {
+        // jumpt to record
+        get(`/api/getRecord?id=${answer}&collectionId=${currentCollection.id}`)
+          .then((data: any) => {
+            setCurrentRecord && setCurrentRecord(data.result);
+          })
+          .catch((error: any) => {
+            __error("error:", error);
+            Notify.failure("Record not found");
+          });
+      }
+    );
+  };
+
+  const clearPromptEditor = () => {
+    setCurrentRecord && setCurrentRecord(null);
+    setRawHistory("");
+  }
+
   return (
     <div className="border pb-4">
       {/* ID */}
 
-      <div className="border-b p-4">
-        id:{" "}
-        {currentRecord && (
-          <span className={`font-semibold ${dirty ? 'text-orange-500' : ''}`}>{currentRecord.id}</span>
-        )}
+      <div className="border-b p-4 grid grid-cols-2 items-center align-middle">
+        <div>
+          id:{" "}
+          {currentRecord && (
+            <span className={`font-semibold ${dirty ? "text-orange-500" : ""}`}>
+              {currentRecord.id}
+            </span>
+          )}
+        </div>
+        <div className="ml-3 flex align-middle gap-2">
+        <Button size="sm" isIconOnly>
+          <ArrowRightCircleIcon
+            width="2em"
+            className="cursor-pointer"
+            onClick={showJumpToRecordDialog}
+          />
+          </Button>
+          <Button size="sm" isIconOnly>
+          <XMarkCircleIcon
+            width="2em"
+            className="cursor-pointer"
+            onClick={clearPromptEditor}
+          />
+          </Button>
+        </div>
       </div>
 
       {/* PROMPT */}
@@ -104,7 +190,7 @@ const PromptEditor: FC = () => {
           labelPlacement="outside"
           placeholder="Enter input or context"
           className="w-full"
-          value={currentRecord && currentRecord.input || ""}
+          value={(currentRecord && currentRecord.input) || ""}
           onValueChange={throttledSaveChanges("input")}
         />
       </div>
@@ -117,7 +203,7 @@ const PromptEditor: FC = () => {
           labelPlacement="outside"
           placeholder="Enter histories separated by new lines"
           className="w-full"
-          value={(currentRecord && currentRecord.history.join("\n")) || ""}
+          value={rawHistory}
           onValueChange={throttledSaveChanges("history")}
         />
       </div>

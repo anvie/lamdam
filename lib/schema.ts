@@ -13,12 +13,18 @@ export const DumpCollectionSchema = z.object({
 });
 
 
+export const GetRecordSchema = z.object({
+    id: z.string().min(3),
+    collectionId: z.string().min(10)
+});
+
+
 export const AddRecordSchema = z.object({
     prompt: z.string().min(3),
     response: z.string().min(10),
     input: z.string().default(""),
     // creator: z.string().min(3),
-    history: z.array(z.string()),
+    history: z.array(z.array(z.string())),
     collectionId: z.string()
 });
 
@@ -29,7 +35,7 @@ export const UpdateRecordSchema = z.object({
     response: z.string().min(10),
     input: z.string().default(""),
     // creator: z.string().min(3),
-    history: z.array(z.string()),
+    history: z.array(z.string()).or(z.array(z.array(z.string()))),
     collectionId: z.string().optional()
 });
 

@@ -20,11 +20,14 @@ export type DataRecord = {
   prompt: string;
   response: string;
   input: string;
-  history: string[];
+  history: string[][];
   creator?: string;
   createdAt: number;
   lastUpdated: number;
   updateHistory: UpdateHistory[];
   collectionId: string;
   dirty?: boolean;
+
+  // client-only for helper format history from raw text (not actual filed from server).
+  rawHistory: string;
 }

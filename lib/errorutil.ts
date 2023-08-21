@@ -16,7 +16,13 @@ type ValidationError = {
     path: string[];
 }
 
-export function errorMessage(errs: ValidationError[] | string):string {
+export function errorMessage(errs: any):string {
+    if (typeof errs === "string") {
+        return errs
+    }
+    if (errs.error){
+        return errs.error
+    }
     let _errs:ValidationError[] | string = errs;
     if (typeof errs === "string") {
         _errs = JSON.parse(errs)

@@ -36,6 +36,52 @@ import {
   DropdownTrigger,
 } from "@nextui-org/dropdown";
 
+function compileHistory(rawHistory: string): string[][] {
+  if (rawHistory.trim() === "") {
+    return [];
+  }
+  let compiledHistory: string[][] = [];
+  if (rawHistory) {
+    const lines = rawHistory.trim().split("\n");
+    let user = [];
+    let ai = [];
+    let inA = false;
+    let inB = false;
+    for (let line of lines) {
+      if (line.startsWith("-----")){
+        inA = false;
+        inB = false;
+      }
+      if (line.startsWith("a:")) {
+        user.push(line.substring(2, line.length).trim());
+        inA = true;
+        inB = false;
+      } else if (line.startsWith("b:")) {
+        ai.push(line.substring(2, line.length).trim());
+        inB = true;
+        inA = false;
+      }else if (inA){
+        // append to user's last line
+        user[user.length - 1] += "\n" + line.trim();
+      }else if (inB){
+        // append to ai's last line
+        ai[ai.length - 1] += "\n" + line.trim();
+      }
+    }
+    if (user.length !== ai.length) {
+      __debug("user:", user);
+      __debug("ai:", ai);
+      throw new Error("History is not valid. a and b length is not equal.");
+    }
+    // zip the user and ai into one list
+    for (let i = 0; i < user.length; i++) {
+      compiledHistory.push([user[i], ai[i]]);
+    }
+    __debug("compiledHistory:", compiledHistory);
+  }
+  return compiledHistory;
+}
+
 const RecordOps: FC = () => {
   const [error, setError] = useState("");
   let { globalState, setGlobalState } = useContext(GlobalContext);
@@ -71,7 +117,7 @@ const RecordOps: FC = () => {
         prompt: rec.prompt,
         response: rec.response,
         input: rec.input,
-        history: rec.history,
+        history: compileHistory(rec.rawHistory),
         collectionId: currentCollection!.id,
       })
         .then((data) => {
@@ -106,12 +152,14 @@ const RecordOps: FC = () => {
       return;
     }
 
+    let compiledHistory: string[][] = compileHistory(rec.rawHistory);
+
     post("/api/updateRecord", {
       id: rec.id,
       prompt: rec.prompt,
       input: rec.input,
       response: rec.response,
-      history: rec.history,
+      history: compiledHistory,
       collectionId: currentCollection!.id,
     })
       .then((data) => {
@@ -123,7 +171,7 @@ const RecordOps: FC = () => {
           prompt: rec.prompt,
           response: rec.response,
           input: rec.input,
-          history: rec.history,
+          history: compiledHistory,
           collectionId: rec.collectionId,
           dirty: false,
         });
@@ -152,8 +200,12 @@ const RecordOps: FC = () => {
       return;
     }
 
-    Confirm.show("Confirmation", `Are you sure you want to delete record "${rec.prompt}"?`,"Yes", "No", ()=>{
-
+    Confirm.show(
+      "Confirmation",
+      `Are you sure you want to delete record "${rec.prompt}"?`,
+      "Yes",
+      "No",
+      () => {
         post("/api/deleteRecord", {
           id: rec.id,
           collectionId: currentCollection?.id,
@@ -173,9 +225,8 @@ const RecordOps: FC = () => {
               Notify.failure("Cannot update record :(. " + errorMessage(err));
             }
           });
-      
-    });
-
+      }
+    );
   };
 
   return (
@@ -361,7 +412,7 @@ const ConfirmModal: FC<Props> = ({
               prompt: rec.prompt,
               response: rec.response,
               input: rec.input,
-              history: rec.history,
+              history: compileHistory(rec.rawHistory),
               collectionId,
             })
               .then((data) => {
