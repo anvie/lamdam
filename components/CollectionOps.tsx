@@ -27,6 +27,7 @@ import { ThemeSwitch } from "./theme-switch";
 import { Notify } from "notiflix";
 import { Report } from "notiflix/build/notiflix-report-aio";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
+import { Confirm } from "notiflix/build/notiflix-confirm-aio";
 
 const CollectionOps: FC = () => {
   return (
@@ -53,10 +54,11 @@ const CollectionOpsButtons = () => {
   const { currentCollection, setCurrentCollection } =
     useContext(CollectionContext);
 
-  const onDumpClick = () => {
+  const doDump = () => {
     if (!currentCollection) {
       return;
     }
+
     Loading.hourglass(`Dumping collection ${currentCollection.name}...`);
     post(`/api/dumpCollection`, {
       id: currentCollection.id,
@@ -72,11 +74,30 @@ const CollectionOpsButtons = () => {
         }
       })
       .catch((err: any) => {
-        Report.failure("Failed!", `Cannot dump collection: <br/><br/>${err}`, "Okay");
+        Report.failure(
+          "Failed!",
+          `Cannot dump collection: <br/><br/>${err}`,
+          "Okay"
+        );
       })
       .finally(() => {
         Loading.remove();
       });
+  };
+
+  const onDumpClick = () => {
+    if (!currentCollection) {
+      return;
+    }
+    Confirm.show(
+      "Confirmation",
+      `Are you sure to dump the collection ${currentCollection.name}?`,
+      "Yes",
+      "No",
+      () => {
+        doDump();
+      }
+    );
   };
 
   return (

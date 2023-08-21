@@ -9,6 +9,7 @@ import path from "path";
 
 import mongoose from "mongoose";
 import fs from "fs";
+import * as crypto from 'crypto';
 
 const DUMP_PATH = process.env.DUMP_PATH as string;
 
@@ -53,29 +54,62 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   const cursor = db.collection(col.name).find();
   let fout = null;
   try {
+    const hash = crypto.createHash('sha1');
+
     // open file and write to it row by row from docs
     fout = fs.createWriteStream(dumpPath);
 
     fout.write("[\n");
+    hash.update("[\n");
     while (await cursor.hasNext()) {
       const doc = await cursor.next();
       if (!doc){
         continue;
       }
-      fout.write(JSON.stringify({
+      const dataLine = JSON.stringify({
         instruction: doc.prompt,
         input: doc.input || '',
-        output: doc.response,
+        response: doc.response,
         history: doc.history || []
-      }, null, 2));
+      }, null, 2);
+
+      fout.write(dataLine);
+      hash.update(dataLine);
+
       if (await cursor.hasNext()) {
         fout.write(",\n");
+        hash.update(",\n");
       }
       counter++;
     }
     fout.write("]\n");
+    hash.update("]\n");
 
     fout.close();
+
+    // write daaset info if any
+
+    const infoPath = path.join(DUMP_PATH, `dataset_info.json`);
+    if (fs.existsSync(infoPath)) {
+      const digest = hash.digest('hex');
+      __debug(`Dump completed, hash: ${digest}`);
+
+      // read info path as json
+      const info = fs.readFileSync(infoPath, 'utf-8');
+      const infoJson = JSON.parse(info);
+      infoJson[col.name] = {
+        file_name: `${col.name}.json`,
+        file_sha1: digest,
+        columns: {
+          "prompt": "instruction",
+          "response": "response",
+          "history": "history",
+          "input": "input"
+        }
+      }
+
+      fs.writeFileSync(infoPath, JSON.stringify(infoJson, null, 2));
+    }
 
     return res.json({
       result: {
@@ -95,3 +129,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
 }
 
 export default apiHandler(handler);
+

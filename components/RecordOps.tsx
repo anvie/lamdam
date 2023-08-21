@@ -148,7 +148,6 @@ const RecordOps: FC = () => {
     }
 
     Confirm.show("Confirmation", `Are you sure you want to delete record "${rec.prompt}"?`,"Yes", "No", ()=>{
-      
 
         post("/api/deleteRecord", {
           id: rec.id,
