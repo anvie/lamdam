@@ -45,7 +45,7 @@ const PromptEditor: FC = () => {
           id: "",
           prompt: "",
           response: "",
-          instruction: "",
+          input: "",
           history: [],
           creator: "",
           createdAt: 0,
@@ -96,16 +96,16 @@ const PromptEditor: FC = () => {
         />
       </div>
 
-      {/* INSTRUCTION / CONTEXT */}
+      {/* input / CONTEXT */}
 
       <div className="px-4">
         <Textarea
-          label="Instruction: (context)"
+          label="input: (context)"
           labelPlacement="outside"
-          placeholder="Enter instruction or context"
+          placeholder="Enter input or context"
           className="w-full"
-          value={currentRecord && currentRecord.instruction || ""}
-          onValueChange={throttledSaveChanges("instruction")}
+          value={currentRecord && currentRecord.input || ""}
+          onValueChange={throttledSaveChanges("input")}
         />
       </div>
 

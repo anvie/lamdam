@@ -1,10 +1,9 @@
 import { apiHandler } from "@/lib/ApiHandler";
 import { toApiRespDoc } from "@/lib/docutil";
 import { __debug, __error } from "@/lib/logger";
-import { AddRecordSchema, UpdateRecordSchema } from "@/lib/schema";
+import { UpdateRecordSchema } from "@/lib/schema";
 import { getCurrentTimeMillis } from "@/lib/timeutil";
 import { Collection } from "@/models/Collection";
-import { DataRecordRow } from "@/models/DataRecordRow";
 import type { NextApiRequest, NextApiResponse } from "next/types";
 
 import mongoose, { Types } from "mongoose";
@@ -17,7 +16,7 @@ type Data = {
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
-  const { id, prompt, response, instruction, history, collectionId } =
+  const { id, prompt, response, input, history, collectionId } =
     UpdateRecordSchema.parse(req.body);
 
   if (req.method !== "POST") {
@@ -39,7 +38,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
       $set: {
         prompt,
         response,
-        instruction,
+        input,
         history,
         createdAt: getCurrentTimeMillis(),
         lastUpdated: getCurrentTimeMillis(),
@@ -69,7 +68,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   //     $set: {
   //       prompt,
   //       response,
-  //       instruction,
+  //       input,
   //       history,
   //       createdAt: getCurrentTimeMillis(),
   //       lastUpdated: getCurrentTimeMillis(),

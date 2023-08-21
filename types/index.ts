@@ -19,7 +19,7 @@ export type DataRecord = {
   id: string;
   prompt: string;
   response: string;
-  instruction: string;
+  input: string;
   history: string[];
   creator?: string;
   createdAt: number;

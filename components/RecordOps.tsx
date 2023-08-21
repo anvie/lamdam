@@ -107,7 +107,7 @@ const RecordOps: FC = () => {
     post("/api/updateRecord", {
       id: rec.id,
       prompt: rec.prompt,
-      instruction: rec.instruction,
+      input: rec.input,
       response: rec.response,
       history: rec.history,
       collectionId: currentCollection!.id,
@@ -120,7 +120,7 @@ const RecordOps: FC = () => {
           ...doc,
           prompt: rec.prompt,
           response: rec.response,
-          instruction: rec.instruction,
+          input: rec.input,
           history: rec.history,
           collectionId: rec.collectionId,
           dirty: false,
@@ -316,7 +316,7 @@ const ConfirmModal: FC<Props> = ({
             await post("/api/addRecord", {
               prompt: rec.prompt,
               response: rec.response,
-              instruction: rec.instruction,
+              input: rec.input,
               history: rec.history,
               collectionId,
             })

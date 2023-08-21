@@ -37,7 +37,7 @@ const RecordsExplorer: FC = () => {
       setGlobalState({ ...globalState, newRecord: null });
     }
     if (globalState.deleteRecord) {
-      void refreshData(currentCollection?.id || "0");
+      void refreshData(currentCollection?.id || "0", query);
     }
   }, [globalState]);
 
@@ -58,11 +58,11 @@ const RecordsExplorer: FC = () => {
       });
   };
 
-  const refreshData = async (id: string) => {
+  const refreshData = async (id: string, query?: string | undefined) => {
     if (!id){
       return;
     }
-    return await get(`/api/records?collectionId=${id}`).then((data) => {
+    return await get(`/api/records?collectionId=${id}${query ? `&q=${query}`: ''}`).then((data) => {
       setData(data.result);
     });
   };
@@ -81,6 +81,7 @@ const RecordsExplorer: FC = () => {
         value={query}
         onClear={() => {
           setQuery("");
+          void refreshData(currentCollection?.id || "0");
         }}
         onKeyUp={(e) => {
           // setQuery(e.currentTarget.value);

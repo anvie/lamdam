@@ -24,17 +24,19 @@ import {
 import CInput from "./CInput";
 import CTextarea from "./CTextarea";
 import { ThemeSwitch } from "./theme-switch";
+import { Notify } from "notiflix";
+import { Report } from "notiflix/build/notiflix-report-aio";
+import { Loading } from "notiflix/build/notiflix-loading-aio";
 
 const CollectionOps: FC = () => {
   return (
     <div className="border grid grid-cols-2 gap-3 p-5">
       <div>
-      <CollectionSelector />
-      <RecordsStats />
+        <CollectionSelector />
+        <RecordsStats />
       </div>
-      
-        <CollectionOpsButtons />
-      
+
+      <CollectionOpsButtons />
     </div>
   );
 };
@@ -55,18 +57,25 @@ const CollectionOpsButtons = () => {
     if (!currentCollection) {
       return;
     }
+    Loading.hourglass(`Dumping collection ${currentCollection.name}...`);
     post(`/api/dumpCollection`, {
-      collectionId: currentCollection.id,
+      id: currentCollection.id,
     })
       .then((resp: any) => {
         __debug("resp:", resp);
         if (resp.result) {
-          alert("Collection dumped");
+          Report.success(
+            "Dump Success",
+            `Total ${resp.result.total} records dumped from collection ${currentCollection.name}`,
+            "Okay"
+          );
         }
       })
       .catch((err: any) => {
-        __error(err.message);
-        alert("Cannot dump collection");
+        Report.failure("Failed!", `Cannot dump collection: <br/><br/>${err}`, "Okay");
+      })
+      .finally(() => {
+        Loading.remove();
       });
   };
 
@@ -100,12 +109,9 @@ const CollectionOpsButtons = () => {
 };
 
 const RecordsStats = () => {
-  const { currentCollection } =
-    useContext(CollectionContext);
-
+  const { currentCollection } = useContext(CollectionContext);
 
   let { globalState, setGlobalState } = useContext(GlobalContext);
-
 
   const [recordsCount, setRecordsCount] = useState<number>(0);
 
@@ -130,7 +136,11 @@ const RecordsStats = () => {
     }
   }, [globalState]);
 
-  return currentCollection ? <div className="text-sm">{recordsCount} total</div> : <div></div>;
+  return currentCollection ? (
+    <div className="text-sm">{recordsCount} total</div>
+  ) : (
+    <div></div>
+  );
 };
 
 const AddCollectionModal: FC<any> = ({

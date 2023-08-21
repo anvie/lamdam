@@ -52,7 +52,7 @@ async function handleResponse(response: Response) {
         //     adminAccess.logout();
         // }
 
-        const error = (data && data.message) || response.statusText;
+        const error = (data && data.message || data.error) || response.statusText;
         return Promise.reject(error);
     }
     return data;

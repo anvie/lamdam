@@ -15,7 +15,7 @@ type Data = {
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
-  const { prompt, response, instruction, history, collectionId } =
+  const { prompt, response, input, history, collectionId } =
     AddRecordSchema.parse(req.body);
 
   if (req.method !== "POST") {
@@ -35,7 +35,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
       .insertOne({
         prompt,
         response,
-        instruction,
+        input,
         history,
         createdAt: getCurrentTimeMillis(),
         lastUpdated: getCurrentTimeMillis(),

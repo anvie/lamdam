@@ -1,10 +1,9 @@
 import { apiHandler } from "@/lib/ApiHandler";
 import { toApiRespDoc } from "@/lib/docutil";
 import { __debug, __error } from "@/lib/logger";
-import { AddRecordSchema, MoveRecordSchema } from "@/lib/schema";
+import { MoveRecordSchema } from "@/lib/schema";
 import { getCurrentTimeMillis } from "@/lib/timeutil";
 import { Collection } from "@/models/Collection";
-import { DataRecordRow } from "@/models/DataRecordRow";
 import type { NextApiRequest, NextApiResponse } from "next/types";
 import mongoose, { Types } from "mongoose";
 const db = require("../../lib/db");
