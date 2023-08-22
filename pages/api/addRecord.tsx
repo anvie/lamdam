@@ -15,7 +15,7 @@ type Data = {
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
-  const { prompt, response, input, history, collectionId } =
+  const { prompt, response, input, history, collectionId, outputPositive, outputNegative } =
     AddRecordSchema.parse(req.body);
 
   if (req.method !== "POST") {
@@ -31,10 +31,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
 
     const col = mongoose.connection.db.collection(colDoc.name);
 
+    let formattedResponse = response;
+
+    if (colDoc.meta.dataType === "rm"){
+      formattedResponse = outputPositive + "\n\n----------\n\n" + outputNegative;
+    }
+
     return col
       .insertOne({
         prompt,
-        response,
+        response: formattedResponse,
         input,
         history,
         createdAt: getCurrentTimeMillis(),

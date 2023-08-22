@@ -113,12 +113,20 @@ const RecordOps: FC = () => {
       }
       const rec: DataRecord = currentRecord!;
 
+      let formattedResponse = rec.response;
+
+      if (currentCollection?.meta?.dataType === "rm"){
+        formattedResponse = rec.outputPositive + "\n\n----------\n\n" + rec.outputNegative;
+      }
+
       post("/api/addRecord", {
         prompt: rec.prompt,
-        response: rec.response,
+        response: formattedResponse,
         input: rec.input,
         history: compileHistory(rec.rawHistory),
         collectionId: currentCollection!.id,
+        outputPositive: rec.outputPositive,
+        outputNegative: rec.outputNegative,
       })
         .then((data) => {
           const doc = data.result as DataRecord;

@@ -27,6 +27,9 @@ import { ThemeSwitch } from "./theme-switch";
 import { Report } from "notiflix/build/notiflix-report-aio";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
+import { Select, SelectItem } from "@nextui-org/select";
+import { formatErrorMessage } from "@/lib/errorutil";
+import CSelect from "./CSelect";
 
 const CollectionOps: FC = () => {
   return (
@@ -185,6 +188,7 @@ const AddCollectionModal: FC<any> = ({
   const onSubmit = (onClose: any) => {
     setError("");
     return (data: any) => {
+      __debug("data:", data);
       post("/api/addCollection", data)
         .then((data) => {
           __debug("data:", data);
@@ -226,6 +230,14 @@ const AddCollectionModal: FC<any> = ({
                   name="description"
                   errors={errors}
                 />
+
+                <CSelect control={control} name="dataType" errors={errors} items={
+                  [
+                    { key: "sft", value: "sft", name: "SFT" },
+                    { key: "rm", value: "rm", name: "Reward Modeling" },
+                  ]
+                } />
+
                 {error && <ErrorLabel message={error} />}
                 {/* <code>
                   <pre>{JSON.stringify(errors, null, 2)}</pre>

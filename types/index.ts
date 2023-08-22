@@ -4,10 +4,15 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
 };
 
+interface CollectionMeta {
+  dataType?: string;
+}
+
 export type Collection = {
   id: string;
   name: string;
   count: number;
+  meta: CollectionMeta;
 }
 
 export type UpdateHistory = {
@@ -27,6 +32,10 @@ export type DataRecord = {
   updateHistory: UpdateHistory[];
   collectionId: string;
   dirty?: boolean;
+
+  // for reward modeling
+  outputPositive?: string;
+  outputNegative?: string;
 
   // client-only for helper format history from raw text (not actual filed from server).
   rawHistory: string;

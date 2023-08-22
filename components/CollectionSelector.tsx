@@ -65,7 +65,7 @@ const CollectionSelector = () => {
         {data &&
           data.map((collection, index) => (
             <option key={`collection-${index}`} value={collection.id}>
-              {collection.name}
+              {collection.name} - {toDataTypeName(collection.meta?.dataType)}
             </option>
           ))}
       </select>
@@ -73,4 +73,18 @@ const CollectionSelector = () => {
   );
 };
 
+function toDataTypeName(dataType: string | undefined) {
+  if (dataType === undefined){
+    return "SFT";
+  }
+  if (dataType === "rm"){
+    return "Reward Modeling";
+  }else if (dataType === "sft"){
+    return "SFT";
+  }else{
+    return "SFT";
+  }
+}
+
 export default CollectionSelector;
+

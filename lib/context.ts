@@ -3,9 +3,10 @@
 import { Dispatch, SetStateAction, createContext } from "react";
 import { DataRecord, Collection } from "@/types";
 
+
 export const SelectedRecordContext = createContext<{
     currentRecord: DataRecord | null;
-    setCurrentRecord: Dispatch<SetStateAction<DataRecord | null>> | null;
+    setCurrentRecord: Dispatch<DataRecord | null> | null;
 }>({ currentRecord: null, setCurrentRecord: null });
 
 export const CollectionContext = createContext<{

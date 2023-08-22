@@ -5,6 +5,7 @@ export const AddCollectionSchema = z.object({
     name: z.string().min(3).regex(/^[a-zA-Z0-9_]+$/, "only accept alphanumeric and underscore"),
     description: z.string().min(5),
     creator: z.string().min(3),
+    dataType: z.string()
 });
 
 
@@ -25,7 +26,11 @@ export const AddRecordSchema = z.object({
     input: z.string().default(""),
     // creator: z.string().min(3),
     history: z.array(z.array(z.string())),
-    collectionId: z.string()
+    collectionId: z.string(),
+
+    // -- for reward model --
+    outputPositive: z.string().optional(),
+    outputNegative: z.string().optional()
 });
 
 

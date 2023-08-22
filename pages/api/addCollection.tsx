@@ -13,7 +13,7 @@ type Data = {
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
-  const { name, description, creator } = AddCollectionSchema.parse(req.body);
+  const { name, description, creator, dataType } = AddCollectionSchema.parse(req.body);
 
   if (req.method !== "POST") {
     res.status(405).end();
@@ -26,6 +26,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     creator,
     createdAt: getCurrentTimeMillis(),
     lastUpdated: getCurrentTimeMillis(),
+    meta: {
+      dataType
+    }
   })
     .save()
     .then((doc: any) => {

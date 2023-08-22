@@ -25,7 +25,7 @@ const PromptEditor: FC = () => {
       let lines = [];
       for (let i = 0; i < currentRecord.history.length; i++) {
         const item = currentRecord.history[i];
-        __debug('item:', item)
+        __debug("item:", item);
         lines.push(`a: ${item[0]}`);
         lines.push(`b: ${item[1]}`);
         if (currentRecord.history[i + 1]) {
@@ -33,7 +33,8 @@ const PromptEditor: FC = () => {
         }
       }
       setRawHistory(lines.join("\n"));
-      setCurrentRecord && setCurrentRecord({...currentRecord, rawHistory: lines.join("\n")})
+      setCurrentRecord &&
+        setCurrentRecord({ ...currentRecord, rawHistory: lines.join("\n") });
     }
   }, [currentRecord]);
 
@@ -89,6 +90,8 @@ const PromptEditor: FC = () => {
           updateHistory: [],
           collectionId: currentCollection.id,
           rawHistory: "",
+          outputPositive: "",
+          outputNegative: "",
           [name]: _value,
         };
         setCurrentRecord && setCurrentRecord(doc);
@@ -123,7 +126,7 @@ const PromptEditor: FC = () => {
   const clearPromptEditor = () => {
     setCurrentRecord && setCurrentRecord(null);
     setRawHistory("");
-  }
+  };
 
   return (
     <div className="border pb-4">
@@ -139,19 +142,19 @@ const PromptEditor: FC = () => {
           )}
         </div>
         <div className="ml-3 flex align-middle gap-2">
-        <Button size="sm" isIconOnly>
-          <ArrowRightCircleIcon
-            width="2em"
-            className="cursor-pointer"
-            onClick={showJumpToRecordDialog}
-          />
+          <Button size="sm" isIconOnly>
+            <ArrowRightCircleIcon
+              width="2em"
+              className="cursor-pointer"
+              onClick={showJumpToRecordDialog}
+            />
           </Button>
           <Button size="sm" isIconOnly>
-          <XMarkCircleIcon
-            width="2em"
-            className="cursor-pointer"
-            onClick={clearPromptEditor}
-          />
+            <XMarkCircleIcon
+              width="2em"
+              className="cursor-pointer"
+              onClick={clearPromptEditor}
+            />
           </Button>
         </div>
       </div>
@@ -171,15 +174,38 @@ const PromptEditor: FC = () => {
 
       {/* RESPONSE */}
 
-      <div className="px-4">
+      <div
+        className={`px-4 ${
+          currentCollection?.meta?.dataType === "rm" ? "flex flex-col gap-2 border-2 border-blue-100 m-2 rounded-md pb-2" : ""
+        }`}
+      >
         <Textarea
-          label="Response:"
+          label={
+            currentCollection?.meta?.dataType === "rm"
+              ? "Good Output:"
+              : "Response:"
+          }
           labelPlacement="outside"
-          placeholder="Enter AI response"
+          placeholder={`Enter AI ${
+            currentCollection?.meta?.dataType === "rm"
+              ? "output for positive"
+              : "response"
+          }`}
           className="w-full"
-          value={(currentRecord && currentRecord.response) || ""}
-          onValueChange={throttledSaveChanges("response")}
+          value={(currentRecord && (currentCollection?.meta?.dataType === "rm" ? currentRecord.outputPositive : currentRecord.response)) || ""}
+          onValueChange={throttledSaveChanges(currentCollection?.meta?.dataType === "rm" ? "outputPositive" : "response")}
         />
+
+        {currentCollection?.meta?.dataType === "rm" && (
+          <Textarea
+            label={"Bad Output:"}
+            labelPlacement="outside"
+            placeholder={`Enter AI output for negative`}
+            className="w-full"
+            value={(currentRecord && (currentCollection?.meta?.dataType === "rm" ? currentRecord.outputNegative : currentRecord.response)) || ""}
+            onValueChange={throttledSaveChanges("outputNegative")}
+          />
+        )}
       </div>
 
       {/* input / CONTEXT */}

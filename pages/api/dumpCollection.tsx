@@ -9,7 +9,7 @@ import path from "path";
 
 import mongoose from "mongoose";
 import fs from "fs";
-import * as crypto from 'crypto';
+import * as crypto from "crypto";
 
 const DUMP_PATH = process.env.DUMP_PATH as string;
 
@@ -24,7 +24,7 @@ type Data = {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   const { id: collectionId } = DumpCollectionSchema.parse(req.body);
-  __debug('collectionId:', collectionId)
+  __debug("collectionId:", collectionId);
 
   if (req.method !== "POST") {
     res.status(405).end();
@@ -38,7 +38,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     return;
   }
 
-  const dumpPath = path.join(DUMP_PATH, `${col.name}.json`);
+  const dataType = col.meta.dataType || "sft";
+
+  let fileName = `${col.name}.json`;
+
+  if (dataType === "rm") {
+    fileName = `comparison_${col.name}.json`
+  }
+
+  const dumpPath = path.join(DUMP_PATH, fileName);
   __debug("dumpPath:", dumpPath);
 
   // if dumpPath not exists throw error
@@ -47,14 +55,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     return res.status(500).json({ error: "dumpPath not exists" });
   }
 
-
   const db = mongoose.connection.db;
 
-  let counter = 0
+  let counter = 0;
   const cursor = db.collection(col.name).find();
   let fout = null;
   try {
-    const hash = crypto.createHash('sha1');
+    const hash = crypto.createHash("sha1");
 
     // open file and write to it row by row from docs
     fout = fs.createWriteStream(dumpPath);
@@ -63,15 +70,35 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     hash.update("[\n");
     while (await cursor.hasNext()) {
       const doc = await cursor.next();
-      if (!doc){
+      if (!doc) {
         continue;
       }
-      const dataLine = JSON.stringify({
-        instruction: doc.prompt,
-        input: doc.input || '',
-        response: doc.response,
-        history: doc.history || []
-      }, null, 2);
+
+      let dataLine: string = "";
+
+      if (dataType === "rm") {
+        dataLine = JSON.stringify(
+          {
+            instruction: doc.prompt,
+            input: doc.input || "",
+            output: doc.response.split("\n\n----------\n\n"),
+          },
+          null,
+          2
+        );
+      } else {
+        // default sft
+        dataLine = JSON.stringify(
+          {
+            instruction: doc.prompt,
+            input: doc.input || "",
+            response: doc.response,
+            history: doc.history || [],
+          },
+          null,
+          2
+        );
+      }
 
       fout.write(dataLine);
       hash.update(dataLine);
@@ -91,21 +118,30 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
 
     const infoPath = path.join(DUMP_PATH, `dataset_info.json`);
     if (fs.existsSync(infoPath)) {
-      const digest = hash.digest('hex');
+      const digest = hash.digest("hex");
       __debug(`Dump completed, hash: ${digest}`);
 
       // read info path as json
-      const info = fs.readFileSync(infoPath, 'utf-8');
+      const info = fs.readFileSync(infoPath, "utf-8");
       const infoJson = JSON.parse(info);
-      infoJson[col.name] = {
-        file_name: `${col.name}.json`,
-        file_sha1: digest,
-        columns: {
-          "prompt": "instruction",
-          "response": "response",
-          "history": "history",
-          "query": "input"
-        }
+
+      if (dataType === "rm") {
+        infoJson[col.name] = {
+          file_name: fileName,
+          file_sha1: digest,
+        };
+      } else {
+        // for default (sft)
+        infoJson[col.name] = {
+          file_name: fileName,
+          file_sha1: digest,
+          columns: {
+            prompt: "instruction",
+            response: "response",
+            history: "history",
+            query: "input",
+          },
+        };
       }
 
       fs.writeFileSync(infoPath, JSON.stringify(infoJson, null, 2));
@@ -114,14 +150,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     return res.json({
       result: {
         status: "done",
-        total: counter
-      }
+        total: counter,
+      },
     });
   } catch (err: any) {
     __error("cannot write to file: " + err.message);
     return res.status(500).json({ error: err.message });
-  }finally{
-    if (fout !== null){
+  } finally {
+    if (fout !== null) {
       fout.close();
     }
     __debug("dumped", counter, "rows");
@@ -129,4 +165,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
 }
 
 export default apiHandler(handler);
-
