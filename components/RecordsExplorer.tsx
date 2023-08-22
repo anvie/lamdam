@@ -36,30 +36,38 @@ const RecordsExplorer: FC = () => {
     }
     if (globalState.newRecord) {
       __debug("globalState.newRecord changed. New record:", globalState.newRecord)
-      setData([globalState.newRecord].concat(data));
+      const newData = [globalState.newRecord].concat(data);
+      __debug('newData:', newData)
+      setData(newData);
       setGlobalState({ ...globalState, newRecord: null });
     }
     if (globalState.deleteRecord) {
+      __debug("globalState.deleteRecord changed.");
       void refreshData(currentCollection?.id || "0", query);
+      setGlobalState({ ...globalState, deleteRecord: null });
     }
   }, [globalState]);
 
+  // useEffect(() => {
+  //   if (!currentRecord){
+  //     return;
+  //   }
+  //   const records = data.map((rec)=> {
+  //     if (!currentRecord){
+  //       return rec;
+  //     }
+  //     if (rec.id === currentRecord.id){
+  //       return currentRecord;
+  //     }else{
+  //       return rec;
+  //     }
+  //   });
+  //   setData(records);
+  // }, [currentRecord]);
+
   useEffect(() => {
-    if (!currentRecord){
-      return;
-    }
-    const records = data.map((rec)=> {
-      if (!currentRecord){
-        return rec;
-      }
-      if (rec.id === currentRecord.id){
-        return currentRecord;
-      }else{
-        return rec;
-      }
-    });
-    setData(records);
-  }, [currentRecord]);
+    __debug("data changed:", data)
+  }, [data]);
 
   const doSearch = () => {
     if (!currentCollection){
@@ -82,6 +90,7 @@ const RecordsExplorer: FC = () => {
     if (!id){
       return;
     }
+    __debug("refreshing data for collectionId:", id);
     return await get(`/api/records?collectionId=${id}${query ? `&q=${query}`: ''}`).then((data) => {
       setData(data.result);
     });
