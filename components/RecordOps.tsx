@@ -48,7 +48,7 @@ function compileHistory(rawHistory: string): string[][] {
     let inA = false;
     let inB = false;
     for (let line of lines) {
-      if (line.startsWith("-----")){
+      if (line.startsWith("-----")) {
         inA = false;
         inB = false;
       }
@@ -60,10 +60,10 @@ function compileHistory(rawHistory: string): string[][] {
         ai.push(line.substring(2, line.length).trim());
         inB = true;
         inA = false;
-      }else if (inA){
+      } else if (inA) {
         // append to user's last line
         user[user.length - 1] += "\n" + line.trim();
-      }else if (inB){
+      } else if (inB) {
         // append to ai's last line
         ai[ai.length - 1] += "\n" + line.trim();
       }
@@ -80,6 +80,15 @@ function compileHistory(rawHistory: string): string[][] {
     __debug("compiledHistory:", compiledHistory);
   }
   return compiledHistory;
+}
+
+function formatResponse(rec: DataRecord, dataType: string): string {
+  let formattedResponse = rec.response;
+  if (dataType === "rm") {
+    formattedResponse =
+      rec.outputPositive + "\n\n----------\n\n" + rec.outputNegative;
+  }
+  return formattedResponse;
 }
 
 const RecordOps: FC = () => {
@@ -100,49 +109,60 @@ const RecordOps: FC = () => {
     setEnableOps(currentRecord !== null && currentRecord.id !== "");
   }, [currentRecord]);
 
+  const doAddRecord = () => {
+    setError("");
+
+    if (!currentRecord) {
+      alert("Please specify record first");
+      return;
+    }
+    const rec: DataRecord = currentRecord!;
+
+    // let formattedResponse = rec.response;
+
+    // if (currentCollection?.meta?.dataType === "rm") {
+    //   formattedResponse =
+    //     rec.outputPositive + "\n\n----------\n\n" + rec.outputNegative;
+    // }
+
+    const formattedResponse = formatResponse(
+      rec,
+      currentCollection?.meta?.dataType || "sft"
+    );
+    __debug("formattedResponse:", formattedResponse);
+
+    post("/api/addRecord", {
+      prompt: rec.prompt,
+      response: formattedResponse,
+      input: rec.input,
+      history: compileHistory(rec.rawHistory),
+      collectionId: currentCollection!.id,
+      outputPositive: rec.outputPositive,
+      outputNegative: rec.outputNegative,
+    })
+      .then((data) => {
+        const doc = data.result as DataRecord;
+        __debug("doc:", doc);
+        setCurrentRecord!(doc);
+        setGlobalState({
+          ...globalState,
+          newRecord: doc,
+        });
+      })
+      .catch((err) => {
+        if (err) {
+          __error(typeof err);
+          alert("Cannot add record :(. " + errorMessage(err));
+        }
+      });
+  };
+
   const onAddClick = () => {
     if (currentRecord && currentRecord.id != "") {
       // apabila sudah exists, kasih konfirmasi apakah mau buat duplikat dari current record?
       modalState.onOpen();
     } else {
-      setError("");
-
-      if (!currentRecord) {
-        alert("Please specify record first");
-        return;
-      }
-      const rec: DataRecord = currentRecord!;
-
-      let formattedResponse = rec.response;
-
-      if (currentCollection?.meta?.dataType === "rm"){
-        formattedResponse = rec.outputPositive + "\n\n----------\n\n" + rec.outputNegative;
-      }
-
-      post("/api/addRecord", {
-        prompt: rec.prompt,
-        response: formattedResponse,
-        input: rec.input,
-        history: compileHistory(rec.rawHistory),
-        collectionId: currentCollection!.id,
-        outputPositive: rec.outputPositive,
-        outputNegative: rec.outputNegative,
-      })
-        .then((data) => {
-          const doc = data.result as DataRecord;
-          __debug("doc:", doc);
-          setCurrentRecord!(doc);
-          setGlobalState({
-            ...globalState,
-            newRecord: doc,
-          });
-        })
-        .catch((err) => {
-          if (err) {
-            __error(typeof err);
-            alert("Cannot add record :(. " + errorMessage(err));
-          }
-        });
+      doAddRecord();
     }
   };
 
@@ -161,12 +181,16 @@ const RecordOps: FC = () => {
     }
 
     let compiledHistory: string[][] = compileHistory(rec.rawHistory);
+    const formattedResponse = formatResponse(
+      rec,
+      currentCollection?.meta?.dataType || "sft"
+    );
 
     post("/api/updateRecord", {
       id: rec.id,
       prompt: rec.prompt,
       input: rec.input,
-      response: rec.response,
+      response: formattedResponse,
       history: compiledHistory,
       collectionId: currentCollection!.id,
     })
@@ -287,12 +311,7 @@ const RecordOps: FC = () => {
       </div>
 
       {currentCollection && (
-        <ConfirmModal
-          currentRecord={currentRecord}
-          onUpdate={setCurrentRecord}
-          collectionId={currentCollection.id}
-          {...modalState}
-        />
+        <ConfirmModal onConfirm={doAddRecord} {...modalState} />
       )}
     </div>
   );
@@ -376,20 +395,22 @@ const MoveRecordButton: FC<{
 
 interface Props {
   isOpen: boolean;
-  onOpen: () => void;
+  // onOpen: () => void;
   onOpenChange: (open: boolean) => void;
-  currentRecord: DataRecord | null;
-  onUpdate: any;
-  collectionId: string;
+  onConfirm: () => void;
+  // currentRecord: DataRecord | null;
+  // currentCollection: Collection;
+  // onUpdate: any;
 }
 
 const ConfirmModal: FC<Props> = ({
   isOpen,
-  onOpen,
+  // onOpen,
   onOpenChange,
-  currentRecord,
-  onUpdate,
-  collectionId,
+  onConfirm,
+  // currentRecord,
+  // currentCollection,
+  // onUpdate,
 }) => {
   let { globalState, setGlobalState } = useContext(GlobalContext);
 
@@ -410,37 +431,45 @@ const ConfirmModal: FC<Props> = ({
       <ModalContent>
         {(onClose) => {
           const onSubmit = async () => {
-            if (!currentRecord) {
-              alert("Please specify record first");
-              return;
-            }
-            const rec = currentRecord;
-            __debug("currentRecord:", currentRecord);
-            await post("/api/addRecord", {
-              prompt: rec.prompt,
-              response: rec.response,
-              input: rec.input,
-              history: compileHistory(rec.rawHistory),
-              collectionId,
-            })
-              .then((data) => {
-                __debug("data:", data);
-                setGlobalState({
-                  ...globalState,
-                  newRecord: data.result as DataRecord,
-                });
-                onClose();
-                onUpdate(data.result as DataRecord);
-                Notify.success("New record was created", {
-                  position: "center-top",
-                });
-              })
-              .catch((err) => {
-                if (err) {
-                  __error(err);
-                  setError("Cannot add collection :(");
-                }
-              });
+            onConfirm();
+            onClose();
+            // if (!currentRecord) {
+            //   alert("Please specify record first");
+            //   return;
+            // }
+            // const rec = currentRecord;
+            // __debug("currentRecord:", currentRecord);
+
+            // const formattedResponse = formatResponse(
+            //   rec,
+            //   currentCollection?.meta?.dataType || "sft"
+            // );
+
+            // await post("/api/addRecord", {
+            //   prompt: rec.prompt,
+            //   response: formattedResponse,
+            //   input: rec.input,
+            //   history: compileHistory(rec.rawHistory),
+            //   collectionId: currentCollection.id,
+            // })
+            //   .then((data) => {
+            //     __debug("data:", data);
+            //     setGlobalState({
+            //       ...globalState,
+            //       newRecord: data.result as DataRecord,
+            //     });
+            //     onClose();
+            //     onUpdate(data.result as DataRecord);
+            //     Notify.success("New record was created", {
+            //       position: "center-top",
+            //     });
+            //   })
+            //   .catch((err) => {
+            //     if (err) {
+            //       __error(err);
+            //       setError("Cannot add collection :(");
+            //     }
+            //   });
           };
 
           return (
