@@ -8,6 +8,17 @@ import { Confirm, Notify } from "notiflix";
 import { get } from "@/lib/FetchWrapper";
 import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
 import GoExternalIcon from "./icon/GoExternalIcon";
+import { DataRecord } from "@/types";
+
+
+function formatResponse(rec: DataRecord, dataType: string): string {
+  let formattedResponse = rec.response;
+  if (dataType === "rm") {
+    formattedResponse =
+      rec.outputPositive + "\n\n----------\n\n" + rec.outputNegative;
+  }
+  return formattedResponse;
+}
 
 const PromptEditor: FC = () => {
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
@@ -68,12 +79,21 @@ const PromptEditor: FC = () => {
         }
         return;
       }
+      let newResponse = currentRecord?.response || '';
+      if (name === "outputPositive"){
+        newResponse = `${value}\n\n----------\n\n${currentRecord?.outputNegative || ''}`
+      }
+      if (name === "outputNegative"){
+        newResponse = `${currentRecord?.outputPositive || ''}\n\n----------\n\n${value}`
+      }
+      __debug('newResponse:', newResponse)
       if (currentRecord) {
         setDirty(true);
         setCurrentRecord &&
           setCurrentRecord({
             ...currentRecord,
             dirty: true,
+            response: newResponse,
             [name]: _value,
           });
       } else {
