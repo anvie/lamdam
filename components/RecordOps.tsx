@@ -201,7 +201,7 @@ const RecordOps: FC = () => {
         setCurrentRecord!({
           ...doc,
           prompt: rec.prompt,
-          response: rec.response,
+          response: formattedResponse,
           input: rec.input,
           history: compiledHistory,
           collectionId: rec.collectionId,
