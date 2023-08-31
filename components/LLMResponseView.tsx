@@ -9,35 +9,47 @@ import {
   ModalHeader,
 } from "@nextui-org/modal";
 import { FC, useEffect, useState } from "react";
+import CInput from "./CInput";
+import { Input } from "@nextui-org/input";
 
 export interface LLMResponseData {
-    target: string;
-    text: string;
+  target: string;
+  text: string;
 }
 
 interface Props {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   currentRecord: DataRecord;
-  onCopy: (data:LLMResponseData) => void;
+  onCopy: (data: LLMResponseData) => void;
 }
 
 const LLMResponseView: FC<Props> = ({
   isOpen,
   onOpenChange,
   currentRecord,
-  onCopy
+  onCopy,
 }) => {
   const [data, setData] = useState("");
+  const [sourceError, setSourceError] = useState(false);
+  const [kiaiApiUrl, setKiaiApiUrl] = useState("");
 
   useEffect(() => {
     if (isOpen) {
       void stearmResponse();
+      if (localStorage.getItem("lamdam.kiaiApiUrl")) {
+        setKiaiApiUrl(localStorage.getItem("lamdam.kiaiApiUrl")!);
+      }
     }
   }, [isOpen]);
 
   const stearmResponse = async () => {
-    const url = `${process.env.NEXT_PUBLIC_KIAI_API_URL}/v1/chat/completions`;
+    let url = `${process.env.NEXT_PUBLIC_KIAI_API_URL}/v1/chat/completionsx`;
+
+    if (localStorage.getItem("lamdam.kiaiApiUrl")) {
+      url = localStorage.getItem("lamdam.kiaiApiUrl")! + "/v1/chat/completions";
+    }
+
     const content = currentRecord.prompt || "";
     if (!content) {
       return;
@@ -78,12 +90,14 @@ const LLMResponseView: FC<Props> = ({
       const { value, done } = await reader.read();
       if (done) break;
       console.log("Received", value);
-      let d:any = {};
+      if (value.indexOf("data: [DONE]") > -1) break;
+      let d: any = {};
       try {
         d = JSON.parse(value.substring(6));
-      }catch(e){
+      } catch (e) {
         __error("cannot parse response", e);
         __error("response value:", value);
+        setSourceError(true);
       }
       if (d.choices && d.choices.length > 0) {
         if (d.choices[0].delta.content) {
@@ -102,19 +116,48 @@ const LLMResponseView: FC<Props> = ({
         {(onClose) => (
           <>
             <ModalHeader>KiAi Response</ModalHeader>
-            <ModalBody>{data}</ModalBody>
+            <ModalBody>
+              {sourceError && (
+                <div>
+                  <div className="text-red-500">
+                    Error: Cannot parse response
+                  </div>
+                  <Input
+                    label="Enter KiAi API url:"
+                    value={kiaiApiUrl}
+                    onValueChange={(d) => {
+                      localStorage.setItem("lamdam.kiaiApiUrl", d);
+                      setKiaiApiUrl(d);
+                    }}
+                    onKeyUp={(e) => {
+                      if (e.key === "Enter") {
+                        setSourceError(false);
+                        void stearmResponse();
+                      }
+                    }}
+                  />
+                </div>
+              )}
+              {data}
+            </ModalBody>
 
             <ModalFooter>
-              <Button color="success" onClick={()=>{
-                onCopy({target: "good", text: data});
-                onClose();
-              }}>
+              <Button
+                color="success"
+                onClick={() => {
+                  onCopy({ target: "good", text: data });
+                  onClose();
+                }}
+              >
                 Copy to Good Output
               </Button>
-              <Button color="warning" onClick={()=>{
-                onCopy({target: "bad", text: data});
-                onClose();
-              }}>
+              <Button
+                color="warning"
+                onClick={() => {
+                  onCopy({ target: "bad", text: data });
+                  onClose();
+                }}
+              >
                 Copy to Bad Output
               </Button>
               <Button color="danger" variant="light" onClick={onClose}>
