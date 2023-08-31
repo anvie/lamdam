@@ -277,6 +277,8 @@ const RecordOps: FC = () => {
         rec.outputNegative = data.text;
       } else if (data.target === "good") {
         rec.outputPositive = data.text;
+      } else if (data.target === "response") {
+        rec.response = data.text;
       }
 
       const formattedResponse = formatResponse(
@@ -353,6 +355,7 @@ const RecordOps: FC = () => {
           onOpenChange={onLlmResponseModalChange}
           currentRecord={currentRecord}
           onCopy={onCopyLLMResponse}
+          mode={currentCollection?.meta?.dataType || "sft"}
         />
       )}
     </div>

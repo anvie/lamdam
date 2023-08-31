@@ -10,7 +10,8 @@ import {
 } from "@nextui-org/modal";
 import { FC, useEffect, useState } from "react";
 import CInput from "./CInput";
-import { Input } from "@nextui-org/input";
+import { Input, Textarea } from "@nextui-org/input";
+import CTextarea from "./CTextarea";
 
 export interface LLMResponseData {
   target: string;
@@ -22,6 +23,7 @@ interface Props {
   onOpenChange: (isOpen: boolean) => void;
   currentRecord: DataRecord;
   onCopy: (data: LLMResponseData) => void;
+  mode: string;
 }
 
 const LLMResponseView: FC<Props> = ({
@@ -29,6 +31,7 @@ const LLMResponseView: FC<Props> = ({
   onOpenChange,
   currentRecord,
   onCopy,
+  mode
 }) => {
   const [data, setData] = useState("");
   const [sourceError, setSourceError] = useState(false);
@@ -79,39 +82,45 @@ const LLMResponseView: FC<Props> = ({
       body: JSON.stringify(query),
     };
     try {
-        const response = await fetch(url, requestOptions);
+      const response = await fetch(url, requestOptions);
 
-    const reader = response!
-      .body!.pipeThrough(new TextDecoderStream())
-      .getReader();
+      const reader = response!
+        .body!.pipeThrough(new TextDecoderStream())
+        .getReader();
 
-    let dataBuff = "";
-    setData("");
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      console.log("Received", value);
-      if (value.indexOf("data: [DONE]") > -1) break;
-      let d: any = {};
-      try {
-        d = JSON.parse(value.substring(6));
-      } catch (e) {
-        __error("cannot parse response", e);
-        __error("response value:", value);
-        setSourceError(true);
-      }
-      if (d.choices && d.choices.length > 0) {
-        if (d.choices[0].delta.content) {
-          dataBuff += d.choices[0].delta.content;
-          if (dataBuff) {
-            setData(dataBuff);
+      let dataBuff = "";
+      setData("");
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        console.log("Received", value);
+        if (value.indexOf("data: [DONE]") > -1) break;
+        const values = value.split("\n");
+        for (let i = 0; i < values.length; i++) {
+          const v = values[i];
+          let d: any = {};
+          try {
+            if (v.indexOf("data: ") > -1) {
+              d = JSON.parse(v.replace("data: ", ""));
+            }
+          } catch (e) {
+            __error("cannot parse response", e);
+            __error("response value:", value);
+            setSourceError(true);
+          }
+          if (d.choices && d.choices.length > 0) {
+            if (d.choices[0].delta.content) {
+              dataBuff += d.choices[0].delta.content;
+              if (dataBuff) {
+                setData(dataBuff);
+              }
+            }
           }
         }
       }
-    }
-    }catch(e){
-        __error("error:", e);
-        setSourceError(true);
+    } catch (e) {
+      __error("error:", e);
+      setSourceError(true);
     }
   };
 
@@ -143,11 +152,12 @@ const LLMResponseView: FC<Props> = ({
                   />
                 </div>
               )}
-              {data}
+              <Textarea value={data} />
             </ModalBody>
 
             <ModalFooter>
-              <Button
+              {
+                mode === "rm" && <><Button
                 color="success"
                 onClick={() => {
                   onCopy({ target: "good", text: data });
@@ -164,7 +174,19 @@ const LLMResponseView: FC<Props> = ({
                 }}
               >
                 Copy to Bad Output
+              </Button></>
+              }
+              {
+                mode === "sft" && <Button
+                color="success"
+                onClick={() => {
+                  onCopy({ target: "response", text: data });
+                  onClose();
+                }}
+              >
+                Use as Response
               </Button>
+              }
               <Button color="danger" variant="light" onClick={onClose}>
                 Close
               </Button>
