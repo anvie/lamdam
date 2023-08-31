@@ -44,7 +44,7 @@ const LLMResponseView: FC<Props> = ({
   }, [isOpen]);
 
   const stearmResponse = async () => {
-    let url = `${process.env.NEXT_PUBLIC_KIAI_API_URL}/v1/chat/completionsx`;
+    let url = `${process.env.NEXT_PUBLIC_KIAI_API_URL}/v1/chat/completions`;
 
     if (localStorage.getItem("lamdam.kiaiApiUrl")) {
       url = localStorage.getItem("lamdam.kiaiApiUrl")! + "/v1/chat/completions";
@@ -78,7 +78,8 @@ const LLMResponseView: FC<Props> = ({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(query),
     };
-    const response = await fetch(url, requestOptions);
+    try {
+        const response = await fetch(url, requestOptions);
 
     const reader = response!
       .body!.pipeThrough(new TextDecoderStream())
@@ -107,6 +108,10 @@ const LLMResponseView: FC<Props> = ({
           }
         }
       }
+    }
+    }catch(e){
+        __error("error:", e);
+        setSourceError(true);
     }
   };
 
