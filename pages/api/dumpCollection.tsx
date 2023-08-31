@@ -141,6 +141,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
             history: "history",
             query: "input",
           },
+          stage: dataType
         };
       }
 
