@@ -35,6 +35,7 @@ import {
   DropdownMenu,
   DropdownTrigger,
 } from "@nextui-org/dropdown";
+import LLMResponseView, { LLMResponseData } from "./LLMResponseView";
 
 function compileHistory(rawHistory: string): string[][] {
   if (rawHistory.trim() === "") {
@@ -100,6 +101,11 @@ const RecordOps: FC = () => {
   const modalState = useDisclosure();
 
   const [enableOps, setEnableOps] = useState(false);
+  const {
+    isOpen: llmResponseModalVisible,
+    onOpen: onLlmResponseModalOpen,
+    onOpenChange: onLlmResponseModalChange,
+  } = useDisclosure();
 
   useEffect(() => {
     Notify.init({ position: "center-top" });
@@ -205,6 +211,8 @@ const RecordOps: FC = () => {
           input: rec.input,
           history: compiledHistory,
           collectionId: rec.collectionId,
+          outputPositive: rec.outputPositive,
+          outputNegative: rec.outputNegative,
           dirty: false,
         });
         Notify.success("Record has been updated", { position: "center-top" });
@@ -261,6 +269,28 @@ const RecordOps: FC = () => {
     );
   };
 
+  const onCopyLLMResponse = (data: LLMResponseData) => {
+    if (currentRecord) {
+      const rec = currentRecord;
+
+      if (data.target === "bad") {
+        rec.outputNegative = data.text;
+      } else if (data.target === "good") {
+        rec.outputPositive = data.text;
+      }
+
+      const formattedResponse = formatResponse(
+        rec,
+        currentCollection?.meta?.dataType || "sft"
+      );
+
+      setCurrentRecord!({
+        ...rec,
+        response: formattedResponse,
+      });
+    }
+  };
+
   return (
     <div className="border">
       <div className="flex flex-col p-2 items-start justify-start gap-3">
@@ -295,6 +325,9 @@ const RecordOps: FC = () => {
 
         <div className="p-2 border-b-1 w-full"></div>
 
+        <Button size="md" onClick={onLlmResponseModalOpen}>
+          Get KiAi Response
+        </Button>
         <Button size="md">Get GPT Response</Button>
 
         <div className="p-2 border-b-1 w-full"></div>
@@ -312,6 +345,15 @@ const RecordOps: FC = () => {
 
       {currentCollection && (
         <ConfirmModal onConfirm={doAddRecord} {...modalState} />
+      )}
+
+      {currentRecord && (
+        <LLMResponseView
+          isOpen={llmResponseModalVisible}
+          onOpenChange={onLlmResponseModalChange}
+          currentRecord={currentRecord}
+          onCopy={onCopyLLMResponse}
+        />
       )}
     </div>
   );
