@@ -26,12 +26,16 @@ interface Props {
   mode: string;
 }
 
+function getKiaiApiUrl(): string {
+  return localStorage.getItem("lamdam.kiaiApiUrl") || "";
+}
+
 const LLMResponseView: FC<Props> = ({
   isOpen,
   onOpenChange,
   currentRecord,
   onCopy,
-  mode
+  mode,
 }) => {
   const [data, setData] = useState("");
   const [sourceError, setSourceError] = useState(false);
@@ -40,8 +44,8 @@ const LLMResponseView: FC<Props> = ({
   useEffect(() => {
     if (isOpen) {
       void stearmResponse();
-      if (localStorage.getItem("lamdam.kiaiApiUrl")) {
-        setKiaiApiUrl(localStorage.getItem("lamdam.kiaiApiUrl")!);
+      if (getKiaiApiUrl()) {
+        setKiaiApiUrl(getKiaiApiUrl()!);
       }
     }
   }, [isOpen]);
@@ -49,27 +53,49 @@ const LLMResponseView: FC<Props> = ({
   const stearmResponse = async () => {
     let url = `${process.env.NEXT_PUBLIC_KIAI_API_URL}/v1/chat/completions`;
 
-    if (localStorage.getItem("lamdam.kiaiApiUrl")) {
-      url = localStorage.getItem("lamdam.kiaiApiUrl")! + "/v1/chat/completions";
+    if (getKiaiApiUrl()) {
+      url = getKiaiApiUrl()! + "/v1/chat/completions";
     }
 
-    const content = currentRecord.prompt || "";
+    let content = currentRecord.prompt || "";
     if (!content) {
       return;
     }
+    const messages = [
+      {
+        role: "system",
+        content:
+          "kamu adalah Kitab AI atau biasa dipanggil KiAi, kamu bisa memberikan informasi yang bermanfaat",
+      },
+    ];
+
+    if (currentRecord.history){
+        for (let i=0; i<currentRecord.history.length; i++) {
+            const h = currentRecord.history[i];
+            messages.push({
+                role: "user",
+                content: h[0],
+            });
+            messages.push({
+                role: "assistant",
+                content: h[1],
+            });
+        }
+    }
+
+    if (currentRecord.input){
+        // content = currentRecord.input + "\n\n---\n" + content;
+        content = content + "\n" + currentRecord.input;
+    }
+
+    messages.push({
+      role: "user",
+      content,
+    });
+
     let query = {
       model: "string",
-      messages: [
-        {
-          role: "system",
-          content:
-            "kamu adalah Kitab AI atau biasa dipanggil KiAi, kamu bisa memberikan informasi yang bermanfaat",
-        },
-        {
-          role: "user",
-          content,
-        },
-      ],
+      messages,
       temperature: 0.35,
       top_p: 0,
       n: 1,
@@ -156,37 +182,39 @@ const LLMResponseView: FC<Props> = ({
             </ModalBody>
 
             <ModalFooter>
-              {
-                mode === "rm" && <><Button
-                color="success"
-                onClick={() => {
-                  onCopy({ target: "good", text: data });
-                  onClose();
-                }}
-              >
-                Copy to Good Output
-              </Button>
-              <Button
-                color="warning"
-                onClick={() => {
-                  onCopy({ target: "bad", text: data });
-                  onClose();
-                }}
-              >
-                Copy to Bad Output
-              </Button></>
-              }
-              {
-                mode === "sft" && <Button
-                color="success"
-                onClick={() => {
-                  onCopy({ target: "response", text: data });
-                  onClose();
-                }}
-              >
-                Use as Response
-              </Button>
-              }
+              {mode === "rm" && (
+                <>
+                  <Button
+                    color="success"
+                    onClick={() => {
+                      onCopy({ target: "good", text: data });
+                      onClose();
+                    }}
+                  >
+                    Copy to Good Output
+                  </Button>
+                  <Button
+                    color="warning"
+                    onClick={() => {
+                      onCopy({ target: "bad", text: data });
+                      onClose();
+                    }}
+                  >
+                    Copy to Bad Output
+                  </Button>
+                </>
+              )}
+              {mode === "sft" && (
+                <Button
+                  color="success"
+                  onClick={() => {
+                    onCopy({ target: "response", text: data });
+                    onClose();
+                  }}
+                >
+                  Use as Response
+                </Button>
+              )}
               <Button color="danger" variant="light" onClick={onClose}>
                 Close
               </Button>
