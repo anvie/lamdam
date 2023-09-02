@@ -204,7 +204,7 @@ const RecordOps: FC = () => {
         __debug("data:", data);
         const doc = currentRecord!;
         doc.dirty = false;
-        setCurrentRecord!({
+        const updatedRecord = {
           ...doc,
           prompt: rec.prompt,
           response: formattedResponse,
@@ -214,7 +214,12 @@ const RecordOps: FC = () => {
           outputPositive: rec.outputPositive,
           outputNegative: rec.outputNegative,
           dirty: false,
-        });
+        };
+        setCurrentRecord!(updatedRecord);
+        setGlobalState({
+          ...globalState,
+          updatedRecord,
+        })
         Notify.success("Record has been updated", { position: "center-top" });
       })
       .catch((err) => {

@@ -24,6 +24,7 @@ export interface GlobalState {
     currentRecord: DataRecord | null;
     newRecord: DataRecord | null;
     deleteRecord: DataRecord | null;
+    updatedRecord: DataRecord | null;
 }
 
 export const GlobalContext = createContext<{
@@ -34,7 +35,8 @@ export const GlobalContext = createContext<{
         currentCollection: null,
         currentRecord: null,
         newRecord: null,
-        deleteRecord: null
+        deleteRecord: null,
+        updatedRecord: null,
     },
     setGlobalState: () => { },
 });

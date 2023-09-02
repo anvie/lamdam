@@ -29,6 +29,7 @@ export default function Home() {
     currentRecord: null,
     newRecord: null,
     deleteRecord: null,
+    updatedRecord: null
   });
 
   useEffect(() => {

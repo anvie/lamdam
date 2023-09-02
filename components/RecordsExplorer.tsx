@@ -46,6 +46,17 @@ const RecordsExplorer: FC = () => {
       void refreshData(currentCollection?.id || "0", query);
       setGlobalState({ ...globalState, deleteRecord: null });
     }
+    if (globalState.updatedRecord){
+      __debug("globalState.updatedRecord changed.");
+      const newData = data.map((d)=> {
+        if (d.id === globalState.updatedRecord?.id){
+          return globalState.updatedRecord;
+        }
+        return d;
+      });
+      setData(newData);
+      setGlobalState({ ...globalState, updatedRecord: null });
+    }
   }, [globalState]);
 
   // useEffect(() => {

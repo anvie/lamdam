@@ -99,7 +99,7 @@ const LLMResponseView: FC<Props> = ({
       temperature: 0.35,
       top_p: 0,
       n: 1,
-      max_tokens: 512,
+      max_tokens: 1024,
       stream: true,
     };
     const requestOptions: RequestInit = {
