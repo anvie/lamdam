@@ -9,9 +9,7 @@ import {
   ModalHeader,
 } from "@nextui-org/modal";
 import { FC, useEffect, useState } from "react";
-import CInput from "./CInput";
 import { Input, Textarea } from "@nextui-org/input";
-import CTextarea from "./CTextarea";
 
 export interface LLMResponseData {
   target: string;
@@ -51,6 +49,8 @@ const LLMResponseView: FC<Props> = ({
   }, [isOpen]);
 
   const stearmResponse = async () => {
+    setSourceError(false);
+
     let url = `${process.env.NEXT_PUBLIC_KIAI_API_URL}/v1/chat/completions`;
 
     if (getKiaiApiUrl()) {
