@@ -24,7 +24,7 @@ interface Props {
   mode: string;
 }
 
-function getKiaiApiUrl(): string {
+function getopenaiApiUrl(): string {
   return localStorage.getItem("lamdam.openAiApiUrl") || "";
 }
 
@@ -38,13 +38,14 @@ const GPTResponseView: FC<Props> = ({
   const [data, setData] = useState("");
   const [sourceError, setSourceError] = useState(false);
   const [apiKeyNotFound, setAPIKeyNotFound] = useState(false);
-  const [kiaiApiUrl, setKiaiApiUrl] = useState("");
+  const [openaiApiUrl, setopenaiApiUrl] = useState("");
+  const [prompt, setPrompt] = useState("");
 
   useEffect(() => {
     if (isOpen) {
       void stearmResponse();
-      if (getKiaiApiUrl()) {
-        setKiaiApiUrl(getKiaiApiUrl()!);
+      if (getopenaiApiUrl()) {
+        setopenaiApiUrl(getopenaiApiUrl()!);
       }
     }
   }, [isOpen]);
@@ -56,8 +57,8 @@ const GPTResponseView: FC<Props> = ({
 
     let url = `https://api.openai.com/v1/chat/completions`;
 
-    if (getKiaiApiUrl()) {
-      url = getKiaiApiUrl()! + "/v1/chat/completions";
+    if (getopenaiApiUrl()) {
+      url = getopenaiApiUrl()! + "/v1/chat/completions";
     }
 
     const openaiApiKey = localStorage.getItem("openai.apiKey") || "";
@@ -72,6 +73,14 @@ const GPTResponseView: FC<Props> = ({
     if (!content) {
       return;
     }
+
+    if (content.indexOf("---") > -1) {
+      const s = content.split("\n")
+      setPrompt(s[s.length-1]);
+    }else{
+      setPrompt(content);
+    }
+
     const messages = [
       {
         role: "system",
@@ -169,7 +178,7 @@ const GPTResponseView: FC<Props> = ({
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader>KiAi Response</ModalHeader>
+            <ModalHeader>GPT Response</ModalHeader>
             <ModalBody>
               {sourceError && (
                 <div>
@@ -177,11 +186,11 @@ const GPTResponseView: FC<Props> = ({
                     Error: Cannot parse response
                   </div>
                   <Input
-                    label="Enter KiAi API url:"
-                    value={kiaiApiUrl}
+                    label="Enter GPT API url:"
+                    value={openaiApiUrl}
                     onValueChange={(d) => {
                       localStorage.setItem("lamdam.openaiApiUrl", d);
-                      setKiaiApiUrl(d);
+                      setopenaiApiUrl(d);
                     }}
                     onKeyUp={(e) => {
                       if (e.key === "Enter") {
@@ -199,7 +208,7 @@ const GPTResponseView: FC<Props> = ({
                   </div>
                   <Input
                     label="Your Openai API key"
-                    value={kiaiApiUrl}
+                    value={openaiApiUrl}
                     onValueChange={(d) => {
                       let apiKey = d.trim();
                       if (d.startsWith("sk-")){
@@ -217,6 +226,7 @@ const GPTResponseView: FC<Props> = ({
                   />
                 </div>
               )}
+              <div className="font-semibold">{prompt}</div>
               <Textarea value={data} />
             </ModalBody>
 

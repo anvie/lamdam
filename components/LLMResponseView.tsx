@@ -38,6 +38,7 @@ const LLMResponseView: FC<Props> = ({
   const [data, setData] = useState("");
   const [sourceError, setSourceError] = useState(false);
   const [kiaiApiUrl, setKiaiApiUrl] = useState("");
+  const [prompt, setPrompt] = useState("");
 
   useEffect(() => {
     if (isOpen) {
@@ -62,6 +63,15 @@ const LLMResponseView: FC<Props> = ({
     if (!content) {
       return;
     }
+
+
+    if (content.indexOf("---") > -1) {
+      const s = content.split("\n")
+      setPrompt(s[s.length-1]);
+    }else{
+      setPrompt(content);
+    }
+
     const messages = [
       {
         role: "system",
@@ -179,6 +189,7 @@ const LLMResponseView: FC<Props> = ({
                   />
                 </div>
               )}
+              <div className="font-semibold">{prompt}</div>
               <Textarea value={data} />
             </ModalBody>
 
