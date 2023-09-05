@@ -76,7 +76,7 @@ const GPTResponseView: FC<Props> = ({
       {
         role: "system",
         content:
-          "kamu adalah Kitab AI atau biasa dipanggil KiAi, kamu bisa memberikan informasi yang bermanfaat",
+          "Kamu adalah Kitab AI atau biasa dipanggil KiAi, kamu bisa memberikan informasi yang bermanfaat",
       },
     ];
 
