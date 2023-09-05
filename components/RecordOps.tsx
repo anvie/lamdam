@@ -36,6 +36,7 @@ import {
   DropdownTrigger,
 } from "@nextui-org/dropdown";
 import LLMResponseView, { LLMResponseData } from "./LLMResponseView";
+import GPTResponseView from "./GPTResponseView";
 
 function compileHistory(rawHistory: string): string[][] {
   if (rawHistory.trim() === "") {
@@ -105,6 +106,11 @@ const RecordOps: FC = () => {
     isOpen: llmResponseModalVisible,
     onOpen: onLlmResponseModalOpen,
     onOpenChange: onLlmResponseModalChange,
+  } = useDisclosure();
+  const {
+    isOpen: gptResponseModalVisible,
+    onOpen: onGptResponseModalOpen,
+    onOpenChange: onGptResponseModalChange,
   } = useDisclosure();
 
   useEffect(() => {
@@ -335,7 +341,7 @@ const RecordOps: FC = () => {
         <Button size="md" onClick={onLlmResponseModalOpen}>
           Get KiAi Response
         </Button>
-        <Button size="md">Get GPT Response</Button>
+        <Button size="md" onClick={onGptResponseModalOpen}>Get GPT Response</Button>
 
         <div className="p-2 border-b-1 w-full"></div>
 
@@ -358,6 +364,16 @@ const RecordOps: FC = () => {
         <LLMResponseView
           isOpen={llmResponseModalVisible}
           onOpenChange={onLlmResponseModalChange}
+          currentRecord={currentRecord}
+          onCopy={onCopyLLMResponse}
+          mode={currentCollection?.meta?.dataType || "sft"}
+        />
+      )}
+
+      {currentRecord && (
+        <GPTResponseView
+          isOpen={gptResponseModalVisible}
+          onOpenChange={onGptResponseModalChange}
           currentRecord={currentRecord}
           onCopy={onCopyLLMResponse}
           mode={currentCollection?.meta?.dataType || "sft"}

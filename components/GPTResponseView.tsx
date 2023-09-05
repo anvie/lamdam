@@ -25,10 +25,10 @@ interface Props {
 }
 
 function getKiaiApiUrl(): string {
-  return localStorage.getItem("lamdam.kiaiApiUrl") || "";
+  return localStorage.getItem("lamdam.openAiApiUrl") || "";
 }
 
-const LLMResponseView: FC<Props> = ({
+const GPTResponseView: FC<Props> = ({
   isOpen,
   onOpenChange,
   currentRecord,
@@ -37,6 +37,7 @@ const LLMResponseView: FC<Props> = ({
 }) => {
   const [data, setData] = useState("");
   const [sourceError, setSourceError] = useState(false);
+  const [apiKeyNotFound, setAPIKeyNotFound] = useState(false);
   const [kiaiApiUrl, setKiaiApiUrl] = useState("");
 
   useEffect(() => {
@@ -50,12 +51,21 @@ const LLMResponseView: FC<Props> = ({
 
   const stearmResponse = async () => {
     setSourceError(false);
+    setAPIKeyNotFound(false);
     setData("");
 
-    let url = `${process.env.NEXT_PUBLIC_KIAI_API_URL}/v1/chat/completions`;
+    let url = `https://api.openai.com/v1/chat/completions`;
 
     if (getKiaiApiUrl()) {
       url = getKiaiApiUrl()! + "/v1/chat/completions";
+    }
+
+    const openaiApiKey = localStorage.getItem("openai.apiKey") || "";
+
+    if (!openaiApiKey) {
+      __error("openai.apiKey not set");
+      setAPIKeyNotFound(true);
+      return;
     }
 
     let content = currentRecord.prompt || "";
@@ -66,27 +76,27 @@ const LLMResponseView: FC<Props> = ({
       {
         role: "system",
         content:
-          "Kamu adalah Kitab AI atau biasa dipanggil KiAi, kamu bisa memberikan informasi yang bermanfaat",
+          "kamu adalah Kitab AI atau biasa dipanggil KiAi, kamu bisa memberikan informasi yang bermanfaat",
       },
     ];
 
-    if (currentRecord.history){
-        for (let i=0; i<currentRecord.history.length; i++) {
-            const h = currentRecord.history[i];
-            messages.push({
-                role: "user",
-                content: h[0],
-            });
-            messages.push({
-                role: "assistant",
-                content: h[1],
-            });
-        }
+    if (currentRecord.history) {
+      for (let i = 0; i < currentRecord.history.length; i++) {
+        const h = currentRecord.history[i];
+        messages.push({
+          role: "user",
+          content: h[0],
+        });
+        messages.push({
+          role: "assistant",
+          content: h[1],
+        });
+      }
     }
 
-    if (currentRecord.input){
-        // content = currentRecord.input + "\n\n---\n" + content;
-        content = content + "\n" + currentRecord.input;
+    if (currentRecord.input) {
+      // content = currentRecord.input + "\n\n---\n" + content;
+      content = content + "\n" + currentRecord.input;
     }
 
     messages.push({
@@ -95,9 +105,9 @@ const LLMResponseView: FC<Props> = ({
     });
 
     let query = {
-      model: "string",
+      model: "gpt-3.5-turbo",
       messages,
-      temperature: 0.35,
+      temperature: 0.6,
       top_p: 0,
       n: 1,
       max_tokens: 1024,
@@ -105,7 +115,10 @@ const LLMResponseView: FC<Props> = ({
     };
     const requestOptions: RequestInit = {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer sk-${openaiApiKey}`,
+      },
       body: JSON.stringify(query),
     };
     try {
@@ -167,12 +180,37 @@ const LLMResponseView: FC<Props> = ({
                     label="Enter KiAi API url:"
                     value={kiaiApiUrl}
                     onValueChange={(d) => {
-                      localStorage.setItem("lamdam.kiaiApiUrl", d);
+                      localStorage.setItem("lamdam.openaiApiUrl", d);
                       setKiaiApiUrl(d);
                     }}
                     onKeyUp={(e) => {
                       if (e.key === "Enter") {
                         setSourceError(false);
+                        void stearmResponse();
+                      }
+                    }}
+                  />
+                </div>
+              )}
+              {apiKeyNotFound && (
+                <div>
+                  <div className="text-red-500">
+                    Error: openai API key not found
+                  </div>
+                  <Input
+                    label="Your Openai API key"
+                    value={kiaiApiUrl}
+                    onValueChange={(d) => {
+                      let apiKey = d.trim();
+                      if (d.startsWith("sk-")){
+                        apiKey = d.replace("sk-", "");
+                      }
+                      localStorage.setItem("openai.apiKey", apiKey);
+                      setAPIKeyNotFound(false);
+                    }}
+                    onKeyUp={(e) => {
+                      if (e.key === "Enter") {
+                        setAPIKeyNotFound(false);
                         void stearmResponse();
                       }
                     }}
@@ -227,4 +265,4 @@ const LLMResponseView: FC<Props> = ({
   );
 };
 
-export default LLMResponseView;
+export default GPTResponseView;
