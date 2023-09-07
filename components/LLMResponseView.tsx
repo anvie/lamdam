@@ -64,7 +64,6 @@ const LLMResponseView: FC<Props> = ({
       return;
     }
 
-
     if (content.indexOf("---") > -1) {
       const s = content.split("\n")
       setPrompt(s[s.length-1]);

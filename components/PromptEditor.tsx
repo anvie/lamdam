@@ -9,9 +9,10 @@ import { Confirm, Notify } from "notiflix";
 import { get } from "@/lib/FetchWrapper";
 import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
 import { ClipboardIcon } from "./icon/ClipboardIcon";
+import { AnnotationIcon } from "./icon/AnnotationIcon";
 import GoExternalIcon from "./icon/GoExternalIcon";
 import { DataRecord } from "@/types";
-
+import ChatModePromptEditor from "./ChatModePromptEditor";
 
 function formatResponse(rec: DataRecord, dataType: string): string {
   let formattedResponse = rec.response;
@@ -29,6 +30,7 @@ const PromptEditor: FC = () => {
 
   const [dirty, setDirty] = useState(false);
   const [rawHistory, setRawHistory] = useState("");
+  const [chatMode, setChatMode] = useState(false);
 
   useEffect(() => {
     if (currentRecord && dirty && !currentRecord.dirty) {
@@ -81,14 +83,18 @@ const PromptEditor: FC = () => {
         }
         return;
       }
-      let newResponse = currentRecord?.response || '';
-      if (name === "outputPositive"){
-        newResponse = `${value}\n\n----------\n\n${currentRecord?.outputNegative || ''}`
+      let newResponse = currentRecord?.response || "";
+      if (name === "outputPositive") {
+        newResponse = `${value}\n\n----------\n\n${
+          currentRecord?.outputNegative || ""
+        }`;
       }
-      if (name === "outputNegative"){
-        newResponse = `${currentRecord?.outputPositive || ''}\n\n----------\n\n${value}`
+      if (name === "outputNegative") {
+        newResponse = `${
+          currentRecord?.outputPositive || ""
+        }\n\n----------\n\n${value}`;
       }
-      __debug('newResponse:', newResponse)
+      __debug("newResponse:", newResponse);
       if (currentRecord) {
         setDirty(true);
         setCurrentRecord &&
@@ -148,6 +154,7 @@ const PromptEditor: FC = () => {
   const clearPromptEditor = () => {
     setCurrentRecord && setCurrentRecord(null);
     setRawHistory("");
+    setChatMode(false);
   };
 
   const onAddToHistory = () => {
@@ -158,9 +165,12 @@ const PromptEditor: FC = () => {
       return;
     }
     let histories = currentRecord.history;
-    histories.push([`${currentRecord.prompt}\n${currentRecord.input}`.trim(), currentRecord.response]);
-    currentRecord.prompt = ""
-    currentRecord.response = ""
+    histories.push([
+      `${currentRecord.prompt}\n${currentRecord.input}`.trim(),
+      currentRecord.response,
+    ]);
+    currentRecord.prompt = "";
+    currentRecord.response = "";
     const _rawHistory = histories.join("\n-----\n");
     setCurrentRecord &&
       setCurrentRecord({
@@ -170,7 +180,12 @@ const PromptEditor: FC = () => {
         dirty: currentRecord.id ? true : false,
       });
     // setRawHistory(_rawHistory);
-  }
+  };
+
+  const onSwithToChatMode = () => {
+    __debug("chatMode:", chatMode);
+    setChatMode(!chatMode);
+  };
 
   return (
     <div className="border pb-4">
@@ -201,91 +216,128 @@ const PromptEditor: FC = () => {
             />
           </Button>
           <Divider orientation="vertical" />
-          <Button size="sm" title="Add to history">
-            <ClipboardIcon
-              width="2em"
-              className="cursor-pointer"
-              onClick={onAddToHistory}
-            />
-            + history
+          <Button
+            size="sm"
+            title="Add to history"
+            onClick={onAddToHistory}
+            className={`cursor-pointer ${chatMode ? "text-gray-500" : ""}`}
+            disabled={chatMode}
+          >
+            <ClipboardIcon width="2em" />+ history
+          </Button>
+          <Divider orientation="vertical" />
+          <Button
+            size="sm"
+            title="Swith to chat mode"
+            onClick={onSwithToChatMode}
+            className="cursor-pointer"
+          >
+            <AnnotationIcon width="2em" />
+            Chat mode
           </Button>
         </div>
       </div>
 
       {/* PROMPT */}
 
-      <div className="px-4 pt-2">
-        <Textarea
-          label="Prompt:"
-          labelPlacement="outside"
-          placeholder="Enter your prompt"
-          className="w-full"
-          value={(currentRecord && currentRecord.prompt) || ""}
-          onValueChange={throttledSaveChanges("prompt")}
-        />
-      </div>
+      {!chatMode ? (
+        <div>
+          <div className="px-4 pt-2">
+            <Textarea
+              label="Prompt:"
+              labelPlacement="outside"
+              placeholder="Enter your prompt"
+              className="w-full"
+              value={(currentRecord && currentRecord.prompt) || ""}
+              onValueChange={throttledSaveChanges("prompt")}
+            />
+          </div>
 
-      {/* RESPONSE */}
+          {/* RESPONSE */}
 
-      <div
-        className={`px-4 ${
-          currentCollection?.meta?.dataType === "rm" ? "flex flex-col gap-2 border-2 border-blue-100 m-2 rounded-md pb-2" : ""
-        }`}
-      >
-        <Textarea
-          label={
-            currentCollection?.meta?.dataType === "rm"
-              ? "Good Output:"
-              : "Response:"
-          }
-          labelPlacement="outside"
-          placeholder={`Enter AI ${
-            currentCollection?.meta?.dataType === "rm"
-              ? "output for positive"
-              : "response"
-          }`}
-          className="w-full"
-          value={(currentRecord && (currentCollection?.meta?.dataType === "rm" ? currentRecord.outputPositive : currentRecord.response)) || ""}
-          onValueChange={throttledSaveChanges(currentCollection?.meta?.dataType === "rm" ? "outputPositive" : "response")}
-        />
+          <div
+            className={`px-4 ${
+              currentCollection?.meta?.dataType === "rm"
+                ? "flex flex-col gap-2 border-2 border-blue-100 m-2 rounded-md pb-2"
+                : ""
+            }`}
+          >
+            <Textarea
+              label={
+                currentCollection?.meta?.dataType === "rm"
+                  ? "Good Output:"
+                  : "Response:"
+              }
+              labelPlacement="outside"
+              placeholder={`Enter AI ${
+                currentCollection?.meta?.dataType === "rm"
+                  ? "output for positive"
+                  : "response"
+              }`}
+              className="w-full"
+              value={
+                (currentRecord &&
+                  (currentCollection?.meta?.dataType === "rm"
+                    ? currentRecord.outputPositive
+                    : currentRecord.response)) ||
+                ""
+              }
+              onValueChange={throttledSaveChanges(
+                currentCollection?.meta?.dataType === "rm"
+                  ? "outputPositive"
+                  : "response"
+              )}
+            />
 
-        {currentCollection?.meta?.dataType === "rm" && (
-          <Textarea
-            label={"Bad Output:"}
-            labelPlacement="outside"
-            placeholder={`Enter AI output for negative`}
-            className="w-full"
-            value={(currentRecord && (currentCollection?.meta?.dataType === "rm" ? currentRecord.outputNegative : currentRecord.response)) || ""}
-            onValueChange={throttledSaveChanges("outputNegative")}
-          />
-        )}
-      </div>
+            {currentCollection?.meta?.dataType === "rm" && (
+              <Textarea
+                label={"Bad Output:"}
+                labelPlacement="outside"
+                placeholder={`Enter AI output for negative`}
+                className="w-full"
+                value={
+                  (currentRecord &&
+                    (currentCollection?.meta?.dataType === "rm"
+                      ? currentRecord.outputNegative
+                      : currentRecord.response)) ||
+                  ""
+                }
+                onValueChange={throttledSaveChanges("outputNegative")}
+              />
+            )}
+          </div>
 
-      {/* input / CONTEXT */}
+          {/* input / CONTEXT */}
 
-      <div className="px-4">
-        <Textarea
-          label="input: (context)"
-          labelPlacement="outside"
-          placeholder="Enter input or context"
-          className="w-full"
-          value={(currentRecord && currentRecord.input) || ""}
-          onValueChange={throttledSaveChanges("input")}
-        />
-      </div>
+          <div className="px-4">
+            <Textarea
+              label="input: (context)"
+              labelPlacement="outside"
+              placeholder="Enter input or context"
+              className="w-full"
+              value={(currentRecord && currentRecord.input) || ""}
+              onValueChange={throttledSaveChanges("input")}
+            />
+          </div>
 
-      {/* HISTORY */}
+          {/* HISTORY */}
 
-      <div className="px-4">
-        <Textarea
-          label="History:"
-          labelPlacement="outside"
-          placeholder={"a: input\nb: response\n-----\na: input\nb: response"}
-          className="w-full"
-          value={rawHistory}
-          onValueChange={throttledSaveChanges("history")}
-        />
-      </div>
+          <div className="px-4">
+            <Textarea
+              label="History:"
+              labelPlacement="outside"
+              placeholder={
+                "a: input\nb: response\n-----\na: input\nb: response"
+              }
+              className="w-full"
+              value={rawHistory}
+              onValueChange={throttledSaveChanges("history")}
+            />
+          </div>
+        </div>
+      ) : (
+        <ChatModePromptEditor initialMessage={`${currentRecord?.prompt || ''}\n${currentRecord?.input || ''}`.trim()} />
+      )}
     </div>
   );
 };
