@@ -4,9 +4,11 @@ import { Textarea } from "@nextui-org/input";
 import { FC, useContext, useEffect, useState } from "react";
 import ArrowRightCircleIcon from "./icon/ArrowRightCircleIcon";
 import { Button } from "@nextui-org/button";
+import { Divider } from "@nextui-org/react";
 import { Confirm, Notify } from "notiflix";
 import { get } from "@/lib/FetchWrapper";
 import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
+import { ClipboardIcon } from "./icon/ClipboardIcon";
 import GoExternalIcon from "./icon/GoExternalIcon";
 import { DataRecord } from "@/types";
 
@@ -148,6 +150,28 @@ const PromptEditor: FC = () => {
     setRawHistory("");
   };
 
+  const onAddToHistory = () => {
+    if (!currentCollection) {
+      return;
+    }
+    if (!currentRecord) {
+      return;
+    }
+    let histories = currentRecord.history;
+    histories.push([`${currentRecord.prompt}\n${currentRecord.input}`.trim(), currentRecord.response]);
+    currentRecord.prompt = ""
+    currentRecord.response = ""
+    const _rawHistory = histories.join("\n-----\n");
+    setCurrentRecord &&
+      setCurrentRecord({
+        ...currentRecord,
+        history: histories,
+        rawHistory: _rawHistory,
+        dirty: currentRecord.id ? true : false,
+      });
+    // setRawHistory(_rawHistory);
+  }
+
   return (
     <div className="border pb-4">
       {/* ID */}
@@ -161,7 +185,7 @@ const PromptEditor: FC = () => {
             </span>
           )}
         </div>
-        <div className="ml-3 flex align-middle gap-2">
+        <div className="ml-3 flex h-5 items-center space-x-4 text-small gap-2">
           <Button size="sm" isIconOnly>
             <ArrowRightCircleIcon
               width="2em"
@@ -175,6 +199,15 @@ const PromptEditor: FC = () => {
               className="cursor-pointer"
               onClick={clearPromptEditor}
             />
+          </Button>
+          <Divider orientation="vertical" />
+          <Button size="sm" title="Add to history">
+            <ClipboardIcon
+              width="2em"
+              className="cursor-pointer"
+              onClick={onAddToHistory}
+            />
+            + history
           </Button>
         </div>
       </div>
@@ -245,9 +278,9 @@ const PromptEditor: FC = () => {
 
       <div className="px-4">
         <Textarea
-          label="History: (separated by 2 new lines)"
+          label="History:"
           labelPlacement="outside"
-          placeholder="Enter histories separated by new lines"
+          placeholder={"a: input\nb: response\n-----\na: input\nb: response"}
           className="w-full"
           value={rawHistory}
           onValueChange={throttledSaveChanges("history")}
