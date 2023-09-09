@@ -1,4 +1,4 @@
-import { __error } from "@/lib/logger";
+import { __debug, __error } from "@/lib/logger";
 import { DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
 import {
@@ -38,6 +38,7 @@ const GPTResponseView: FC<Props> = ({
   const [data, setData] = useState("");
   const [sourceError, setSourceError] = useState(false);
   const [apiKeyNotFound, setAPIKeyNotFound] = useState(false);
+  const [openaiApiKey, setOpenaiApiKey] = useState("");
   const [openaiApiUrl, setopenaiApiUrl] = useState("");
   const [prompt, setPrompt] = useState("");
 
@@ -61,9 +62,9 @@ const GPTResponseView: FC<Props> = ({
       url = getopenaiApiUrl()! + "/v1/chat/completions";
     }
 
-    const openaiApiKey = localStorage.getItem("openai.apiKey") || "";
+    const _openaiApiKey = localStorage.getItem("openai.apiKey") || "";
 
-    if (!openaiApiKey) {
+    if (!_openaiApiKey) {
       __error("openai.apiKey not set");
       setAPIKeyNotFound(true);
       return;
@@ -126,7 +127,7 @@ const GPTResponseView: FC<Props> = ({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer sk-${openaiApiKey}`,
+        Authorization: `Bearer sk-${_openaiApiKey}`,
       },
       body: JSON.stringify(query),
     };
@@ -142,8 +143,14 @@ const GPTResponseView: FC<Props> = ({
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        console.log("Received", value);
+        console.log("Received:", value);
         if (value.indexOf("data: [DONE]") > -1) break;
+        if (value.indexOf("\"error\"") > -1){
+          if (value.indexOf("\"invalid_api_key\"") > -1){
+            setAPIKeyNotFound(true);
+          }
+          break;
+        }
         const values = value.split("\n");
         for (let i = 0; i < values.length; i++) {
           const v = values[i];
@@ -208,19 +215,22 @@ const GPTResponseView: FC<Props> = ({
                   </div>
                   <Input
                     label="Your Openai API key"
-                    value={openaiApiUrl}
+                    value={openaiApiKey}
                     onValueChange={(d) => {
                       let apiKey = d.trim();
                       if (d.startsWith("sk-")){
                         apiKey = d.replace("sk-", "");
                       }
                       localStorage.setItem("openai.apiKey", apiKey);
-                      setAPIKeyNotFound(false);
+                      setOpenaiApiKey(d.trim());
                     }}
                     onKeyUp={(e) => {
+                      __debug('e:', e)
                       if (e.key === "Enter") {
-                        setAPIKeyNotFound(false);
-                        void stearmResponse();
+                        if ((e.target as any).value.length > 0){
+                          setAPIKeyNotFound(false);
+                          void stearmResponse();
+                        }
                       }
                     }}
                   />
