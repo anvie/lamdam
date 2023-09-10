@@ -11,14 +11,14 @@ import {
   SelectedRecordContext,
 } from "@/lib/context";
 import { get } from "@/lib/FetchWrapper";
-import { __debug } from "@/lib/logger";
+import { __debug, __error } from "@/lib/logger";
 
 const RecordsExplorer: FC = () => {
   const { currentCollection, setCurrentCollection } =
     useContext(CollectionContext);
 
   let { globalState, setGlobalState } = useContext(GlobalContext);
-  let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
+  // let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   const [data, setData] = useState<DataRecord[]>([]);
   const [query, setQuery] = useState<string>("");
 
@@ -30,14 +30,17 @@ const RecordsExplorer: FC = () => {
   }, [currentCollection]);
 
   useEffect(() => {
-    __debug("in RecordsExplorer globalState effect")
+    __debug("in RecordsExplorer globalState effect");
     if (!globalState) {
       return;
     }
     if (globalState.newRecord) {
-      __debug("globalState.newRecord changed. New record:", globalState.newRecord)
+      __debug(
+        "globalState.newRecord changed. New record:",
+        globalState.newRecord
+      );
       const newData = [globalState.newRecord].concat(data);
-      __debug('newData:', newData)
+      __debug("newData:", newData);
       setData(newData);
       setGlobalState({ ...globalState, newRecord: null });
     }
@@ -46,10 +49,10 @@ const RecordsExplorer: FC = () => {
       void refreshData(currentCollection?.id || "0", query);
       setGlobalState({ ...globalState, deleteRecord: null });
     }
-    if (globalState.updatedRecord){
+    if (globalState.updatedRecord) {
       __debug("globalState.updatedRecord changed.");
-      const newData = data.map((d)=> {
-        if (d.id === globalState.updatedRecord?.id){
+      const newData = data.map((d) => {
+        if (d.id === globalState.updatedRecord?.id) {
           return globalState.updatedRecord;
         }
         return d;
@@ -77,16 +80,16 @@ const RecordsExplorer: FC = () => {
   // }, [currentRecord]);
 
   useEffect(() => {
-    __debug("data changed:", data)
+    __debug("data changed:", data);
   }, [data]);
 
   const doSearch = () => {
-    if (!currentCollection){
+    if (!currentCollection) {
       return;
     }
-    let uri = `/api/records?collectionId=${currentCollection?.id}`
+    let uri = `/api/records?collectionId=${currentCollection?.id}`;
     if (query) {
-      uri = `/api/records?collectionId=${currentCollection?.id}&q=${query}`
+      uri = `/api/records?collectionId=${currentCollection?.id}&q=${query}`;
     }
     void get(uri)
       .then((data) => {
@@ -98,11 +101,13 @@ const RecordsExplorer: FC = () => {
   };
 
   const refreshData = async (id: string, query?: string | undefined) => {
-    if (!id){
+    if (!id) {
       return;
     }
     __debug("refreshing data for collectionId:", id);
-    return await get(`/api/records?collectionId=${id}${query ? `&q=${query}`: ''}`).then((data) => {
+    return await get(
+      `/api/records?collectionId=${id}${query ? `&q=${query}` : ""}`
+    ).then((data) => {
       setData(data.result);
     });
   };
@@ -137,7 +142,13 @@ const RecordsExplorer: FC = () => {
 
       {data &&
         data.map((data, index) => {
-          return <DataRecordRow key={`data-record-${data.id}`} data={data} />;
+          return (
+            <DataRecordRow
+              key={`data-record-${data.id}`}
+              collectionId={currentCollection?.id || "0"}
+              data={data}
+            />
+          );
         })}
     </div>
   );
@@ -145,7 +156,10 @@ const RecordsExplorer: FC = () => {
 
 export default RecordsExplorer;
 
-const DataRecordRow: FC<{ data: DataRecord }> = ({ data }) => {
+const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
+  data,
+  collectionId,
+}) => {
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   const [rec, setRec] = useState<DataRecord | null>(null);
 
@@ -154,7 +168,7 @@ const DataRecordRow: FC<{ data: DataRecord }> = ({ data }) => {
       setRec(data);
       return;
     }
-    if (currentRecord.dirty) {
+    if (data.id === currentRecord.id && currentRecord.dirty) {
       setRec({ ...data, dirty: true });
       return;
     }
@@ -165,8 +179,23 @@ const DataRecordRow: FC<{ data: DataRecord }> = ({ data }) => {
     }
   }, [currentRecord]);
 
+  useEffect(() => {
+    __debug("data changed:", data);
+    setRec(JSON.parse(JSON.stringify(data)));
+  }, [data]);
+
   const onClick = () => {
-    setCurrentRecord!(data);
+    __debug("rec:", rec);
+    setCurrentRecord && setCurrentRecord(rec);
+
+    // uncomment this lines if you want to re-fetch the data from the server
+    // get(`/api/getRecord?id=${data.id}&collectionId=${collectionId}`)
+    //   .then((data: any) => {
+    //     setCurrentRecord && setCurrentRecord(data.result);
+    //   })
+    //   .catch((error: any) => {
+    //     __error("error when refreshing single record data from server:", error);
+    //   });
   };
 
   return rec ? (

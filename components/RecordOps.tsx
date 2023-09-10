@@ -130,13 +130,6 @@ const RecordOps: FC = () => {
     }
     const rec: DataRecord = currentRecord!;
 
-    // let formattedResponse = rec.response;
-
-    // if (currentCollection?.meta?.dataType === "rm") {
-    //   formattedResponse =
-    //     rec.outputPositive + "\n\n----------\n\n" + rec.outputNegative;
-    // }
-
     const formattedResponse = formatResponse(
       rec,
       currentCollection?.meta?.dataType || "sft"
@@ -499,43 +492,6 @@ const ConfirmModal: FC<Props> = ({
           const onSubmit = async () => {
             onConfirm();
             onClose();
-            // if (!currentRecord) {
-            //   alert("Please specify record first");
-            //   return;
-            // }
-            // const rec = currentRecord;
-            // __debug("currentRecord:", currentRecord);
-
-            // const formattedResponse = formatResponse(
-            //   rec,
-            //   currentCollection?.meta?.dataType || "sft"
-            // );
-
-            // await post("/api/addRecord", {
-            //   prompt: rec.prompt,
-            //   response: formattedResponse,
-            //   input: rec.input,
-            //   history: compileHistory(rec.rawHistory),
-            //   collectionId: currentCollection.id,
-            // })
-            //   .then((data) => {
-            //     __debug("data:", data);
-            //     setGlobalState({
-            //       ...globalState,
-            //       newRecord: data.result as DataRecord,
-            //     });
-            //     onClose();
-            //     onUpdate(data.result as DataRecord);
-            //     Notify.success("New record was created", {
-            //       position: "center-top",
-            //     });
-            //   })
-            //   .catch((err) => {
-            //     if (err) {
-            //       __error(err);
-            //       setError("Cannot add collection :(");
-            //     }
-            //   });
           };
 
           return (

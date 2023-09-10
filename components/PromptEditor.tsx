@@ -36,11 +36,12 @@ const PromptEditor: FC = () => {
     if (currentRecord && dirty && !currentRecord.dirty) {
       setDirty(false);
     }
+    __debug('PromptEditor.currentRecord:', currentRecord)
     if (currentRecord && currentRecord.rawHistory != rawHistory) {
       let lines = [];
       for (let i = 0; i < currentRecord.history.length; i++) {
         const item = currentRecord.history[i];
-        __debug("item:", item);
+        // __debug("item:", item);
         lines.push(`a: ${item[0]}`);
         lines.push(`b: ${item[1]}`);
         if (currentRecord.history[i + 1]) {
@@ -164,14 +165,14 @@ const PromptEditor: FC = () => {
     if (!currentRecord) {
       return;
     }
-    let histories = currentRecord.history;
+    let histories = JSON.parse(JSON.stringify(currentRecord.history));
     histories.push([
       `${currentRecord.prompt}\n${currentRecord.input}`.trim(),
       currentRecord.response,
     ]);
     currentRecord.prompt = "";
     currentRecord.response = "";
-    const _rawHistory = histories.join("\n-----\n");
+    const _rawHistory = (histories.map((d:string[]) => `a: ${d[0]}\nb: ${d[1]}`)).join("\n-----\n");
     setCurrentRecord &&
       setCurrentRecord({
         ...currentRecord,
