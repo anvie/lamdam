@@ -332,7 +332,7 @@ const RecordOps: FC = () => {
         <div className="p-2 border-b-1 w-full"></div>
 
         <Button size="md" onClick={onLlmResponseModalOpen}>
-          Get KiAi Response
+          Get Kitab-AI Response
         </Button>
         <Button size="md" onClick={onGptResponseModalOpen}>Get GPT Response</Button>
 

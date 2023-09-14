@@ -165,7 +165,7 @@ const LLMResponseView: FC<Props> = ({
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader>KiAi Response</ModalHeader>
+            <ModalHeader>Kitab-AI Response</ModalHeader>
             <ModalBody>
               {sourceError && (
                 <div>
@@ -173,7 +173,7 @@ const LLMResponseView: FC<Props> = ({
                     Error: Cannot parse response
                   </div>
                   <Input
-                    label="Enter KiAi API url:"
+                    label="Enter Kitab-AI API url:"
                     value={kiaiApiUrl}
                     onValueChange={(d) => {
                       localStorage.setItem("lamdam.kiaiApiUrl", d);

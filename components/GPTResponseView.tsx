@@ -115,7 +115,7 @@ const GPTResponseView: FC<Props> = ({
     });
 
     let query = {
-      model: "gpt-3.5-turbo",
+      model: "gpt-4",
       messages,
       temperature: 0.6,
       top_p: 0,
