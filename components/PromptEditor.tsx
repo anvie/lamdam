@@ -1,4 +1,9 @@
-import { CollectionContext, SelectedRecordContext } from "@/lib/context";
+import {
+  CollectionContext,
+  QAPair,
+  SelectedHistoryContext,
+  SelectedRecordContext,
+} from "@/lib/context";
 import { __debug, __error } from "@/lib/logger";
 import { Textarea } from "@nextui-org/input";
 import { FC, useContext, useEffect, useState } from "react";
@@ -28,6 +33,8 @@ const PromptEditor: FC = () => {
   const { currentCollection, setCurrentCollection } =
     useContext(CollectionContext);
 
+  const [newHistory, setNewHistory] = useState<QAPair[]>([]);
+
   const [dirty, setDirty] = useState(false);
   const [rawHistory, setRawHistory] = useState("");
   const [chatMode, setChatMode] = useState(false);
@@ -36,7 +43,7 @@ const PromptEditor: FC = () => {
     if (currentRecord && dirty && !currentRecord.dirty) {
       setDirty(false);
     }
-    __debug('PromptEditor.currentRecord:', currentRecord)
+    __debug("PromptEditor.currentRecord:", currentRecord);
     if (currentRecord && currentRecord.rawHistory != rawHistory) {
       let lines = [];
       for (let i = 0; i < currentRecord.history.length; i++) {
@@ -107,25 +114,29 @@ const PromptEditor: FC = () => {
           });
       } else {
         // recrod belum exists, buatkan
-        const doc = {
-          id: "",
-          prompt: "",
-          response: "",
-          input: "",
-          history: [],
-          creator: "",
-          createdAt: 0,
-          lastUpdated: 0,
-          updateHistory: [],
-          collectionId: currentCollection.id,
-          rawHistory: "",
-          outputPositive: "",
-          outputNegative: "",
-          [name]: _value,
-        };
-        setCurrentRecord && setCurrentRecord(doc);
+        setEmptyRecord();
       }
     };
+  };
+
+  const setEmptyRecord = () => {
+    const doc = {
+      id: "",
+      prompt: "",
+      response: "",
+      input: "",
+      history: [],
+      creator: "",
+      createdAt: 0,
+      lastUpdated: 0,
+      updateHistory: [],
+      collectionId: currentCollection!.id,
+      rawHistory: "",
+      outputPositive: "",
+      outputNegative: "",
+    };
+    setCurrentRecord && setCurrentRecord(doc);
+    return doc;
   };
 
   const showJumpToRecordDialog = () => {
@@ -158,8 +169,37 @@ const PromptEditor: FC = () => {
     setChatMode(false);
   };
 
+  const addChatAsHistory = () => {
+    let _currentRecord: DataRecord | null = null;
+
+    if (!currentRecord) {
+      _currentRecord = setEmptyRecord();
+    } else {
+      _currentRecord = currentRecord;
+    }
+
+    let histories = newHistory.map((d: QAPair) => [d.a, d.b]);
+    const _rawHistory = newHistory
+      .map((d: QAPair) => `a: ${d.a}\nb: ${d.b}`)
+      .join("\n-----\n");
+
+    setCurrentRecord &&
+      setCurrentRecord({
+        ..._currentRecord,
+        history: histories,
+        rawHistory: _rawHistory,
+        dirty: _currentRecord.id ? true : false,
+      });
+
+    setChatMode(false);
+  };
+
   const onAddToHistory = () => {
     if (!currentCollection) {
+      return;
+    }
+    if (chatMode) {
+      addChatAsHistory();
       return;
     }
     if (!currentRecord) {
@@ -172,7 +212,9 @@ const PromptEditor: FC = () => {
     ]);
     currentRecord.prompt = "";
     currentRecord.response = "";
-    const _rawHistory = (histories.map((d:string[]) => `a: ${d[0]}\nb: ${d[1]}`)).join("\n-----\n");
+    const _rawHistory = histories
+      .map((d: string[]) => `a: ${d[0]}\nb: ${d[1]}`)
+      .join("\n-----\n");
     setCurrentRecord &&
       setCurrentRecord({
         ...currentRecord,
@@ -221,8 +263,7 @@ const PromptEditor: FC = () => {
             size="sm"
             title="Add to history"
             onClick={onAddToHistory}
-            className={`cursor-pointer ${chatMode ? "text-gray-500" : ""}`}
-            disabled={chatMode}
+            className={`cursor-pointer`}
           >
             <ClipboardIcon width="2em" />+ history
           </Button>
@@ -337,7 +378,13 @@ const PromptEditor: FC = () => {
           </div>
         </div>
       ) : (
-        <ChatModePromptEditor initialMessage={`${currentRecord?.prompt || ''}\n${currentRecord?.input || ''}`.trim()} />
+        <SelectedHistoryContext.Provider value={{ newHistory, setNewHistory }}>
+          <ChatModePromptEditor
+            initialMessage={`${currentRecord?.prompt || ""}\n${
+              currentRecord?.input || ""
+            }`.trim()}
+          />
+        </SelectedHistoryContext.Provider>
       )}
     </div>
   );

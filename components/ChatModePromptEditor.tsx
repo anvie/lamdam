@@ -1,4 +1,9 @@
-import { CollectionContext, SelectedRecordContext } from "@/lib/context";
+import {
+  CollectionContext,
+  QAPair,
+  SelectedHistoryContext,
+  SelectedRecordContext,
+} from "@/lib/context";
 import { __debug, __error } from "@/lib/logger";
 import { Textarea } from "@nextui-org/input";
 import { FC, useContext, useEffect, useRef, useState } from "react";
@@ -12,6 +17,8 @@ import { ClipboardIcon } from "./icon/ClipboardIcon";
 import { AnnotationIcon } from "./icon/AnnotationIcon";
 import GoExternalIcon from "./icon/GoExternalIcon";
 import { DataRecord } from "@/types";
+import moment from "moment";
+import { SYSTEM_MESSAGE } from "@/lib/consts";
 
 interface Props {
   initialMessage?: string;
@@ -19,8 +26,9 @@ interface Props {
 
 const ChatModePromptEditor: FC<Props> = ({ initialMessage }) => {
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
-  const { currentCollection, setCurrentCollection } =
-    useContext(CollectionContext);
+
+  // const { currentCollection, setCurrentCollection } =
+  //   useContext(CollectionContext);
 
   const [dirty, setDirty] = useState(false);
   const [rawHistory, setRawHistory] = useState("");
@@ -41,7 +49,7 @@ function getKiaiApiUrl(): string {
 }
 
 function formatDistanceToNow(distance: Date): string {
-  return "1 minute ago";
+  return moment(distance).fromNow();
 }
 
 type Message = {
@@ -66,17 +74,27 @@ async function sendMessage(
   const messages = [
     {
       role: "system",
+      content: SYSTEM_MESSAGE,
+    },
+    {
+      role: "user",
       content:
-        "Kamu adalah Kitab AI atau biasa dipanggil KiAi, kamu bisa memberikan informasi yang bermanfaat",
+        "Namamu adalah Kitab AI, sebuah kecerdasan buatan yang ditraining menggunakan kitab-kitab pesantren.",
+    },
+    {
+      role: "assistant",
+      content: "Terimakasih, nama saya adalah Kitab AI",
     },
   ];
 
   histories.forEach((h) => {
     messages.push({
-      role: h.creator === "user" ? "user" : "assistant",
+      role: h.creator === "me" ? "user" : "assistant",
       content: h.content,
     });
   });
+
+  messages.pop(); // remove last message
 
   messages.push({
     role: "user",
@@ -144,6 +162,7 @@ async function sendMessage(
 }
 
 let GLOBAL_IN_PROCESSING_MESSAGE = false;
+let _AUTO_SCROLLER_IVAL: NodeJS.Timer | null = null;
 
 const formatMessageOutput = (message: string) => {
   return message.replaceAll("\n", "<br/>");
@@ -154,17 +173,78 @@ interface ChatBoxProps {
 }
 
 const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  let { newHistory, setNewHistory } = useContext(SelectedHistoryContext);
+
+  const [messagesHistory, setMessagesHistory] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [buffMessage, setBuffMessage] = useState("");
   const [inProcessingMessage, setInProcessingMessage] = useState(false);
 
   useEffect(() => {
+    if (_AUTO_SCROLLER_IVAL !== null) {
+      clearInterval(_AUTO_SCROLLER_IVAL);
+      _AUTO_SCROLLER_IVAL = null;
+    }
+    _AUTO_SCROLLER_IVAL = setTimeout(() => {
+      __debug("in auto scroller ival");
+      const el = document.getElementById("ChatBox");
+      if (el) {
+        el.scrollTop = el.scrollHeight;
+      }
+
+      // finally, set message history context
+      updateHistoryContext();
+    }, 1000);
+    const el = document.getElementById("ChatBox");
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [buffMessage]);
+
+  useEffect(() => {
     if (initialMessage) {
       setInputMessage(initialMessage);
     }
-  }, [initialMessage]);
+    if (newHistory.length > 0) {
+      // setMessagesHistory([]);
+      let _messagesHistory: Message[] = [];
+      let counter = 1;
+      newHistory.forEach((qaPair) => {
+        _messagesHistory.push({
+          id: Date.now() + ++counter,
+          creator: "me",
+          content: qaPair.a,
+          date: new Date(),
+        });
+        _messagesHistory.push({
+          id: Date.now() + ++counter,
+          creator: "Kitab-AI",
+          content: qaPair.b,
+          date: new Date(),
+        });
+      });
+      setMessagesHistory(_messagesHistory);
+    }
+  }, [initialMessage, newHistory]);
+
+  const updateHistoryContext = () => {
+    __debug("in updateHistoryContext()");
+    const result: QAPair[] = messagesHistory
+      .reduce((acc: Message[][], curr, idx, src) => {
+        if (idx % 2 === 0) acc.push([curr, src[idx + 1]]);
+        return acc;
+      }, [])
+      .map((msgs) => {
+        return {
+          a: msgs[0].content,
+          b: msgs[1].content,
+        };
+      });
+    __debug("result:", result);
+
+    setNewHistory(result);
+  };
 
   const handleSendMessage = () => {
     __debug("in handleSendMessage()");
@@ -180,17 +260,17 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
     setInProcessingMessage(true);
     GLOBAL_IN_PROCESSING_MESSAGE = true;
 
-    messages.push({
+    messagesHistory.push({
       id: Date.now(),
       creator: "me",
       content: inputMessage,
       date: new Date(),
     });
-    setMessages(messages);
+    setMessagesHistory(messagesHistory);
 
     void sendMessage(
       inputMessage.trim(),
-      messages,
+      messagesHistory,
       (message, isDone) => {
         // __debug('message:', message)
         if (!isDone) {
@@ -198,13 +278,13 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
           setInProcessingMessage(false);
           GLOBAL_IN_PROCESSING_MESSAGE = false;
         } else if (isDone) {
-          messages.push({
+          messagesHistory.push({
             id: Date.now(),
-            creator: "KiAI",
+            creator: "Kitab-AI",
             content: message,
             date: new Date(),
           });
-          setMessages(messages);
+          setMessagesHistory(messagesHistory);
           setInputMessage("");
           setBuffMessage("");
         }
@@ -222,12 +302,15 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
 
   return (
     <div className="p-4 w-full h-screen">
-      <div className="overflow-y-scroll border-2 border-gray-500 rounded p-4 h-[600px]">
-        {messages.map((message) => (
+      <div
+        id="ChatBox"
+        className="overflow-y-scroll border-2 border-gray-500 rounded p-4 h-[600px]"
+      >
+        {messagesHistory.map((message) => (
           <div
             key={message.id}
-            className={`flex flex-col bg-gray-300 p-2 rounded mb-2 ${
-              message.creator !== "KiAI" ? "bg-green-100" : ""
+            className={`flex flex-col p-2 rounded mb-2 ${
+              message.creator === "Kitab-AI" ? "bg-green-100" : "bg-gray-300"
             }`}
           >
             <span className="dark:text-gray-500 font-semibol">
@@ -246,8 +329,8 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
         ))}
 
         {buffMessage && (
-          <div key={0} className="flex flex-col bg-gray-300 p-2 rounded mb-2">
-            <span className="dark:text-gray-500 font-semibol">KiAI:</span>
+          <div key={0} className="flex flex-col bg-green-100 p-2 rounded mb-2">
+            <span className="dark:text-gray-500 font-semibol">Kitab-AI:</span>
             <p
               className="dark:text-black"
               dangerouslySetInnerHTML={{

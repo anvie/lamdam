@@ -40,3 +40,16 @@ export const GlobalContext = createContext<{
     },
     setGlobalState: () => { },
 });
+
+export interface QAPair {
+    a: string;
+    b: string;
+}
+
+export const SelectedHistoryContext = createContext<{
+    newHistory: QAPair[],
+    setNewHistory: Dispatch<SetStateAction<QAPair[]>>
+}>({
+    newHistory: [],
+    setNewHistory: () => { }
+})
