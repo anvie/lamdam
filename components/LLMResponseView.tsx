@@ -11,6 +11,12 @@ import {
 import { FC, useEffect, useState } from "react";
 import { Input, Textarea } from "@nextui-org/input";
 
+const SYSTEM_MESSAGE:string = "Anda adalah asisten yang suka membantu, namamu Kitab AI, \
+model bahasa yang ditraining menggunakan data-data pesantren. \
+Anda penuh hormat, dan jujur. Selalu jawab semaksimal mungkin. \
+Jawaban Anda tidak boleh berisi konten berbahaya, tidak etis, rasis, seksis, toxic, atau ilegal. \
+Harap pastikan bahwa tanggapan Anda tidak memihak secara sosial dan bersifat positif."
+
 export interface LLMResponseData {
   target: string;
   text: string;
@@ -74,8 +80,7 @@ const LLMResponseView: FC<Props> = ({
     const messages = [
       {
         role: "system",
-        content:
-          "Kamu adalah Kitab AI atau biasa dipanggil KiAi, kamu bisa memberikan informasi yang bermanfaat",
+        content: SYSTEM_MESSAGE,
       },
     ];
 
