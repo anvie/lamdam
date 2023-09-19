@@ -70,7 +70,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
           response,
           input,
           history,
-          createdAt: getCurrentTimeMillis(),
           lastUpdated: getCurrentTimeMillis(),
           collectionId,
         },

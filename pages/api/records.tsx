@@ -18,7 +18,7 @@ type Data = {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   const {
-    query: { collectionId, q },
+    query: { collectionId, q, order },
     method,
   } = req;
 
@@ -43,9 +43,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
 
   __debug('query:', query)
 
+  let sortOrder:any = { createdAt: -1 };
+
+  if (order == "createdAt:1"){
+    sortOrder = { createdAt: 1 };
+  }else if (order == "lastUpdated:1"){
+    sortOrder = { lastUpdated: 1 };
+  }else if (order == "lastUpdated:-1"){
+    sortOrder = { lastUpdated: -1 };
+  }
+
   return await col.find(query)
-    .sort({ createdAt: -1 })
-    .limit(15)
+    .sort(sortOrder)
+    .limit(10)
     .toArray()
     .then((docs: any[]) => {
       return res.json({ result: docs.map(toApiRespDoc).map((rec) => {
