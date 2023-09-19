@@ -161,7 +161,7 @@ const LLMResponseView: FC<Props> = ({
   };
 
   return (
-    <Modal size="2xl" isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Modal size="2xl" className="min-h-[450px]" isOpen={isOpen} onOpenChange={onOpenChange}>
       <ModalContent>
         {(onClose) => (
           <>
@@ -189,7 +189,7 @@ const LLMResponseView: FC<Props> = ({
                 </div>
               )}
               <div className="font-semibold">{prompt}</div>
-              <Textarea value={data} />
+              <Textarea minRows={10} maxRows={20} value={data} />
             </ModalBody>
 
             <ModalFooter>

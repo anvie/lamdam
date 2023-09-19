@@ -166,6 +166,7 @@ const PromptEditor: FC = () => {
   const clearPromptEditor = () => {
     setCurrentRecord && setCurrentRecord(null);
     setRawHistory("");
+    setNewHistory([]);
     setChatMode(false);
   };
 
@@ -273,9 +274,9 @@ const PromptEditor: FC = () => {
             title="Swith to chat mode"
             onClick={onSwithToChatMode}
             className="cursor-pointer"
+            isIconOnly
           >
             <AnnotationIcon width="2em" />
-            Chat mode
           </Button>
         </div>
       </div>

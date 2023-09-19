@@ -10,6 +10,7 @@ import {
 } from "@nextui-org/modal";
 import { FC, useEffect, useState } from "react";
 import { Input, Textarea } from "@nextui-org/input";
+import { SYSTEM_MESSAGE } from "@/lib/consts";
 
 export interface LLMResponseData {
   target: string;
@@ -79,14 +80,14 @@ const GPTResponseView: FC<Props> = ({
       const s = content.split("\n")
       setPrompt(s[s.length-1]);
     }else{
-      setPrompt(content);
+      setPrompt(`${content}<br />${currentRecord.input}`.trim());
     }
 
     const messages = [
       {
         role: "system",
-        content:
-          "Kamu adalah Kitab AI atau biasa dipanggil KiAi, kamu bisa memberikan informasi yang bermanfaat",
+        content: SYSTEM_MESSAGE,
+          // "Kamu adalah Kitab AI, ahli ilmu nahwu shorof, bisa menganalils dan menjelaskan gramatikal arab, kamu bisa memberikan jawaban atas pertanyaan yang diajukan.",
       },
     ];
 
@@ -181,11 +182,11 @@ const GPTResponseView: FC<Props> = ({
   };
 
   return (
-    <Modal size="2xl" isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Modal size="2xl" className="min-h-[450px]" isOpen={isOpen} onOpenChange={onOpenChange}>
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader>GPT Response</ModalHeader>
+            <ModalHeader>Kitab-AI Response</ModalHeader>
             <ModalBody>
               {sourceError && (
                 <div>
@@ -236,8 +237,8 @@ const GPTResponseView: FC<Props> = ({
                   />
                 </div>
               )}
-              <div className="font-semibold">{prompt}</div>
-              <Textarea value={data} />
+              <div className="font-semibold" dangerouslySetInnerHTML={{ __html: prompt }} ></div>
+              <Textarea value={data} minRows={15} maxRows={15} />
             </ModalBody>
 
             <ModalFooter>

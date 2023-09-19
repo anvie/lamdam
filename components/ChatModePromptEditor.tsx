@@ -1,5 +1,4 @@
 import {
-  CollectionContext,
   QAPair,
   SelectedHistoryContext,
   SelectedRecordContext,
@@ -7,16 +6,7 @@ import {
 import { __debug, __error } from "@/lib/logger";
 import { Textarea } from "@nextui-org/input";
 import { FC, useContext, useEffect, useRef, useState } from "react";
-import ArrowRightCircleIcon from "./icon/ArrowRightCircleIcon";
 import { Button } from "@nextui-org/button";
-import { Divider } from "@nextui-org/react";
-import { Confirm, Notify } from "notiflix";
-import { get } from "@/lib/FetchWrapper";
-import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
-import { ClipboardIcon } from "./icon/ClipboardIcon";
-import { AnnotationIcon } from "./icon/AnnotationIcon";
-import GoExternalIcon from "./icon/GoExternalIcon";
-import { DataRecord } from "@/types";
 import moment from "moment";
 import { SYSTEM_MESSAGE } from "@/lib/consts";
 
@@ -203,7 +193,7 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
   }, [buffMessage]);
 
   useEffect(() => {
-    if (initialMessage) {
+    if (initialMessage && messagesHistory.length === 0) {
       setInputMessage(initialMessage);
     }
     if (newHistory.length > 0) {
@@ -349,6 +339,8 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
           value={inputMessage}
           onValueChange={setInputMessage}
           ref={inputRef}
+          autoFocus
+          disabled={inProcessingMessage}
         />
         <Button
           onClick={handleSendMessage}
@@ -358,8 +350,9 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
               handleSendMessage();
             }
           }}
-          className="bg-green-500 text-white mt-6"
+          className={`${ !inProcessingMessage ? "bg-green-500" : "bg-gray-500" } text-white mt-6`}
           size="lg"
+          disabled={inProcessingMessage}
         >
           Send
         </Button>
