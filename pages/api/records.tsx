@@ -10,6 +10,7 @@ const mongoose = require("mongoose");
 
 import { Collection } from "@/models/Collection";
 import { __debug, __error } from "@/lib/logger";
+import { Types } from "mongoose";
 
 type Data = {
   error?: string;
@@ -18,7 +19,7 @@ type Data = {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   const {
-    query: { collectionId, q, order },
+    query: { collectionId, q, order, fromId, toId },
     method,
   } = req;
 
@@ -28,7 +29,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   }
 
   const colDoc = await Collection.findOne({ _id: collectionId });
-  __debug('colDoc:', colDoc)
 
   if (!colDoc) {
     return res.status(404).end();
@@ -41,23 +41,36 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     query = { ...query, prompt: { $regex: q, $options: "i" } };
   }
 
-  __debug('query:', query)
+  let sortOrder:any = { _id: -1 };
 
-  let sortOrder:any = { createdAt: -1 };
+  // if (order == "createdAt:1"){
+  //   sortOrder = { createdAt: 1 };
+  // }else if (order == "lastUpdated:1"){
+  //   sortOrder = { lastUpdated: 1 };
+  // }else if (order == "lastUpdated:-1"){
+  //   sortOrder = { lastUpdated: -1 };
+  // }
 
-  if (order == "createdAt:1"){
-    sortOrder = { createdAt: 1 };
-  }else if (order == "lastUpdated:1"){
-    sortOrder = { lastUpdated: 1 };
-  }else if (order == "lastUpdated:-1"){
-    sortOrder = { lastUpdated: -1 };
+  if (toId){
+    query = { ...query, _id: { $lt: new Types.ObjectId(toId as string) } };
   }
+  if (fromId){
+    query = { ...query, _id: { $gt: new Types.ObjectId(fromId as string) } };
+    sortOrder = { _id: 1 };
+    // __debug('sortOrder:', sortOrder)
+  }
+
+  // __debug('query:', query)
 
   return await col.find(query)
     .sort(sortOrder)
     .limit(10)
     .toArray()
     .then((docs: any[]) => {
+      if (fromId){
+        // reverse sort order
+        docs = docs.reverse();
+      }
       return res.json({ result: docs.map(toApiRespDoc).map((rec) => {
         rec.history = rec.history ? rec.history : [];
         return rec

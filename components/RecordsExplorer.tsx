@@ -12,6 +12,8 @@ import {
 } from "@/lib/context";
 import { get } from "@/lib/FetchWrapper";
 import { __debug, __error } from "@/lib/logger";
+import Link from "next/link";
+import { Button } from "@nextui-org/button";
 
 const RecordsExplorer: FC = () => {
   const { currentCollection, setCurrentCollection } =
@@ -20,7 +22,9 @@ const RecordsExplorer: FC = () => {
   let { globalState, setGlobalState } = useContext(GlobalContext);
   // let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   const [data, setData] = useState<DataRecord[]>([]);
+  const [loaded, setLoaded] = useState<boolean>(false);
   const [query, setQuery] = useState<string>("");
+  const [lastId, setLastId] = useState<string[]>([]);
 
   useEffect(() => {
     if (!currentCollection) {
@@ -81,6 +85,9 @@ const RecordsExplorer: FC = () => {
 
   useEffect(() => {
     __debug("data changed:", data);
+    if (!loaded){
+      setLoaded(true);
+    }
   }, [data]);
 
   const doSearch = () => {
@@ -104,13 +111,82 @@ const RecordsExplorer: FC = () => {
     if (!id) {
       return;
     }
-    __debug("refreshing data for collectionId:", id);
+    // __debug("refreshing data for collectionId:", id);
+    let uri = `/api/records?collectionId=${currentCollection?.id}`;
+    if (query) {
+      uri = `/api/records?collectionId=${currentCollection?.id}&q=${query}`;
+    }
+    if (lastId.length > 0) {
+      if (lastId[1] !== ""){
+        uri = `${uri}&toId=${lastId[1]}`;
+      }
+      if (lastId[0] !== ""){
+        uri = `${uri}&fromId=${lastId[0]}`;
+      }
+    }
     return await get(
-      `/api/records?collectionId=${id}${query ? `&q=${query}` : ""}`
+      // `/api/records?collectionId=${id}${query ? `&q=${query}` : ""}`
+      uri
     ).then((data) => {
       setData(data.result);
+      if (data.result.length > 0) {
+        setLastId([data.result[0].id, data.result[data.result.length - 1].id]);
+      }else{
+        // setLastId([lastId.shift() as string, lastId[0]]);
+      }
     });
   };
+
+  const onPrevPage = () => {
+    if (!currentCollection) {
+      return;
+    }
+    let uri = `/api/records?collectionId=${currentCollection?.id}`;
+    if (query) {
+      uri = `/api/records?collectionId=${currentCollection?.id}&q=${query}`;
+    }
+    if (lastId.length > 0) {
+      uri = `${uri}&toId=${lastId[1]}`;
+    }
+    void get(uri)
+      .then((data) => {
+        setData(data.result);
+        if (data.result.length > 0) {
+          setLastId([data.result[0].id, data.result[data.result.length - 1].id]);
+        }else{
+          // setLastId([lastId.shift() as string, lastId[0]]);
+        }
+      })
+      .catch((err) => {
+        __debug("error", err);
+      });
+  }
+
+  const onNextPage = () => {
+    if (!currentCollection) {
+      return;
+    }
+    let uri = `/api/records?collectionId=${currentCollection?.id}`;
+    if (query) {
+      uri = `/api/records?collectionId=${currentCollection?.id}&q=${query}`;
+    }
+    if (lastId.length > 0) {
+      uri = `${uri}&fromId=${lastId[0]}`;
+    }
+    void get(uri)
+      .then((data) => {
+        setData(data.result);
+        if (data.result.length > 0) {
+          setLastId([data.result[0].id, data.result[data.result.length - 1].id]);
+        }else{
+          setLastId([lastId[1], ""]);
+        }
+      })
+      .catch((err) => {
+        __debug("error", err);
+      });
+  }
+
 
   return (
     <div className="border min-h-screen w-full">
@@ -140,6 +216,7 @@ const RecordsExplorer: FC = () => {
         }}
       />
 
+      <div className="h-[600px] overflow-scroll">
       {data &&
         data.map((data, index) => {
           return (
@@ -150,6 +227,18 @@ const RecordsExplorer: FC = () => {
             />
           );
         })}
+      </div>
+
+      {loaded && <Navigator onPrev={onPrevPage} onNext={onNextPage} />}
+    </div>
+  );
+};
+
+const Navigator: FC<{onPrev: ()=>void, onNext:()=>void}> = ({onPrev, onNext}) => {
+  return (
+    <div className="flex justify-between p-2">
+      <Button onClick={onPrev}>Previous</Button>
+      <Button onClick={onNext}>Next</Button>
     </div>
   );
 };
