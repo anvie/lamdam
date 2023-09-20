@@ -55,7 +55,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
         await Collection.updateOne({ _id: colDstId }, { $inc: { count: 1 } });
 
         const doc = await colDstObj.findOne({ _id: resp.insertedId });
-        __debug("doc:", doc);
+        // __debug("doc:", doc);
 
         return res.json({
           result: toApiRespDoc(doc),

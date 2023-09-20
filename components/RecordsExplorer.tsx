@@ -30,7 +30,7 @@ const RecordsExplorer: FC = () => {
     if (!currentCollection) {
       return;
     }
-    void refreshData(currentCollection?.id || "0");
+    void refreshData(currentCollection?.id || "0", undefined, true);
   }, [currentCollection]);
 
   useEffect(() => {
@@ -45,12 +45,14 @@ const RecordsExplorer: FC = () => {
       );
       const newData = [globalState.newRecord].concat(data);
       __debug("newData:", newData);
+      setLastId([]);
       setData(newData);
       setGlobalState({ ...globalState, newRecord: null });
     }
     if (globalState.deleteRecord) {
       __debug("globalState.deleteRecord changed.");
-      void refreshData(currentCollection?.id || "0", query);
+      setLastId([]);
+      void refreshData(currentCollection?.id || "0", query, true);
       setGlobalState({ ...globalState, deleteRecord: null });
     }
     if (globalState.updatedRecord) {
@@ -61,6 +63,7 @@ const RecordsExplorer: FC = () => {
         }
         return d;
       });
+      setLastId([]);
       setData(newData);
       setGlobalState({ ...globalState, updatedRecord: null });
     }
@@ -107,7 +110,7 @@ const RecordsExplorer: FC = () => {
       });
   };
 
-  const refreshData = async (id: string, query?: string | undefined) => {
+  const refreshData = async (id: string, query?: string | undefined, noLastId:boolean=false) => {
     if (!id) {
       return;
     }
@@ -116,7 +119,7 @@ const RecordsExplorer: FC = () => {
     if (query) {
       uri = `/api/records?collectionId=${currentCollection?.id}&q=${query}`;
     }
-    if (lastId.length > 0) {
+    if (lastId.length > 0 && !noLastId) {
       if (lastId[1] !== ""){
         uri = `${uri}&toId=${lastId[1]}`;
       }

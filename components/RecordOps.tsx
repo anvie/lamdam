@@ -147,7 +147,7 @@ const RecordOps: FC = () => {
     })
       .then((data) => {
         const doc = data.result as DataRecord;
-        __debug("doc:", doc);
+        // __debug("doc:", doc);
         setCurrentRecord!(doc);
         setGlobalState({
           ...globalState,
