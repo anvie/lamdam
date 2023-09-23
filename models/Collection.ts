@@ -8,6 +8,7 @@ const CollectionModel = new Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
   creator: { type: String, default: "" },
+  creatorId: { type: String, default: "" },
   createdAt: { type: Number, required: true },
   lastUpdated: { type: Number, required: true },
   updateHistory: { type: Array<UpdateHistory>, required: true, default: []},

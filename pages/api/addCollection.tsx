@@ -3,6 +3,7 @@ import { toApiRespDoc } from "@/lib/docutil";
 import { AddCollectionSchema } from "@/lib/schema";
 import { getCurrentTimeMillis } from "@/lib/timeutil";
 import { Collection } from "@/models/Collection";
+import { User } from "next-auth";
 import type { NextApiRequest, NextApiResponse } from "next/types";
 
 const db = require("../../lib/db");
@@ -12,7 +13,7 @@ type Data = {
   result?: Object[];
 };
 
-async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: User) {
   const { name, description, creator, dataType } = AddCollectionSchema.parse(req.body);
 
   if (req.method !== "POST") {
@@ -23,7 +24,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   return Collection({
     name,
     description,
-    creator,
+    creator: user?.name || creator,
+    creatorId: user?.id,
     createdAt: getCurrentTimeMillis(),
     lastUpdated: getCurrentTimeMillis(),
     meta: {
@@ -43,4 +45,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     });
 }
 
-export default apiHandler(handler);
+export default apiHandler(handler, { withAuth: true });

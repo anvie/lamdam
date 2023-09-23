@@ -1,19 +1,19 @@
 "use client";
 
-import { Input } from "@nextui-org/input";
-import { FC, useContext, useEffect, useState } from "react";
-import { SearchIcon } from "./icon/SearchIcon";
-import { DataRecord } from "@/types";
-import { truncate } from "@/lib/stringutil";
+import { get } from "@/lib/FetchWrapper";
 import {
   CollectionContext,
   GlobalContext,
   SelectedRecordContext,
 } from "@/lib/context";
-import { get } from "@/lib/FetchWrapper";
-import { __debug, __error } from "@/lib/logger";
-import Link from "next/link";
+import { __debug } from "@/lib/logger";
+import { truncate } from "@/lib/stringutil";
+import { DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
+import { Input } from "@nextui-org/input";
+import moment from "moment";
+import { FC, useContext, useEffect, useState } from "react";
+import { SearchIcon } from "./icon/SearchIcon";
 
 const RecordsExplorer: FC = () => {
   const { currentCollection, setCurrentCollection } =
@@ -88,7 +88,7 @@ const RecordsExplorer: FC = () => {
 
   useEffect(() => {
     __debug("data changed:", data);
-    if (!loaded){
+    if (!loaded) {
       setLoaded(true);
     }
   }, [data]);
@@ -110,7 +110,7 @@ const RecordsExplorer: FC = () => {
       });
   };
 
-  const refreshData = async (id: string, query?: string | undefined, noLastId:boolean=false) => {
+  const refreshData = async (id: string, query?: string | undefined, noLastId: boolean = false) => {
     if (!id) {
       return;
     }
@@ -120,10 +120,10 @@ const RecordsExplorer: FC = () => {
       uri = `/api/records?collectionId=${currentCollection?.id}&q=${query}`;
     }
     if (lastId.length > 0 && !noLastId) {
-      if (lastId[1] !== ""){
+      if (lastId[1] !== "") {
         uri = `${uri}&toId=${lastId[1]}`;
       }
-      if (lastId[0] !== ""){
+      if (lastId[0] !== "") {
         uri = `${uri}&fromId=${lastId[0]}`;
       }
     }
@@ -134,7 +134,7 @@ const RecordsExplorer: FC = () => {
       setData(data.result);
       if (data.result.length > 0) {
         setLastId([data.result[0].id, data.result[data.result.length - 1].id]);
-      }else{
+      } else {
         // setLastId([lastId.shift() as string, lastId[0]]);
       }
     });
@@ -156,7 +156,7 @@ const RecordsExplorer: FC = () => {
         setData(data.result);
         if (data.result.length > 0) {
           setLastId([data.result[0].id, data.result[data.result.length - 1].id]);
-        }else{
+        } else {
           // setLastId([lastId.shift() as string, lastId[0]]);
         }
       })
@@ -181,7 +181,7 @@ const RecordsExplorer: FC = () => {
         setData(data.result);
         if (data.result.length > 0) {
           setLastId([data.result[0].id, data.result[data.result.length - 1].id]);
-        }else{
+        } else {
           setLastId([lastId[1], ""]);
         }
       })
@@ -220,16 +220,16 @@ const RecordsExplorer: FC = () => {
       />
 
       <div className="h-[600px] overflow-scroll">
-      {data &&
-        data.map((data, index) => {
-          return (
-            <DataRecordRow
-              key={`data-record-${data.id}`}
-              collectionId={currentCollection?.id || "0"}
-              data={data}
-            />
-          );
-        })}
+        {data &&
+          data.map((data, index) => {
+            return (
+              <DataRecordRow
+                key={`data-record-${data.id}`}
+                collectionId={currentCollection?.id || "0"}
+                data={data}
+              />
+            );
+          })}
       </div>
 
       {loaded && <Navigator onPrev={onPrevPage} onNext={onNextPage} />}
@@ -237,7 +237,7 @@ const RecordsExplorer: FC = () => {
   );
 };
 
-const Navigator: FC<{onPrev: ()=>void, onNext:()=>void}> = ({onPrev, onNext}) => {
+const Navigator: FC<{ onPrev: () => void, onNext: () => void }> = ({ onPrev, onNext }) => {
   return (
     <div className="flex justify-between p-2">
       <Button onClick={onPrev}>Previous</Button>
@@ -292,19 +292,22 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
 
   return rec ? (
     <div
-      className={`border-b-1 pb-1 cursor-pointer hover:bg-slate-50 dark:hover:dark:text-black border-l-8 pl-2 ${
-        currentRecord && currentRecord!.id === rec.id
-          ? `${
-              rec.dirty
-                ? "border-l-orange-400"
-                : "border-l-green-600 bg-slate-100 dark:text-black"
-            }`
-          : "border-gray-100 "
-      }`}
+      className={`border-b-1 pb-1 cursor-pointer hover:bg-slate-50 dark:hover:dark:text-black border-l-8 pl-2 ${currentRecord && currentRecord!.id === rec.id
+        ? `${rec.dirty
+          ? "border-l-orange-400"
+          : "border-l-green-600 bg-slate-100 dark:text-black"
+        }`
+        : "border-gray-100 "
+        }`}
       onClick={onClick}
     >
       <div>{truncate(rec.prompt, 100)}</div>
-      <div className="text-xs">{truncate(rec.response, 100)}</div>
+      <div className="text-sm">{truncate(rec.response, 100)}</div>
+      <div className="text-xs inline-flex space-x-2 items-center opacity-80">
+        <span>{moment(rec.createdAt).format("YYYY/MM/DD")}</span>
+        <span>-</span>
+        <span>{rec.creator ?? '?'}</span>
+      </div>
     </div>
   ) : (
     <></>
