@@ -106,7 +106,7 @@ const LLMResponseView: FC<Props> = ({
     let query = {
       model: "string",
       messages,
-      temperature: 0.35,
+      temperature: 0.01,
       top_p: 0,
       n: 1,
       max_tokens: 1024,
