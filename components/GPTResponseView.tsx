@@ -1,6 +1,8 @@
+import { SYSTEM_MESSAGE } from "@/lib/consts";
 import { __debug, __error } from "@/lib/logger";
 import { DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
+import { Input, Textarea } from "@nextui-org/input";
 import {
   Modal,
   ModalBody,
@@ -9,8 +11,6 @@ import {
   ModalHeader,
 } from "@nextui-org/modal";
 import { FC, useEffect, useState } from "react";
-import { Input, Textarea } from "@nextui-org/input";
-import { SYSTEM_MESSAGE } from "@/lib/consts";
 
 export interface LLMResponseData {
   target: string;
@@ -77,9 +77,9 @@ const GPTResponseView: FC<Props> = ({
     }
 
     if (content.indexOf("---") > -1) {
-      const s = content.split("\n")
-      setPrompt(s[s.length-1]);
-    }else{
+      const s = content.split("\n");
+      setPrompt(s[s.length - 1]);
+    } else {
       setPrompt(`${content}<br />${currentRecord.input}`.trim());
     }
 
@@ -87,7 +87,7 @@ const GPTResponseView: FC<Props> = ({
       {
         role: "system",
         content: SYSTEM_MESSAGE,
-          // "Kamu adalah Kitab AI, ahli ilmu nahwu shorof, bisa menganalils dan menjelaskan gramatikal arab, kamu bisa memberikan jawaban atas pertanyaan yang diajukan.",
+        // "Kamu adalah Kitab AI, ahli ilmu nahwu shorof, bisa menganalils dan menjelaskan gramatikal arab, kamu bisa memberikan jawaban atas pertanyaan yang diajukan.",
       },
     ];
 
@@ -180,20 +180,18 @@ const GPTResponseView: FC<Props> = ({
       let receivedDataBuff = "";
       let _inData = false;
       setData("");
-      readerLoop:
-      while (true) {
+      readerLoop: while (true) {
         const { value, done } = await reader.read();
         if (done) break;
         console.log("Received", value);
-        if (value.indexOf("\"error\"") > -1){
-          if (value.indexOf("\"invalid_api_key\"") > -1){
+        if (value.indexOf('"error"') > -1) {
+          if (value.indexOf('"invalid_api_key"') > -1) {
             setAPIKeyNotFound(true);
           }
           break;
         }
         const values = value.split("\n");
-        forLinesLoop:
-        for (let i = 0; i < values.length; i++) {
+        forLinesLoop: for (let i = 0; i < values.length; i++) {
           const v = values[i].trim();
           if (v === "") continue forLinesLoop;
           if (v === "data: [DONE]") break;
@@ -203,18 +201,18 @@ const GPTResponseView: FC<Props> = ({
               _inData = true;
               receivedDataBuff = v.replace("data: ", "");
               d = JSON.parse(receivedDataBuff);
-            }else{
-              if (_inData){
+            } else {
+              if (_inData) {
                 receivedDataBuff += v;
                 d = JSON.parse(receivedDataBuff);
                 _inData = false;
                 receivedDataBuff = "";
-              }else{
+              } else {
                 d = JSON.parse(v);
               }
             }
           } catch (e) {
-            if (_inData){
+            if (_inData) {
               continue forLinesLoop;
             }
             __error("cannot parse response", e);
@@ -239,11 +237,16 @@ const GPTResponseView: FC<Props> = ({
   };
 
   return (
-    <Modal size="2xl" className="min-h-[450px]" isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Modal
+      size="2xl"
+      className="min-h-[450px]"
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+    >
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader>Kitab-AI Response</ModalHeader>
+            <ModalHeader>GPT Response</ModalHeader>
             <ModalBody>
               {sourceError && (
                 <div>
@@ -276,16 +279,16 @@ const GPTResponseView: FC<Props> = ({
                     value={openaiApiKey}
                     onValueChange={(d) => {
                       let apiKey = d.trim();
-                      if (d.startsWith("sk-")){
+                      if (d.startsWith("sk-")) {
                         apiKey = d.replace("sk-", "");
                       }
                       localStorage.setItem("openai.apiKey", apiKey);
                       setOpenaiApiKey(d.trim());
                     }}
                     onKeyUp={(e) => {
-                      __debug('e:', e)
+                      __debug("e:", e);
                       if (e.key === "Enter") {
-                        if ((e.target as any).value.length > 0){
+                        if ((e.target as any).value.length > 0) {
                           setAPIKeyNotFound(false);
                           void stearmResponse();
                         }
@@ -294,7 +297,10 @@ const GPTResponseView: FC<Props> = ({
                   />
                 </div>
               )}
-              <div className="font-semibold" dangerouslySetInnerHTML={{ __html: prompt }} ></div>
+              <div
+                className="font-semibold"
+                dangerouslySetInnerHTML={{ __html: prompt }}
+              ></div>
               <Textarea value={data} minRows={15} maxRows={15} />
             </ModalBody>
 
