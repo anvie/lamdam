@@ -43,7 +43,7 @@ const PromptEditor: FC = () => {
     if (currentRecord && dirty && !currentRecord.dirty) {
       setDirty(false);
     }
-    __debug("PromptEditor.currentRecord:", currentRecord);
+    // __debug("PromptEditor.currentRecord:", currentRecord);
     if (currentRecord && currentRecord.rawHistory != rawHistory) {
       let lines = [];
       for (let i = 0; i < currentRecord.history.length; i++) {
@@ -102,7 +102,7 @@ const PromptEditor: FC = () => {
           currentRecord?.outputPositive || ""
         }\n\n----------\n\n${value}`;
       }
-      __debug("newResponse:", newResponse);
+      // __debug("newResponse:", newResponse);
       if (currentRecord) {
         setDirty(true);
         setCurrentRecord &&

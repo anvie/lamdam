@@ -125,23 +125,47 @@ const LLMResponseView: FC<Props> = ({
         .getReader();
 
       let dataBuff = "";
+      let receivedDataBuff = "";
+      let _inData = false;
       setData("");
+      readerLoop:
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
         console.log("Received", value);
-        if (value.indexOf("data: [DONE]") > -1) break;
+        // if (value.indexOf("data: [DONE]") > -1) {
+        //   setData(dataBuff);
+        //   break;
+        // };
         const values = value.split("\n");
+        forLinesLoop:
         for (let i = 0; i < values.length; i++) {
-          const v = values[i];
+          const v = values[i].trim();
+          if (v === "") continue forLinesLoop;
+          if (v === "data: [DONE]") break;
           let d: any = {};
           try {
             if (v.indexOf("data: ") > -1) {
-              d = JSON.parse(v.replace("data: ", ""));
+              _inData = true;
+              receivedDataBuff = v.replace("data: ", "");
+              d = JSON.parse(receivedDataBuff);
+            }else{
+              if (_inData){
+                receivedDataBuff += v;
+                d = JSON.parse(receivedDataBuff);
+                _inData = false;
+                receivedDataBuff = "";
+              }else{
+                d = JSON.parse(v);
+              }
             }
           } catch (e) {
+            if (_inData){
+              continue forLinesLoop;
+            }
             __error("cannot parse response", e);
-            __error("response value:", value);
+            __error("response v:", v);
+            __error("receivedDataBuff:", receivedDataBuff);
             setSourceError(true);
           }
           if (d.choices && d.choices.length > 0) {

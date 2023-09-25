@@ -76,7 +76,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
       }
     )
     .then(async (resp: any) => {
-      __debug("resp:", resp);
+      // __debug("resp:", resp);
 
       const doc = await col.findOne({ _id: new Types.ObjectId(id) });
       // __debug("doc:", doc);
