@@ -1,11 +1,11 @@
-import "@/styles/globals.css";
-import { Metadata } from "next";
-import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
-import { Providers } from "./providers";
-import { Navbar } from "@/components/navbar";
-import { Link } from "@nextui-org/link";
+import { siteConfig } from "@/config/site";
+import { authOptions } from "@/pages/api/auth/[...nextauth]";
+import "@/styles/globals.css";
 import clsx from "clsx";
+import { Metadata } from "next";
+import { getServerSession } from "next-auth";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: {
@@ -24,11 +24,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession(authOptions);
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
@@ -38,7 +40,7 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
+        <Providers themeProps={{ attribute: "class", defaultTheme: "light" }} session={session}>
           <div className="relative flex flex-col h-screen">{children}</div>
         </Providers>
       </body>

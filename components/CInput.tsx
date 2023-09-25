@@ -1,3 +1,4 @@
+import { formatErrorMessage } from "@/lib/errorutil";
 import { Input } from "@nextui-org/input";
 import { FC } from "react";
 import {
@@ -6,8 +7,6 @@ import {
   FieldErrors,
   FieldValues,
 } from "react-hook-form";
-import { __debug, __error } from "@/lib/logger";
-import { formatErrorMessage } from "@/lib/errorutil";
 
 interface CInputProps {
   control: Control<FieldValues, any>;
@@ -16,6 +15,7 @@ interface CInputProps {
   placeholder?: string;
   label?: string;
   errors: FieldErrors<FieldValues>;
+  readOnly?: boolean;
 }
 
 const CInput: FC<CInputProps> = ({
@@ -25,6 +25,7 @@ const CInput: FC<CInputProps> = ({
   label,
   placeholder,
   errors,
+  readOnly,
 }) => {
   return (
     <>
@@ -36,10 +37,11 @@ const CInput: FC<CInputProps> = ({
           <Input
             label={label || name.toUpperCase()}
             placeholder={placeholder || `Enter ${name}`}
-            isClearable
+            isClearable={!readOnly}
             onChange={onChange}
             value={value}
-            onClear={() => onChange("")}
+            onClear={!readOnly ? () => onChange("") : undefined}
+            readOnly={readOnly}
           />
         )}
       />

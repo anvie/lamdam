@@ -1,4 +1,6 @@
+import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { User, getServerSession } from "next-auth";
 // const expressJwt = require("express-jwt");
 // const util = require("util");
 import getConfig from "next/config";
@@ -50,16 +52,28 @@ function errorHandler(err: any, res: NextApiResponse) {
 function apiHandler<T>(
   handler: (
     req: NextApiRequest,
-    res: NextApiResponse
-  ) => NextApiResponse | Promise<T>
+    res: NextApiResponse,
+    user?: User
+  ) => NextApiResponse | Promise<T>,
+  opts?: { withAuth: boolean }
 ) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     try {
+      let user: User | undefined = undefined;
       // global middleware, aktifkan ini kalau mau pakai jwt based authentication
       // await jwtMiddleware(req, res);
+      if (opts?.withAuth) {
+        const session = await getServerSession(req, res, authOptions)
+
+        if (!session) {
+          throw { name: "UnauthorizedError" };
+        }
+
+        user = session?.user
+      }
 
       // route handler
-      await handler(req, res);
+      await handler(req, res, user);
     } catch (err) {
       // global error handler
       errorHandler(err, res);
