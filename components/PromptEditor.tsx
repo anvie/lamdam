@@ -1,3 +1,4 @@
+import { get } from "@/lib/FetchWrapper";
 import {
   CollectionContext,
   QAPair,
@@ -5,19 +6,17 @@ import {
   SelectedRecordContext,
 } from "@/lib/context";
 import { __debug, __error } from "@/lib/logger";
-import { Textarea } from "@nextui-org/input";
-import { FC, useContext, useEffect, useState } from "react";
-import ArrowRightCircleIcon from "./icon/ArrowRightCircleIcon";
+import { DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
+import { Textarea } from "@nextui-org/input";
 import { Divider } from "@nextui-org/react";
 import { Confirm, Notify } from "notiflix";
-import { get } from "@/lib/FetchWrapper";
-import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
-import { ClipboardIcon } from "./icon/ClipboardIcon";
-import { AnnotationIcon } from "./icon/AnnotationIcon";
-import GoExternalIcon from "./icon/GoExternalIcon";
-import { DataRecord } from "@/types";
+import { FC, useContext, useEffect, useState } from "react";
 import ChatModePromptEditor from "./ChatModePromptEditor";
+import { AnnotationIcon } from "./icon/AnnotationIcon";
+import ArrowRightCircleIcon from "./icon/ArrowRightCircleIcon";
+import { ClipboardIcon } from "./icon/ClipboardIcon";
+import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
 
 function formatResponse(rec: DataRecord, dataType: string): string {
   let formattedResponse = rec.response;
@@ -93,14 +92,12 @@ const PromptEditor: FC = () => {
       }
       let newResponse = currentRecord?.response || "";
       if (name === "outputPositive") {
-        newResponse = `${value}\n\n----------\n\n${
-          currentRecord?.outputNegative || ""
-        }`;
+        newResponse = `${value}\n\n----------\n\n${currentRecord?.outputNegative || ""
+          }`;
       }
       if (name === "outputNegative") {
-        newResponse = `${
-          currentRecord?.outputPositive || ""
-        }\n\n----------\n\n${value}`;
+        newResponse = `${currentRecord?.outputPositive || ""
+          }\n\n----------\n\n${value}`;
       }
       // __debug("newResponse:", newResponse);
       if (currentRecord) {
@@ -271,9 +268,10 @@ const PromptEditor: FC = () => {
           <Divider orientation="vertical" />
           <Button
             size="sm"
+            color={chatMode ? "primary" : "default"}
             title="Swith to chat mode"
             onClick={onSwithToChatMode}
-            className="cursor-pointer"
+            className={`cursor-pointer ${chatMode ? "text-white" : ""}`}
             isIconOnly
           >
             <AnnotationIcon width="2em" />
@@ -299,11 +297,10 @@ const PromptEditor: FC = () => {
           {/* RESPONSE */}
 
           <div
-            className={`px-4 ${
-              currentCollection?.meta?.dataType === "rm"
-                ? "flex flex-col gap-2 border-2 border-blue-100 m-2 rounded-md pb-2"
-                : ""
-            }`}
+            className={`px-4 ${currentCollection?.meta?.dataType === "rm"
+              ? "flex flex-col gap-2 border-2 border-blue-100 m-2 rounded-md pb-2"
+              : ""
+              }`}
           >
             <Textarea
               label={
@@ -312,11 +309,10 @@ const PromptEditor: FC = () => {
                   : "Response:"
               }
               labelPlacement="outside"
-              placeholder={`Enter AI ${
-                currentCollection?.meta?.dataType === "rm"
-                  ? "output for positive"
-                  : "response"
-              }`}
+              placeholder={`Enter AI ${currentCollection?.meta?.dataType === "rm"
+                ? "output for positive"
+                : "response"
+                }`}
               className="w-full"
               value={
                 (currentRecord &&
@@ -381,9 +377,8 @@ const PromptEditor: FC = () => {
       ) : (
         <SelectedHistoryContext.Provider value={{ newHistory, setNewHistory }}>
           <ChatModePromptEditor
-            initialMessage={`${currentRecord?.prompt || ""}\n${
-              currentRecord?.input || ""
-            }`.trim()}
+            initialMessage={`${currentRecord?.prompt || ""}\n${currentRecord?.input || ""
+              }`.trim()}
           />
         </SelectedHistoryContext.Provider>
       )}

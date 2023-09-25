@@ -1,12 +1,12 @@
 import { apiHandler } from "@/lib/ApiHandler";
 import { toApiRespDoc } from "@/lib/docutil";
-import { __debug, __error } from "@/lib/logger";
+import { __error } from "@/lib/logger";
 import { AddRecordSchema } from "@/lib/schema";
 import { getCurrentTimeMillis } from "@/lib/timeutil";
 import { Collection } from "@/models/Collection";
-import { DataRecordRow } from "@/models/DataRecordRow";
-import type { NextApiRequest, NextApiResponse } from "next/types";
 import mongoose from "mongoose";
+import { User } from "next-auth";
+import type { NextApiRequest, NextApiResponse } from "next/types";
 const db = require("../../lib/db");
 
 type Data = {
@@ -14,7 +14,7 @@ type Data = {
   result?: Object[];
 };
 
-async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: User) {
   const { prompt, response, input, history, collectionId, outputPositive, outputNegative } =
     AddRecordSchema.parse(req.body);
 
@@ -33,7 +33,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
 
     let formattedResponse = response;
 
-    if (colDoc.meta.dataType === "rm"){
+    if (colDoc.meta.dataType === "rm") {
       formattedResponse = outputPositive + "\n\n----------\n\n" + outputNegative;
     }
 
@@ -43,6 +43,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
         response: formattedResponse,
         input,
         history,
+        creator: user?.name,
+        creatorId: user?.id,
         createdAt: getCurrentTimeMillis(),
         lastUpdated: getCurrentTimeMillis(),
         meta: {},
@@ -76,4 +78,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   }
 }
 
-export default apiHandler(handler);
+export default apiHandler(handler, { withAuth: true });

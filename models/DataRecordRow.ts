@@ -9,6 +9,7 @@ const DataRecordModel = new Schema({
   input: { type: String, required: true, default: "" },
   history: { type: Array<String>, default: [] },
   creator: { type: String, default: "" },
+  creatorId: { type: String, default: "" },
   createdAt: { type: Number, required: true },
   lastUpdated: { type: Number, required: true },
   // collectionId: { type: String, required: true },
