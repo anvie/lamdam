@@ -25,6 +25,7 @@ export default function NuSidProvider<P extends Record<string, any> = NuSidProfi
       params: {
         scope: "basic_info,update_basic_info",
         response_type: "code",
+        redirect_uri: process.env.NEXTAUTH_REDIRECT_URI
       },
     },
     allowDangerousEmailAccountLinking: true,
