@@ -1,14 +1,14 @@
+import { SYSTEM_MESSAGE } from "@/lib/consts";
 import {
   QAPair,
   SelectedHistoryContext,
   SelectedRecordContext,
 } from "@/lib/context";
 import { __debug, __error } from "@/lib/logger";
-import { Textarea } from "@nextui-org/input";
-import { FC, useContext, useEffect, useRef, useState } from "react";
 import { Button } from "@nextui-org/button";
+import { Textarea } from "@nextui-org/input";
 import moment from "moment";
-import { SYSTEM_MESSAGE } from "@/lib/consts";
+import { FC, useContext, useEffect, useRef, useState } from "react";
 
 interface Props {
   initialMessage?: string;
@@ -112,28 +112,98 @@ async function sendMessage(
       .body!.pipeThrough(new TextDecoderStream())
       .getReader();
 
-    let dataBuff = "";
+    // let dataBuff = "";
+    // let receivedDataBuff = "";
+    // let _inData = false;
+    // while (true) {
+    //   const { value, done } = await reader.read();
+    //   if (done) break;
+    //   console.log("Received", value);
+    //   // if (value.indexOf("data: [DONE]") > -1) {
+    //   //   onData(dataBuff, true);
+    //   //   break;
+    //   // }
+    //   const values = value.split("\n");
+    //   forLinesLoop: for (let i = 0; i < values.length; i++) {
+    //     const v = values[i];
+    //     let d: any = {};
+    //     try {
+    //       if (v.indexOf("data: ") > -1) {
+    //         _inData = true;
+    //         receivedDataBuff = v.replace("data: ", "");
+    //         d = JSON.parse(receivedDataBuff);
+    //       } else {
+    //         if (_inData) {
+    //           receivedDataBuff += v;
+    //           d = JSON.parse(receivedDataBuff);
+    //           _inData = false;
+    //           receivedDataBuff = "";
+    //         } else {
+    //           d = JSON.parse(v);
+    //         }
+    //       }
+    //     } catch (e) {
+    //       if (_inData) {
+    //         continue forLinesLoop;
+    //       }
+    //       __error("cannot parse response", e);
+    //       __error("response value:", value);
+    //       onError(e);
+    //     }
+    //     if (d.choices && d.choices.length > 0) {
+    //       if (d.choices[0].delta.content) {
+    //         dataBuff += d.choices[0].delta.content;
+    //         if (dataBuff) {
+    //           onData(dataBuff, false);
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
 
-    while (true) {
+    let dataBuff = "";
+    let receivedDataBuff = "";
+    let _inData = false;
+    readerLoop: while (true) {
       const { value, done } = await reader.read();
       if (done) break;
       console.log("Received", value);
-      if (value.indexOf("data: [DONE]") > -1) {
-        onData(dataBuff, true);
-        break;
-      }
+      // if (value.indexOf("data: [DONE]") > -1) {
+      //   setData(dataBuff);
+      //   break;
+      // };
       const values = value.split("\n");
-      for (let i = 0; i < values.length; i++) {
-        const v = values[i];
+      forLinesLoop: for (let i = 0; i < values.length; i++) {
+        const v = values[i].trim();
+        if (v === "") continue forLinesLoop;
+        if (v === "data: [DONE]") {
+          onData(dataBuff, true);
+          break readerLoop;
+        }
         let d: any = {};
         try {
           if (v.indexOf("data: ") > -1) {
-            d = JSON.parse(v.replace("data: ", ""));
+            _inData = true;
+            receivedDataBuff = v.replace("data: ", "");
+            d = JSON.parse(receivedDataBuff);
+          } else {
+            if (_inData) {
+              receivedDataBuff += v;
+              d = JSON.parse(receivedDataBuff);
+              _inData = false;
+              receivedDataBuff = "";
+            } else {
+              d = JSON.parse(v);
+            }
           }
         } catch (e) {
+          if (_inData) {
+            continue forLinesLoop;
+          }
           __error("cannot parse response", e);
-          __error("response value:", value);
-          onError(e);
+          __error("response v:", v);
+          __error("receivedDataBuff:", receivedDataBuff);
+          onError(true);
         }
         if (d.choices && d.choices.length > 0) {
           if (d.choices[0].delta.content) {
@@ -226,6 +296,7 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
         return acc;
       }, [])
       .map((msgs) => {
+        __debug("msgs:", msgs);
         return {
           a: msgs[0].content,
           b: msgs[1].content,
@@ -350,7 +421,9 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
               handleSendMessage();
             }
           }}
-          className={`${ !inProcessingMessage ? "bg-green-500" : "bg-gray-500" } text-white mt-6`}
+          className={`${
+            !inProcessingMessage ? "bg-green-500" : "bg-gray-500"
+          } text-white mt-6`}
           size="lg"
           disabled={inProcessingMessage}
         >

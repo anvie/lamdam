@@ -1,6 +1,8 @@
+import { SYSTEM_MESSAGE } from "@/lib/consts";
 import { __error } from "@/lib/logger";
 import { DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
+import { Input, Textarea } from "@nextui-org/input";
 import {
   Modal,
   ModalBody,
@@ -9,8 +11,6 @@ import {
   ModalHeader,
 } from "@nextui-org/modal";
 import { FC, useEffect, useState } from "react";
-import { Input, Textarea } from "@nextui-org/input";
-import { SYSTEM_MESSAGE } from "@/lib/consts";
 
 export interface LLMResponseData {
   target: string;
@@ -66,9 +66,9 @@ const LLMResponseView: FC<Props> = ({
     }
 
     if (content.indexOf("---") > -1) {
-      const s = content.split("\n")
-      setPrompt(s[s.length-1]);
-    }else{
+      const s = content.split("\n");
+      setPrompt(s[s.length - 1]);
+    } else {
       setPrompt(content);
     }
 
@@ -79,23 +79,23 @@ const LLMResponseView: FC<Props> = ({
       },
     ];
 
-    if (currentRecord.history){
-        for (let i=0; i<currentRecord.history.length; i++) {
-            const h = currentRecord.history[i];
-            messages.push({
-                role: "user",
-                content: h[0],
-            });
-            messages.push({
-                role: "assistant",
-                content: h[1],
-            });
-        }
+    if (currentRecord.history) {
+      for (let i = 0; i < currentRecord.history.length; i++) {
+        const h = currentRecord.history[i];
+        messages.push({
+          role: "user",
+          content: h[0],
+        });
+        messages.push({
+          role: "assistant",
+          content: h[1],
+        });
+      }
     }
 
-    if (currentRecord.input){
-        // content = currentRecord.input + "\n\n---\n" + content;
-        content = content + "\n" + currentRecord.input;
+    if (currentRecord.input) {
+      // content = currentRecord.input + "\n\n---\n" + content;
+      content = content + "\n" + currentRecord.input;
     }
 
     messages.push({
@@ -128,8 +128,7 @@ const LLMResponseView: FC<Props> = ({
       let receivedDataBuff = "";
       let _inData = false;
       setData("");
-      readerLoop:
-      while (true) {
+      readerLoop: while (true) {
         const { value, done } = await reader.read();
         if (done) break;
         console.log("Received", value);
@@ -138,8 +137,7 @@ const LLMResponseView: FC<Props> = ({
         //   break;
         // };
         const values = value.split("\n");
-        forLinesLoop:
-        for (let i = 0; i < values.length; i++) {
+        forLinesLoop: for (let i = 0; i < values.length; i++) {
           const v = values[i].trim();
           if (v === "") continue forLinesLoop;
           if (v === "data: [DONE]") break;
@@ -149,18 +147,18 @@ const LLMResponseView: FC<Props> = ({
               _inData = true;
               receivedDataBuff = v.replace("data: ", "");
               d = JSON.parse(receivedDataBuff);
-            }else{
-              if (_inData){
+            } else {
+              if (_inData) {
                 receivedDataBuff += v;
                 d = JSON.parse(receivedDataBuff);
                 _inData = false;
                 receivedDataBuff = "";
-              }else{
+              } else {
                 d = JSON.parse(v);
               }
             }
           } catch (e) {
-            if (_inData){
+            if (_inData) {
               continue forLinesLoop;
             }
             __error("cannot parse response", e);
@@ -185,7 +183,12 @@ const LLMResponseView: FC<Props> = ({
   };
 
   return (
-    <Modal size="2xl" className="min-h-[450px]" isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Modal
+      size="2xl"
+      className="min-h-[450px]"
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+    >
       <ModalContent>
         {(onClose) => (
           <>
