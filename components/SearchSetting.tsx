@@ -1,3 +1,7 @@
+"use client";
+
+
+import { get } from "@/lib/FetchWrapper"
 import { useLocalStorage } from "@/lib/state"
 import { useFloating } from "@floating-ui/react-dom"
 import {
@@ -13,7 +17,7 @@ import {
 	ModalHeader,
 	useDisclosure,
 } from "@nextui-org/react"
-import { Key, useState } from "react"
+import { Key, useEffect, useState } from "react"
 import { CloseIcon } from "./icon/CloseIcon"
 import { SettingsIcon } from "./icon/SettingsIcon"
 
@@ -33,7 +37,11 @@ const Features = () => {
 	);
 };
 
-const InputCreator = () => {
+const getCreators = async () => {
+	return get("/api/creators");
+};
+
+const InputCreator = async () => {
 	const [open, setOpen] = useState(false);
 	const [inputValue, setInputValue] = useState("");
 
@@ -44,7 +52,7 @@ const InputCreator = () => {
 		"search-settings.creator",
 		[]
 	);
-	
+
 	const filteredItems = creators.filter((item) =>
 		item.toLowerCase().startsWith(inputValue.toLowerCase())
 	);
@@ -99,6 +107,19 @@ const InputCreator = () => {
 
 export const SearchSetting = () => {
 	const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
+	const [data, setData] = useState([]);
+	useEffect(() => {
+		console.log('testing')
+		async function fetchData() {
+			const data = await get("/api/creators");
+			console.log(data);
+			setData(data)
+		}
+
+		if (isOpen) fetchData();
+	}, [isOpen]);
+
 	return (
 		<>
 			<button type="button" onClick={onOpen} className="p-2 outline-none">
