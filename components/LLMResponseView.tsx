@@ -104,10 +104,10 @@ const LLMResponseView: FC<Props> = ({
     });
 
     let query = {
-      model: "string",
+      model: "output/Sidrap-7B-v1b",
       messages,
       temperature: 0.01,
-      top_p: 0,
+      top_p: 0.1,
       n: 1,
       max_tokens: 2000,
       stream: true,

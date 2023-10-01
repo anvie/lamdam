@@ -92,12 +92,13 @@ async function sendMessage(
   });
 
   let query = {
-    model: "string",
+    model: "output/Sidrap-7B-v1b",
     messages,
-    temperature: 0.35,
-    top_p: 0,
+    temperature: 0.3,
+    top_p: 0.1,
     n: 1,
     max_tokens: 1024,
+    frequency_penalty: 0.1,
     stream: true,
   };
   const requestOptions: RequestInit = {

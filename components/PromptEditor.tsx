@@ -92,12 +92,14 @@ const PromptEditor: FC = () => {
       }
       let newResponse = currentRecord?.response || "";
       if (name === "outputPositive") {
-        newResponse = `${value}\n\n----------\n\n${currentRecord?.outputNegative || ""
-          }`;
+        newResponse = `${value}\n\n----------\n\n${
+          currentRecord?.outputNegative || ""
+        }`;
       }
       if (name === "outputNegative") {
-        newResponse = `${currentRecord?.outputPositive || ""
-          }\n\n----------\n\n${value}`;
+        newResponse = `${
+          currentRecord?.outputPositive || ""
+        }\n\n----------\n\n${value}`;
       }
       // __debug("newResponse:", newResponse);
       if (currentRecord) {
@@ -111,7 +113,12 @@ const PromptEditor: FC = () => {
           });
       } else {
         // recrod belum exists, buatkan
-        setEmptyRecord();
+        const doc = setEmptyRecord();
+        setCurrentRecord &&
+          setCurrentRecord({
+            ...doc,
+            [name]: _value,
+          });
       }
     };
   };
@@ -177,13 +184,25 @@ const PromptEditor: FC = () => {
     }
 
     let histories = newHistory.map((d: QAPair) => [d.a, d.b]);
+    __debug("histories:", histories);
     const _rawHistory = newHistory
       .map((d: QAPair) => `a: ${d.a}\nb: ${d.b}`)
       .join("\n-----\n");
 
+    const lastMessage =
+      histories && histories.length > 0 ? histories.pop() : null;
+
     setCurrentRecord &&
       setCurrentRecord({
         ..._currentRecord,
+        prompt:
+          lastMessage && lastMessage.length > 0
+            ? lastMessage[0]
+            : _currentRecord.prompt,
+        response:
+          lastMessage && lastMessage.length > 0
+            ? lastMessage[1]
+            : _currentRecord.prompt,
         history: histories,
         rawHistory: _rawHistory,
         dirty: _currentRecord.id ? true : false,
@@ -297,10 +316,11 @@ const PromptEditor: FC = () => {
           {/* RESPONSE */}
 
           <div
-            className={`px-4 ${currentCollection?.meta?.dataType === "rm"
-              ? "flex flex-col gap-2 border-2 border-blue-100 m-2 rounded-md pb-2"
-              : ""
-              }`}
+            className={`px-4 ${
+              currentCollection?.meta?.dataType === "rm"
+                ? "flex flex-col gap-2 border-2 border-blue-100 m-2 rounded-md pb-2"
+                : ""
+            }`}
           >
             <Textarea
               label={
@@ -309,10 +329,11 @@ const PromptEditor: FC = () => {
                   : "Response:"
               }
               labelPlacement="outside"
-              placeholder={`Enter AI ${currentCollection?.meta?.dataType === "rm"
-                ? "output for positive"
-                : "response"
-                }`}
+              placeholder={`Enter AI ${
+                currentCollection?.meta?.dataType === "rm"
+                  ? "output for positive"
+                  : "response"
+              }`}
               className="w-full"
               value={
                 (currentRecord &&
@@ -326,6 +347,7 @@ const PromptEditor: FC = () => {
                   ? "outputPositive"
                   : "response"
               )}
+              maxRows={30}
             />
 
             {currentCollection?.meta?.dataType === "rm" && (
@@ -377,8 +399,9 @@ const PromptEditor: FC = () => {
       ) : (
         <SelectedHistoryContext.Provider value={{ newHistory, setNewHistory }}>
           <ChatModePromptEditor
-            initialMessage={`${currentRecord?.prompt || ""}\n${currentRecord?.input || ""
-              }`.trim()}
+            initialMessage={`${currentRecord?.prompt || ""}\n${
+              currentRecord?.input || ""
+            }`.trim()}
           />
         </SelectedHistoryContext.Provider>
       )}
