@@ -10,6 +10,7 @@
     "db:import": "ts-node --require tsconfig-paths/register --project tsconfig.script.json etc/script/importdata.js"
   },
   "dependencies": {
+    "@floating-ui/react-dom": "^2.0.2",
     "@hookform/resolvers": "^3.2.0",
     "@nextui-org/button": "2.0.9",
     "@nextui-org/code": "2.0.7",
