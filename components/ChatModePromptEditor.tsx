@@ -113,55 +113,6 @@ async function sendMessage(
       .body!.pipeThrough(new TextDecoderStream())
       .getReader();
 
-    // let dataBuff = "";
-    // let receivedDataBuff = "";
-    // let _inData = false;
-    // while (true) {
-    //   const { value, done } = await reader.read();
-    //   if (done) break;
-    //   console.log("Received", value);
-    //   // if (value.indexOf("data: [DONE]") > -1) {
-    //   //   onData(dataBuff, true);
-    //   //   break;
-    //   // }
-    //   const values = value.split("\n");
-    //   forLinesLoop: for (let i = 0; i < values.length; i++) {
-    //     const v = values[i];
-    //     let d: any = {};
-    //     try {
-    //       if (v.indexOf("data: ") > -1) {
-    //         _inData = true;
-    //         receivedDataBuff = v.replace("data: ", "");
-    //         d = JSON.parse(receivedDataBuff);
-    //       } else {
-    //         if (_inData) {
-    //           receivedDataBuff += v;
-    //           d = JSON.parse(receivedDataBuff);
-    //           _inData = false;
-    //           receivedDataBuff = "";
-    //         } else {
-    //           d = JSON.parse(v);
-    //         }
-    //       }
-    //     } catch (e) {
-    //       if (_inData) {
-    //         continue forLinesLoop;
-    //       }
-    //       __error("cannot parse response", e);
-    //       __error("response value:", value);
-    //       onError(e);
-    //     }
-    //     if (d.choices && d.choices.length > 0) {
-    //       if (d.choices[0].delta.content) {
-    //         dataBuff += d.choices[0].delta.content;
-    //         if (dataBuff) {
-    //           onData(dataBuff, false);
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
-
     let dataBuff = "";
     let receivedDataBuff = "";
     let _inData = false;
@@ -169,10 +120,7 @@ async function sendMessage(
       const { value, done } = await reader.read();
       if (done) break;
       console.log("Received", value);
-      // if (value.indexOf("data: [DONE]") > -1) {
-      //   setData(dataBuff);
-      //   break;
-      // };
+
       const values = value.split("\n");
       forLinesLoop: for (let i = 0; i < values.length; i++) {
         const v = values[i].trim();
@@ -226,7 +174,19 @@ let GLOBAL_IN_PROCESSING_MESSAGE = false;
 let _AUTO_SCROLLER_IVAL: NodeJS.Timer | null = null;
 
 const formatMessageOutput = (message: string) => {
-  return message.replaceAll("\n", "<br/>");
+  return (
+    message
+      .replaceAll("\n", "<br/>")
+      // replace ```pre``` with <pre>code</pre>
+      .replaceAll(
+        /```(python|rust|html|scss)?([^```]+)```/g,
+        `<pre class="bg-gray-900 p-2 text-green-400 rounded-md text-sm mt-4">$2</pre>`
+      )
+      .replaceAll(
+        /```(python|rust|html|scss)?/g,
+        `<pre class="bg-gray-900 p-2 text-green-400 rounded-md text-sm mt-4">`
+      )
+  );
 };
 
 interface ChatBoxProps {
@@ -299,8 +259,8 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
       .map((msgs) => {
         __debug("msgs:", msgs);
         return {
-          a: msgs[0].content,
-          b: msgs[1].content,
+          a: msgs[0]?.content || "",
+          b: msgs[1]?.content || "",
         };
       });
     __debug("result:", result);
@@ -368,33 +328,45 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
         id="ChatBox"
         className="overflow-y-scroll border-2 border-gray-500 rounded p-4 h-[600px]"
       >
-        {messagesHistory.map((message) => (
-          <div
-            key={message.id}
-            className={`flex flex-col p-2 rounded mb-2 ${
-              message.creator === "Kitab-AI" ? "bg-green-100" : "bg-gray-300"
-            }`}
-          >
-            <span className="dark:text-gray-500 font-semibol">
-              {message.creator}:
-            </span>
-            <p
-              className="dark:text-black"
-              dangerouslySetInnerHTML={{
-                __html: formatMessageOutput(message.content),
-              }}
-            ></p>
-            <span className="text-gray-700 text-sm">
-              {formatDistanceToNow(message.date)} ago
-            </span>
-          </div>
-        ))}
+        {messagesHistory
+          .filter((m) => m.content.trim().length > 0)
+          .map((message) => (
+            <div
+              key={message.id}
+              className={`flex flex-col p-2 rounded mb-2 ${
+                message.creator !== "me" ? "" : "bg-gray-300 dark:bg-gray-600"
+              }`}
+            >
+              <span
+                className={`${
+                  message.creator !== "me"
+                    ? ""
+                    : "text-gray-600 dark:text-gray-300"
+                } font-semibol`}
+              >
+                {message.creator === "Kitab-AI" ? "Kitab-AI" : message.creator}:
+              </span>
+              <p
+                className={`text-lg ${
+                  message.creator !== "me"
+                    ? "dark:text-green-500"
+                    : "dark:text-gray-300"
+                }`}
+                dangerouslySetInnerHTML={{
+                  __html: formatMessageOutput(message.content),
+                }}
+              ></p>
+              <span className="dark:text-gray-400 text-gray-700 text-sm">
+                {formatDistanceToNow(message.date)} ago
+              </span>
+            </div>
+          ))}
 
         {buffMessage && (
-          <div key={0} className="flex flex-col bg-green-100 p-2 rounded mb-2">
-            <span className="dark:text-gray-500 font-semibol">Kitab-AI:</span>
+          <div key={0} className="flex flex-col p-2 rounded mb-2">
+            <span className="dark:text-gray-600 font-semibol">Kitab-AI:</span>
             <p
-              className="dark:text-black"
+              className="text-gray-500 dark:text-green-500 text-lg"
               dangerouslySetInnerHTML={{
                 __html: formatMessageOutput(buffMessage),
               }}
@@ -404,10 +376,10 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
       </div>
       <div className="mt-4 flex gap-2 justify-between items-start">
         <Textarea
-          label="Prompt:"
+          size="lg"
           labelPlacement="outside"
           placeholder="Enter your prompt"
-          className="w-full"
+          className="w-full text-xl"
           value={inputMessage}
           onValueChange={setInputMessage}
           ref={inputRef}
@@ -424,7 +396,7 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
           }}
           className={`${
             !inProcessingMessage ? "bg-green-500" : "bg-gray-500"
-          } text-white mt-6`}
+          } text-white mt-1`}
           size="lg"
           disabled={inProcessingMessage}
         >

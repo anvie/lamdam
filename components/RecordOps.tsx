@@ -1,11 +1,23 @@
 "use client";
 
+import { get, post } from "@/lib/FetchWrapper";
+import {
+  CollectionContext,
+  GlobalContext,
+  SelectedRecordContext,
+} from "@/lib/context";
+import { errorMessage } from "@/lib/errorutil";
+import { __debug, __error } from "@/lib/logger";
+import { AddRecordSchema } from "@/lib/schema";
+import { Collection, DataRecord } from "@/types";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@nextui-org/button";
-import { FC, Key, useContext, useEffect, useRef, useState } from "react";
-import { DocumentPlus } from "./icon/DocumentPlus";
-import { CheckIcon } from "./icon/CheckIcon";
-import { XMarkIcon } from "./icon/XMarkIcon";
-import { ArrowRightIcon } from "./icon/ArrowRightIcon";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+} from "@nextui-org/dropdown";
 import {
   Modal,
   ModalBody,
@@ -14,29 +26,17 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@nextui-org/modal";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AddRecordSchema } from "@/lib/schema";
-import { get, post } from "@/lib/FetchWrapper";
-import { __debug, __error } from "@/lib/logger";
-import { ErrorLabel } from "./ErrorLabel";
-import {
-  CollectionContext,
-  GlobalContext,
-  SelectedRecordContext,
-} from "@/lib/context";
-import { Collection, DataRecord } from "@/types";
-import { errorMessage } from "@/lib/errorutil";
-import { Notify } from "notiflix/build/notiflix-notify-aio";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
-import {
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-} from "@nextui-org/dropdown";
-import LLMResponseView, { LLMResponseData } from "./LLMResponseView";
+import { Notify } from "notiflix/build/notiflix-notify-aio";
+import { FC, Key, useContext, useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { ErrorLabel } from "./ErrorLabel";
 import GPTResponseView from "./GPTResponseView";
+import LLMResponseView, { LLMResponseData } from "./LLMResponseView";
+import { ArrowRightIcon } from "./icon/ArrowRightIcon";
+import { CheckIcon } from "./icon/CheckIcon";
+import { DocumentPlus } from "./icon/DocumentPlus";
+import { XMarkIcon } from "./icon/XMarkIcon";
 
 function compileHistory(rawHistory: string): string[][] {
   if (rawHistory.trim() === "") {
@@ -55,19 +55,19 @@ function compileHistory(rawHistory: string): string[][] {
         inB = false;
       }
       if (line.startsWith("a:")) {
-        user.push(line.substring(2, line.length).trim());
+        user.push(line.substring(2, line.length));
         inA = true;
         inB = false;
       } else if (line.startsWith("b:")) {
-        ai.push(line.substring(2, line.length).trim());
+        ai.push(line.substring(2, line.length));
         inB = true;
         inA = false;
       } else if (inA) {
         // append to user's last line
-        user[user.length - 1] += "\n" + line.trim();
+        user[user.length - 1] += "\n" + line;
       } else if (inB) {
         // append to ai's last line
-        ai[ai.length - 1] += "\n" + line.trim();
+        ai[ai.length - 1] += "\n" + line;
       }
     }
     if (user.length !== ai.length) {
@@ -218,7 +218,7 @@ const RecordOps: FC = () => {
         setGlobalState({
           ...globalState,
           updatedRecord,
-        })
+        });
         Notify.success("Record has been updated", { position: "center-top" });
       })
       .catch((err) => {
@@ -334,7 +334,9 @@ const RecordOps: FC = () => {
         <Button size="md" onClick={onLlmResponseModalOpen}>
           Get Kitab-AI Response
         </Button>
-        <Button size="md" onClick={onGptResponseModalOpen}>Get GPT Response</Button>
+        <Button size="md" onClick={onGptResponseModalOpen}>
+          Get GPT Response
+        </Button>
 
         <div className="p-2 border-b-1 w-full"></div>
 

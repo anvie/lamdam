@@ -18,14 +18,14 @@ import ArrowRightCircleIcon from "./icon/ArrowRightCircleIcon";
 import { ClipboardIcon } from "./icon/ClipboardIcon";
 import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
 
-function formatResponse(rec: DataRecord, dataType: string): string {
-  let formattedResponse = rec.response;
-  if (dataType === "rm") {
-    formattedResponse =
-      rec.outputPositive + "\n\n----------\n\n" + rec.outputNegative;
-  }
-  return formattedResponse;
-}
+// function formatResponse(rec: DataRecord, dataType: string): string {
+//   let formattedResponse = rec.response;
+//   if (dataType === "rm") {
+//     formattedResponse =
+//       rec.outputPositive + "\n\n----------\n\n" + rec.outputNegative;
+//   }
+//   return formattedResponse;
+// }
 
 const PromptEditor: FC = () => {
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
@@ -47,7 +47,7 @@ const PromptEditor: FC = () => {
       let lines = [];
       for (let i = 0; i < currentRecord.history.length; i++) {
         const item = currentRecord.history[i];
-        // __debug("item:", item);
+        __debug("item:", item);
         lines.push(`a: ${item[0]}`);
         lines.push(`b: ${item[1]}`);
         if (currentRecord.history[i + 1]) {
