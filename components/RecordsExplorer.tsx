@@ -13,6 +13,7 @@ import { truncate } from "@/lib/stringutil";
 import { DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
 import { Input } from "@nextui-org/input";
+import moment from "moment";
 import { FC, useContext, useEffect, useState } from "react";
 import { SearchIcon } from "./icon/SearchIcon";
 
@@ -221,6 +222,7 @@ const RecordsExplorer: FC = () => {
 		<div className="border min-h-screen w-full">
 			<div className="pb-2 border-b-1 p-2 flex gap-1">
 				<Input
+					className="pb-2 border-b-1 p-2"
 					type="email"
 					placeholder="search records"
 					labelPlacement="outside"
@@ -244,7 +246,7 @@ const RecordsExplorer: FC = () => {
 						setQuery(e.currentTarget.value);
 					}}
 				/>
-				<SearchSetting></SearchSetting>
+				<SearchSetting />
 			</div>
 
 			<div className="h-[600px] overflow-scroll">
@@ -335,7 +337,12 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
 			onClick={onClick}
 		>
 			<div>{truncate(rec.prompt, 100)}</div>
-			<div className="text-xs">{truncate(rec.response, 100)}</div>
+			<div className="text-sm">{truncate(rec.response, 100)}</div>
+			<div className="text-xs inline-flex space-x-2 items-center opacity-80">
+				<span>{moment(rec.createdAt).format("YYYY/MM/DD")}</span>
+				<span>-</span>
+				<span>{rec.creator ?? "?"}</span>
+			</div>
 		</div>
 	) : (
 		<></>

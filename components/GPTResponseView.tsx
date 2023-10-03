@@ -1,6 +1,8 @@
+import { SYSTEM_MESSAGE } from "@/lib/consts";
 import { __debug, __error } from "@/lib/logger";
 import { DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
+import { Input, Textarea } from "@nextui-org/input";
 import {
   Modal,
   ModalBody,
@@ -9,8 +11,6 @@ import {
   ModalHeader,
 } from "@nextui-org/modal";
 import { FC, useEffect, useState } from "react";
-import { Input, Textarea } from "@nextui-org/input";
-import { SYSTEM_MESSAGE } from "@/lib/consts";
 
 export interface LLMResponseData {
   target: string;
@@ -77,9 +77,9 @@ const GPTResponseView: FC<Props> = ({
     }
 
     if (content.indexOf("---") > -1) {
-      const s = content.split("\n")
-      setPrompt(s[s.length-1]);
-    }else{
+      const s = content.split("\n");
+      setPrompt(s[s.length - 1]);
+    } else {
       setPrompt(`${content}<br />${currentRecord.input}`.trim());
     }
 
@@ -87,7 +87,7 @@ const GPTResponseView: FC<Props> = ({
       {
         role: "system",
         content: SYSTEM_MESSAGE,
-          // "Kamu adalah Kitab AI, ahli ilmu nahwu shorof, bisa menganalils dan menjelaskan gramatikal arab, kamu bisa memberikan jawaban atas pertanyaan yang diajukan.",
+        // "Kamu adalah Kitab AI, ahli ilmu nahwu shorof, bisa menganalils dan menjelaskan gramatikal arab, kamu bisa memberikan jawaban atas pertanyaan yang diajukan.",
       },
     ];
 
@@ -139,30 +139,85 @@ const GPTResponseView: FC<Props> = ({
         .body!.pipeThrough(new TextDecoderStream())
         .getReader();
 
+      // let dataBuff = "";
+      // setData("");
+      // while (true) {
+      //   const { value, done } = await reader.read();
+      //   if (done) break;
+      //   console.log("Received:", value);
+      //   if (value.indexOf("data: [DONE]") > -1) break;
+      //   if (value.indexOf("\"error\"") > -1){
+      //     if (value.indexOf("\"invalid_api_key\"") > -1){
+      //       setAPIKeyNotFound(true);
+      //     }
+      //     break;
+      //   }
+      //   const values = value.split("\n");
+      //   for (let i = 0; i < values.length; i++) {
+      //     const v = values[i];
+      //     let d: any = {};
+      //     try {
+      //       if (v.indexOf("data: ") > -1) {
+      //         d = JSON.parse(v.replace("data: ", ""));
+      //       }
+      //     } catch (e) {
+      //       __error("cannot parse response", e);
+      //       __error("response value:", value);
+      //       setSourceError(true);
+      //     }
+      //     if (d.choices && d.choices.length > 0) {
+      //       if (d.choices[0].delta.content) {
+      //         dataBuff += d.choices[0].delta.content;
+      //         if (dataBuff) {
+      //           setData(dataBuff);
+      //         }
+      //       }
+      //     }
+      //   }
+      // }
+
       let dataBuff = "";
+      let receivedDataBuff = "";
+      let _inData = false;
       setData("");
-      while (true) {
+      readerLoop: while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        console.log("Received:", value);
-        if (value.indexOf("data: [DONE]") > -1) break;
-        if (value.indexOf("\"error\"") > -1){
-          if (value.indexOf("\"invalid_api_key\"") > -1){
+        console.log("Received", value);
+        if (value.indexOf('"error"') > -1) {
+          if (value.indexOf('"invalid_api_key"') > -1) {
             setAPIKeyNotFound(true);
           }
           break;
         }
         const values = value.split("\n");
-        for (let i = 0; i < values.length; i++) {
-          const v = values[i];
+        forLinesLoop: for (let i = 0; i < values.length; i++) {
+          const v = values[i].trim();
+          if (v === "") continue forLinesLoop;
+          if (v === "data: [DONE]") break;
           let d: any = {};
           try {
             if (v.indexOf("data: ") > -1) {
-              d = JSON.parse(v.replace("data: ", ""));
+              _inData = true;
+              receivedDataBuff = v.replace("data: ", "");
+              d = JSON.parse(receivedDataBuff);
+            } else {
+              if (_inData) {
+                receivedDataBuff += v;
+                d = JSON.parse(receivedDataBuff);
+                _inData = false;
+                receivedDataBuff = "";
+              } else {
+                d = JSON.parse(v);
+              }
             }
           } catch (e) {
+            if (_inData) {
+              continue forLinesLoop;
+            }
             __error("cannot parse response", e);
-            __error("response value:", value);
+            __error("response v:", v);
+            __error("receivedDataBuff:", receivedDataBuff);
             setSourceError(true);
           }
           if (d.choices && d.choices.length > 0) {
@@ -182,11 +237,16 @@ const GPTResponseView: FC<Props> = ({
   };
 
   return (
-    <Modal size="2xl" className="min-h-[450px]" isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Modal
+      size="2xl"
+      className="min-h-[450px]"
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+    >
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader>Kitab-AI Response</ModalHeader>
+            <ModalHeader>GPT Response</ModalHeader>
             <ModalBody>
               {sourceError && (
                 <div>
@@ -219,16 +279,16 @@ const GPTResponseView: FC<Props> = ({
                     value={openaiApiKey}
                     onValueChange={(d) => {
                       let apiKey = d.trim();
-                      if (d.startsWith("sk-")){
+                      if (d.startsWith("sk-")) {
                         apiKey = d.replace("sk-", "");
                       }
                       localStorage.setItem("openai.apiKey", apiKey);
                       setOpenaiApiKey(d.trim());
                     }}
                     onKeyUp={(e) => {
-                      __debug('e:', e)
+                      __debug("e:", e);
                       if (e.key === "Enter") {
-                        if ((e.target as any).value.length > 0){
+                        if ((e.target as any).value.length > 0) {
                           setAPIKeyNotFound(false);
                           void stearmResponse();
                         }
@@ -237,7 +297,10 @@ const GPTResponseView: FC<Props> = ({
                   />
                 </div>
               )}
-              <div className="font-semibold" dangerouslySetInnerHTML={{ __html: prompt }} ></div>
+              <div
+                className="font-semibold"
+                dangerouslySetInnerHTML={{ __html: prompt }}
+              ></div>
               <Textarea value={data} minRows={15} maxRows={15} />
             </ModalBody>
 

@@ -1,14 +1,14 @@
+import { SYSTEM_MESSAGE } from "@/lib/consts";
 import {
   QAPair,
   SelectedHistoryContext,
   SelectedRecordContext,
 } from "@/lib/context";
 import { __debug, __error } from "@/lib/logger";
-import { Textarea } from "@nextui-org/input";
-import { FC, useContext, useEffect, useRef, useState } from "react";
 import { Button } from "@nextui-org/button";
+import { Textarea } from "@nextui-org/input";
 import moment from "moment";
-import { SYSTEM_MESSAGE } from "@/lib/consts";
+import { FC, useContext, useEffect, useRef, useState } from "react";
 
 interface Props {
   initialMessage?: string;
@@ -92,12 +92,13 @@ async function sendMessage(
   });
 
   let query = {
-    model: "string",
+    model: "output/Sidrap-7B-v1b",
     messages,
-    temperature: 0.35,
-    top_p: 0,
+    temperature: 0.3,
+    top_p: 0.1,
     n: 1,
     max_tokens: 1024,
+    frequency_penalty: 0.1,
     stream: true,
   };
   const requestOptions: RequestInit = {
@@ -113,27 +114,45 @@ async function sendMessage(
       .getReader();
 
     let dataBuff = "";
-
-    while (true) {
+    let receivedDataBuff = "";
+    let _inData = false;
+    readerLoop: while (true) {
       const { value, done } = await reader.read();
       if (done) break;
       console.log("Received", value);
-      if (value.indexOf("data: [DONE]") > -1) {
-        onData(dataBuff, true);
-        break;
-      }
+
       const values = value.split("\n");
-      for (let i = 0; i < values.length; i++) {
-        const v = values[i];
+      forLinesLoop: for (let i = 0; i < values.length; i++) {
+        const v = values[i].trim();
+        if (v === "") continue forLinesLoop;
+        if (v === "data: [DONE]") {
+          onData(dataBuff, true);
+          break readerLoop;
+        }
         let d: any = {};
         try {
           if (v.indexOf("data: ") > -1) {
-            d = JSON.parse(v.replace("data: ", ""));
+            _inData = true;
+            receivedDataBuff = v.replace("data: ", "");
+            d = JSON.parse(receivedDataBuff);
+          } else {
+            if (_inData) {
+              receivedDataBuff += v;
+              d = JSON.parse(receivedDataBuff);
+              _inData = false;
+              receivedDataBuff = "";
+            } else {
+              d = JSON.parse(v);
+            }
           }
         } catch (e) {
+          if (_inData) {
+            continue forLinesLoop;
+          }
           __error("cannot parse response", e);
-          __error("response value:", value);
-          onError(e);
+          __error("response v:", v);
+          __error("receivedDataBuff:", receivedDataBuff);
+          onError(true);
         }
         if (d.choices && d.choices.length > 0) {
           if (d.choices[0].delta.content) {
@@ -155,7 +174,19 @@ let GLOBAL_IN_PROCESSING_MESSAGE = false;
 let _AUTO_SCROLLER_IVAL: NodeJS.Timer | null = null;
 
 const formatMessageOutput = (message: string) => {
-  return message.replaceAll("\n", "<br/>");
+  return (
+    message
+      .replaceAll("\n", "<br/>")
+      // replace ```pre``` with <pre>code</pre>
+      .replaceAll(
+        /```(python|rust|html|scss)?([^```]+)```/g,
+        `<pre class="bg-gray-900 p-2 text-green-400 rounded-md text-sm mt-4">$2</pre>`
+      )
+      .replaceAll(
+        /```(python|rust|html|scss)?/g,
+        `<pre class="bg-gray-900 p-2 text-green-400 rounded-md text-sm mt-4">`
+      )
+  );
 };
 
 interface ChatBoxProps {
@@ -226,9 +257,10 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
         return acc;
       }, [])
       .map((msgs) => {
+        __debug("msgs:", msgs);
         return {
-          a: msgs[0].content,
-          b: msgs[1].content,
+          a: msgs[0]?.content || "",
+          b: msgs[1]?.content || "",
         };
       });
     __debug("result:", result);
@@ -296,33 +328,45 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
         id="ChatBox"
         className="overflow-y-scroll border-2 border-gray-500 rounded p-4 h-[600px]"
       >
-        {messagesHistory.map((message) => (
-          <div
-            key={message.id}
-            className={`flex flex-col p-2 rounded mb-2 ${
-              message.creator === "Kitab-AI" ? "bg-green-100" : "bg-gray-300"
-            }`}
-          >
-            <span className="dark:text-gray-500 font-semibol">
-              {message.creator}:
-            </span>
-            <p
-              className="dark:text-black"
-              dangerouslySetInnerHTML={{
-                __html: formatMessageOutput(message.content),
-              }}
-            ></p>
-            <span className="text-gray-700 text-sm">
-              {formatDistanceToNow(message.date)} ago
-            </span>
-          </div>
-        ))}
+        {messagesHistory
+          .filter((m) => m.content.trim().length > 0)
+          .map((message) => (
+            <div
+              key={message.id}
+              className={`flex flex-col p-2 rounded mb-2 ${
+                message.creator !== "me" ? "" : "bg-gray-300 dark:bg-gray-600"
+              }`}
+            >
+              <span
+                className={`${
+                  message.creator !== "me"
+                    ? ""
+                    : "text-gray-600 dark:text-gray-300"
+                } font-semibol`}
+              >
+                {message.creator === "Kitab-AI" ? "Kitab-AI" : message.creator}:
+              </span>
+              <p
+                className={`text-lg ${
+                  message.creator !== "me"
+                    ? "dark:text-green-500"
+                    : "dark:text-gray-300"
+                }`}
+                dangerouslySetInnerHTML={{
+                  __html: formatMessageOutput(message.content),
+                }}
+              ></p>
+              <span className="dark:text-gray-400 text-gray-700 text-sm">
+                {formatDistanceToNow(message.date)} ago
+              </span>
+            </div>
+          ))}
 
         {buffMessage && (
-          <div key={0} className="flex flex-col bg-green-100 p-2 rounded mb-2">
-            <span className="dark:text-gray-500 font-semibol">Kitab-AI:</span>
+          <div key={0} className="flex flex-col p-2 rounded mb-2">
+            <span className="dark:text-gray-600 font-semibol">Kitab-AI:</span>
             <p
-              className="dark:text-black"
+              className="text-gray-500 dark:text-green-500 text-lg"
               dangerouslySetInnerHTML={{
                 __html: formatMessageOutput(buffMessage),
               }}
@@ -332,10 +376,10 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
       </div>
       <div className="mt-4 flex gap-2 justify-between items-start">
         <Textarea
-          label="Prompt:"
+          size="lg"
           labelPlacement="outside"
           placeholder="Enter your prompt"
-          className="w-full"
+          className="w-full text-xl"
           value={inputMessage}
           onValueChange={setInputMessage}
           ref={inputRef}
@@ -350,7 +394,9 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
               handleSendMessage();
             }
           }}
-          className={`${ !inProcessingMessage ? "bg-green-500" : "bg-gray-500" } text-white mt-6`}
+          className={`${
+            !inProcessingMessage ? "bg-green-500" : "bg-gray-500"
+          } text-white mt-1`}
           size="lg"
           disabled={inProcessingMessage}
         >

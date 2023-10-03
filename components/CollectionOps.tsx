@@ -1,7 +1,15 @@
-import { Button } from "@nextui-org/button";
-import { FC, useContext, useEffect, useRef, useState } from "react";
-import { GearIcon } from "./icon/GearIcon";
+"use client"
 import CollectionSelector from "@/components/CollectionSelector";
+import { post } from "@/lib/FetchWrapper";
+import {
+  CollectionContext,
+  GlobalContext,
+  NeedUpdateContext,
+} from "@/lib/context";
+import { __debug, __error } from "@/lib/logger";
+import { AddCollectionSchema } from "@/lib/schema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@nextui-org/button";
 import {
   Modal,
   ModalBody,
@@ -10,26 +18,19 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@nextui-org/modal";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AddCollectionSchema } from "@/lib/schema";
-import { post } from "@/lib/FetchWrapper";
-import { __debug, __error } from "@/lib/logger";
-import { ErrorLabel } from "./ErrorLabel";
-import {
-  CollectionContext,
-  GlobalContext,
-  NeedUpdateContext,
-} from "@/lib/context";
-import CInput from "./CInput";
-import CTextarea from "./CTextarea";
-import { ThemeSwitch } from "./theme-switch";
-import { Report } from "notiflix/build/notiflix-report-aio";
-import { Loading } from "notiflix/build/notiflix-loading-aio";
+import { signOut, useSession } from "next-auth/react";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
-import { Select, SelectItem } from "@nextui-org/select";
-import { formatErrorMessage } from "@/lib/errorutil";
+import { Loading } from "notiflix/build/notiflix-loading-aio";
+import { Report } from "notiflix/build/notiflix-report-aio";
+import { FC, useContext, useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import CInput from "./CInput";
 import CSelect from "./CSelect";
+import CTextarea from "./CTextarea";
+import { ErrorLabel } from "./ErrorLabel";
+import { GearIcon } from "./icon/GearIcon";
+import LogoutIcon from "./icon/LogoutIcon";
+import { ThemeSwitch } from "./theme-switch";
 
 const CollectionOps: FC = () => {
   return (
@@ -118,6 +119,9 @@ const CollectionOpsButtons = () => {
         <Button size="sm" isIconOnly>
           <GearIcon width="2em" />
         </Button>
+        <Button size="sm" isIconOnly onClick={() => signOut()}>
+          <LogoutIcon width="1.8em" />
+        </Button>
         <Button size="sm" isIconOnly>
           <ThemeSwitch />
         </Button>
@@ -184,6 +188,7 @@ const AddCollectionModal: FC<any> = ({
   });
   const theForm = useRef(null);
   const [error, setError] = useState<string | null>(null);
+  const { data: session } = useSession();
 
   const onSubmit = (onClose: any) => {
     setError("");
@@ -224,7 +229,13 @@ const AddCollectionModal: FC<any> = ({
                 ref={theForm}
               >
                 <CInput control={control} name="name" errors={errors} />
-                <CInput control={control} name="creator" errors={errors} />
+                <CInput
+                  control={control}
+                  name="creator"
+                  defaultValue={session?.user?.name}
+                  errors={errors}
+                  readOnly
+                />
                 <CTextarea
                   control={control}
                   name="description"

@@ -45,7 +45,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
         meta: {},
       })
       .then(async (resp: any) => {
-        __debug("resp:", resp);
+        // __debug("resp:", resp);
 
         // remove from source collection
         await colSrcObj.deleteOne({ _id: new Types.ObjectId(id) });
@@ -74,4 +74,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   }
 }
 
-export default apiHandler(handler);
+export default apiHandler(handler, { withAuth: true });

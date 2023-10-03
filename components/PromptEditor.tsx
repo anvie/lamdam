@@ -1,3 +1,4 @@
+import { get } from "@/lib/FetchWrapper";
 import {
   CollectionContext,
   QAPair,
@@ -5,28 +6,26 @@ import {
   SelectedRecordContext,
 } from "@/lib/context";
 import { __debug, __error } from "@/lib/logger";
-import { Textarea } from "@nextui-org/input";
-import { FC, useContext, useEffect, useState } from "react";
-import ArrowRightCircleIcon from "./icon/ArrowRightCircleIcon";
+import { DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
+import { Textarea } from "@nextui-org/input";
 import { Divider } from "@nextui-org/react";
 import { Confirm, Notify } from "notiflix";
-import { get } from "@/lib/FetchWrapper";
-import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
-import { ClipboardIcon } from "./icon/ClipboardIcon";
-import { AnnotationIcon } from "./icon/AnnotationIcon";
-import GoExternalIcon from "./icon/GoExternalIcon";
-import { DataRecord } from "@/types";
+import { FC, useContext, useEffect, useState } from "react";
 import ChatModePromptEditor from "./ChatModePromptEditor";
+import { AnnotationIcon } from "./icon/AnnotationIcon";
+import ArrowRightCircleIcon from "./icon/ArrowRightCircleIcon";
+import { ClipboardIcon } from "./icon/ClipboardIcon";
+import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
 
-function formatResponse(rec: DataRecord, dataType: string): string {
-  let formattedResponse = rec.response;
-  if (dataType === "rm") {
-    formattedResponse =
-      rec.outputPositive + "\n\n----------\n\n" + rec.outputNegative;
-  }
-  return formattedResponse;
-}
+// function formatResponse(rec: DataRecord, dataType: string): string {
+//   let formattedResponse = rec.response;
+//   if (dataType === "rm") {
+//     formattedResponse =
+//       rec.outputPositive + "\n\n----------\n\n" + rec.outputNegative;
+//   }
+//   return formattedResponse;
+// }
 
 const PromptEditor: FC = () => {
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
@@ -43,12 +42,12 @@ const PromptEditor: FC = () => {
     if (currentRecord && dirty && !currentRecord.dirty) {
       setDirty(false);
     }
-    __debug("PromptEditor.currentRecord:", currentRecord);
+    // __debug("PromptEditor.currentRecord:", currentRecord);
     if (currentRecord && currentRecord.rawHistory != rawHistory) {
       let lines = [];
       for (let i = 0; i < currentRecord.history.length; i++) {
         const item = currentRecord.history[i];
-        // __debug("item:", item);
+        __debug("item:", item);
         lines.push(`a: ${item[0]}`);
         lines.push(`b: ${item[1]}`);
         if (currentRecord.history[i + 1]) {
@@ -102,7 +101,7 @@ const PromptEditor: FC = () => {
           currentRecord?.outputPositive || ""
         }\n\n----------\n\n${value}`;
       }
-      __debug("newResponse:", newResponse);
+      // __debug("newResponse:", newResponse);
       if (currentRecord) {
         setDirty(true);
         setCurrentRecord &&
@@ -114,7 +113,12 @@ const PromptEditor: FC = () => {
           });
       } else {
         // recrod belum exists, buatkan
-        setEmptyRecord();
+        const doc = setEmptyRecord();
+        setCurrentRecord &&
+          setCurrentRecord({
+            ...doc,
+            [name]: _value,
+          });
       }
     };
   };
@@ -180,13 +184,25 @@ const PromptEditor: FC = () => {
     }
 
     let histories = newHistory.map((d: QAPair) => [d.a, d.b]);
+    __debug("histories:", histories);
     const _rawHistory = newHistory
       .map((d: QAPair) => `a: ${d.a}\nb: ${d.b}`)
       .join("\n-----\n");
 
+    const lastMessage =
+      histories && histories.length > 0 ? histories.pop() : null;
+
     setCurrentRecord &&
       setCurrentRecord({
         ..._currentRecord,
+        prompt:
+          lastMessage && lastMessage.length > 0
+            ? lastMessage[0]
+            : _currentRecord.prompt,
+        response:
+          lastMessage && lastMessage.length > 0
+            ? lastMessage[1]
+            : _currentRecord.prompt,
         history: histories,
         rawHistory: _rawHistory,
         dirty: _currentRecord.id ? true : false,
@@ -271,9 +287,10 @@ const PromptEditor: FC = () => {
           <Divider orientation="vertical" />
           <Button
             size="sm"
+            color={chatMode ? "primary" : "default"}
             title="Swith to chat mode"
             onClick={onSwithToChatMode}
-            className="cursor-pointer"
+            className={`cursor-pointer ${chatMode ? "text-white" : ""}`}
             isIconOnly
           >
             <AnnotationIcon width="2em" />
@@ -330,6 +347,7 @@ const PromptEditor: FC = () => {
                   ? "outputPositive"
                   : "response"
               )}
+              maxRows={30}
             />
 
             {currentCollection?.meta?.dataType === "rm" && (

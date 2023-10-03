@@ -1,6 +1,8 @@
+import { SYSTEM_MESSAGE } from "@/lib/consts";
 import { __error } from "@/lib/logger";
 import { DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
+import { Input, Textarea } from "@nextui-org/input";
 import {
   Modal,
   ModalBody,
@@ -9,8 +11,6 @@ import {
   ModalHeader,
 } from "@nextui-org/modal";
 import { FC, useEffect, useState } from "react";
-import { Input, Textarea } from "@nextui-org/input";
-import { SYSTEM_MESSAGE } from "@/lib/consts";
 
 export interface LLMResponseData {
   target: string;
@@ -66,9 +66,9 @@ const LLMResponseView: FC<Props> = ({
     }
 
     if (content.indexOf("---") > -1) {
-      const s = content.split("\n")
-      setPrompt(s[s.length-1]);
-    }else{
+      const s = content.split("\n");
+      setPrompt(s[s.length - 1]);
+    } else {
       setPrompt(content);
     }
 
@@ -79,23 +79,23 @@ const LLMResponseView: FC<Props> = ({
       },
     ];
 
-    if (currentRecord.history){
-        for (let i=0; i<currentRecord.history.length; i++) {
-            const h = currentRecord.history[i];
-            messages.push({
-                role: "user",
-                content: h[0],
-            });
-            messages.push({
-                role: "assistant",
-                content: h[1],
-            });
-        }
+    if (currentRecord.history) {
+      for (let i = 0; i < currentRecord.history.length; i++) {
+        const h = currentRecord.history[i];
+        messages.push({
+          role: "user",
+          content: h[0],
+        });
+        messages.push({
+          role: "assistant",
+          content: h[1],
+        });
+      }
     }
 
-    if (currentRecord.input){
-        // content = currentRecord.input + "\n\n---\n" + content;
-        content = content + "\n" + currentRecord.input;
+    if (currentRecord.input) {
+      // content = currentRecord.input + "\n\n---\n" + content;
+      content = content + "\n" + currentRecord.input;
     }
 
     messages.push({
@@ -104,12 +104,12 @@ const LLMResponseView: FC<Props> = ({
     });
 
     let query = {
-      model: "string",
+      model: "output/Sidrap-7B-v1b",
       messages,
-      temperature: 0.35,
-      top_p: 0,
+      temperature: 0.01,
+      top_p: 0.1,
       n: 1,
-      max_tokens: 1024,
+      max_tokens: 2000,
       stream: true,
     };
     const requestOptions: RequestInit = {
@@ -125,23 +125,45 @@ const LLMResponseView: FC<Props> = ({
         .getReader();
 
       let dataBuff = "";
+      let receivedDataBuff = "";
+      let _inData = false;
       setData("");
-      while (true) {
+      readerLoop: while (true) {
         const { value, done } = await reader.read();
         if (done) break;
         console.log("Received", value);
-        if (value.indexOf("data: [DONE]") > -1) break;
+        // if (value.indexOf("data: [DONE]") > -1) {
+        //   setData(dataBuff);
+        //   break;
+        // };
         const values = value.split("\n");
-        for (let i = 0; i < values.length; i++) {
-          const v = values[i];
+        forLinesLoop: for (let i = 0; i < values.length; i++) {
+          const v = values[i].trim();
+          if (v === "") continue forLinesLoop;
+          if (v === "data: [DONE]") break;
           let d: any = {};
           try {
             if (v.indexOf("data: ") > -1) {
-              d = JSON.parse(v.replace("data: ", ""));
+              _inData = true;
+              receivedDataBuff = v.replace("data: ", "");
+              d = JSON.parse(receivedDataBuff);
+            } else {
+              if (_inData) {
+                receivedDataBuff += v;
+                d = JSON.parse(receivedDataBuff);
+                _inData = false;
+                receivedDataBuff = "";
+              } else {
+                d = JSON.parse(v);
+              }
             }
           } catch (e) {
+            if (_inData) {
+              continue forLinesLoop;
+            }
             __error("cannot parse response", e);
-            __error("response value:", value);
+            __error("response v:", v);
+            __error("receivedDataBuff:", receivedDataBuff);
             setSourceError(true);
           }
           if (d.choices && d.choices.length > 0) {
@@ -161,7 +183,12 @@ const LLMResponseView: FC<Props> = ({
   };
 
   return (
-    <Modal size="2xl" className="min-h-[450px]" isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Modal
+      size="2xl"
+      className="min-h-[450px]"
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+    >
       <ModalContent>
         {(onClose) => (
           <>

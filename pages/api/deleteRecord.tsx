@@ -48,4 +48,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   }
 }
 
-export default apiHandler(handler);
+export default apiHandler(handler, { withAuth: true });
