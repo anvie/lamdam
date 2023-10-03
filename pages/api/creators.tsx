@@ -2,6 +2,9 @@ import { apiHandler } from "@/lib/ApiHandler"
 import { Collection } from "@/models/Collection"
 import type { NextApiRequest, NextApiResponse } from "next/types"
 
+
+const db = require("../../lib/db");
+
 async function handler(req: NextApiRequest, res: NextApiResponse<string[]>) {
 	const {
 		method,
