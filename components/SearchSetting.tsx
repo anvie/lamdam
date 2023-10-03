@@ -1,6 +1,5 @@
 "use client";
 
-
 import { get } from "@/lib/FetchWrapper"
 import { useLocalStorage } from "@/lib/state"
 import { useFloating } from "@floating-ui/react-dom"
@@ -17,17 +16,30 @@ import {
 	ModalHeader,
 	useDisclosure,
 } from "@nextui-org/react"
-import { Key, useEffect, useState } from "react"
+import { Dispatch, Key, SetStateAction, useEffect, useState } from "react"
 import { CloseIcon } from "./icon/CloseIcon"
 import { SettingsIcon } from "./icon/SettingsIcon"
 
 const Features = () => {
 	const items = ["prompt", "response", "input", "history"];
 
-	const [selected, setSelected] = useState([items[0]]);
+	const [selected, setSelected] = useLocalStorage("search-settings.features", [
+		items[0],
+	]);
+	useEffect(() => {
+		console.log(selected);
+	}, [selected]);
+
+	const onValueChange: Dispatch<SetStateAction<string[]>> = (items) => {
+		if (items.length == 0) {
+			alert("there must be at least one");
+		} else {
+			setSelected(items);
+		}
+	};
 
 	return (
-		<CheckboxGroup value={selected} onValueChange={setSelected}>
+		<CheckboxGroup value={selected} onValueChange={onValueChange}>
 			{items.map((item) => (
 				<>
 					<Checkbox value={item}>{item.toLocaleUpperCase()}</Checkbox>
@@ -37,11 +49,7 @@ const Features = () => {
 	);
 };
 
-const getCreators = async () => {
-	return get("/api/creators");
-};
-
-const InputCreator = async () => {
+const InputCreator = () => {
 	const [open, setOpen] = useState(false);
 	const [inputValue, setInputValue] = useState("");
 
@@ -53,26 +61,55 @@ const InputCreator = async () => {
 		[]
 	);
 
-	const filteredItems = creators.filter((item) =>
-		item.toLowerCase().startsWith(inputValue.toLowerCase())
-	);
+	const [data, setData] = useState<string[]>([]);
+	useEffect(() => {
+		get("/api/creators").then((data) => {
+			setData(data);
+		});
+	}, []);
 
-	const onInputCreatorAction = (key: Key) => {};
+	const filteredItems = data.filter((item) => {
+		if (creators.includes(item)) return false;
+		if (item.toLowerCase().startsWith(inputValue.toLowerCase())) return true;
+		if (item.toLowerCase().includes(inputValue.toLowerCase())) return true;
+
+		return false;
+	});
+
+	const onInputCreatorAction = (key: Key) => {
+		if (!creators.includes(key.toString())) {
+			setCreators([...creators, key.toString()]);
+		}
+
+		setInputValue("");
+		setOpen(false);
+		document.getElementById("search-setting.creators")!.focus();
+	};
+
+	const onDeleteTagCreator = (creator: string) => {
+		setCreators(creators.filter((_creator) => _creator != creator));
+	};
+
 	return (
 		<>
 			<section className="flex flex-wrap border p-4 rounded-lg gap-2">
-				{creators.map((item) => (
+				{creators.map((creator) => (
 					<>
 						<div className="flex items-center border rounded-lg px-2 py-1 pt-0 gap-2">
-							<p>{item}</p>
-							<CloseIcon className="cursor-pointer"></CloseIcon>
+							<p>{creator}</p>
+							<CloseIcon
+								className="cursor-pointer"
+								onClick={() => onDeleteTagCreator(creator)}
+							></CloseIcon>
 						</div>
 					</>
 				))}
 				<input
+					id="search-setting.creators"
 					type="text"
 					ref={refs.setReference}
 					placeholder="type  here"
+					value={inputValue}
 					className="outline-none border-0 bg-transparent flex-1 w-fit"
 					onChange={(e) => {
 						const value = e.target.value;
@@ -101,24 +138,14 @@ const InputCreator = async () => {
 					<></>
 				)}
 			</section>
+			{filteredItems.length==0 && inputValue ? <small>There is no more creators</small> : ""}
+			
 		</>
 	);
 };
 
 export const SearchSetting = () => {
 	const { isOpen, onOpen, onOpenChange } = useDisclosure();
-
-	const [data, setData] = useState([]);
-	useEffect(() => {
-		console.log('testing')
-		async function fetchData() {
-			const data = await get("/api/creators");
-			console.log(data);
-			setData(data)
-		}
-
-		if (isOpen) fetchData();
-	}, [isOpen]);
 
 	return (
 		<>
