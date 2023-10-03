@@ -1,20 +1,20 @@
 "use client";
 
-import { SearchSetting } from "@/components/SearchSetting"
-import { get } from "@/lib/FetchWrapper"
+import { SearchSetting } from "@/components/SearchSetting";
+import { get } from "@/lib/FetchWrapper";
 import {
 	CollectionContext,
 	GlobalContext,
 	SelectedRecordContext,
-} from "@/lib/context"
-import { __debug } from "@/lib/logger"
-import { getLocalStorage } from "@/lib/state"
-import { truncate } from "@/lib/stringutil"
-import { DataRecord } from "@/types"
-import { Button } from "@nextui-org/button"
-import { Input } from "@nextui-org/input"
-import { FC, useContext, useEffect, useState } from "react"
-import { SearchIcon } from "./icon/SearchIcon"
+} from "@/lib/context";
+import { __debug } from "@/lib/logger";
+import { getLocalStorage } from "@/lib/state";
+import { truncate } from "@/lib/stringutil";
+import { DataRecord } from "@/types";
+import { Button } from "@nextui-org/button";
+import { Input } from "@nextui-org/input";
+import { FC, useContext, useEffect, useState } from "react";
+import { SearchIcon } from "./icon/SearchIcon";
 
 const RecordsExplorer: FC = () => {
 	const { currentCollection, setCurrentCollection } =
@@ -117,7 +117,6 @@ const RecordsExplorer: FC = () => {
 		for (const feature of features) {
 			uri.searchParams.append("features", feature);
 		}
-
 
 		void get(uri.toString())
 			.then((data) => {
