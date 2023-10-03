@@ -55,11 +55,11 @@ function compileHistory(rawHistory: string): string[][] {
         inB = false;
       }
       if (line.startsWith("a:")) {
-        user.push(line.substring(2, line.length));
+        user.push(line.replace(/^a: +?/, ""));
         inA = true;
         inB = false;
       } else if (line.startsWith("b:")) {
-        ai.push(line.substring(2, line.length));
+        ai.push(line.replace(/^b: +?/, ""));
         inB = true;
         inA = false;
       } else if (inA) {
