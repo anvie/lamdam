@@ -18,3 +18,13 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
 
     return state
 }
+
+
+export const getLocalStorage = <Props>(key: string, initialValue: Props): Props => {
+    try {
+        const item = localStorage.getItem(key)
+        return item ? JSON.parse(item) : initialValue
+    } catch {
+        return initialValue
+    }
+}

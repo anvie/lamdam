@@ -8,6 +8,7 @@ import {
 	SelectedRecordContext,
 } from "@/lib/context"
 import { __debug } from "@/lib/logger"
+import { getLocalStorage } from "@/lib/state"
 import { truncate } from "@/lib/stringutil"
 import { DataRecord } from "@/types"
 import { Button } from "@nextui-org/button"
@@ -97,11 +98,28 @@ const RecordsExplorer: FC = () => {
 		if (!currentCollection) {
 			return;
 		}
-		let uri = `/api/records?collectionId=${currentCollection?.id}`;
+
+		const creators = getLocalStorage<string[]>("search-settings.creator", []);
+		const features = getLocalStorage<string[]>("search-settings.features", []);
+
+		let uri = new URL(
+			`/api/records?collectionId=${currentCollection?.id}`,
+			window.origin
+		);
 		if (query) {
-			uri = `/api/records?collectionId=${currentCollection?.id}&q=${query}`;
+			uri.searchParams.set("q", query);
 		}
-		void get(uri)
+
+		for (const creator of creators) {
+			uri.searchParams.append("creators", creator);
+		}
+
+		for (const feature of features) {
+			uri.searchParams.append("features", feature);
+		}
+
+
+		void get(uri.toString())
 			.then((data) => {
 				setData(data.result);
 			})

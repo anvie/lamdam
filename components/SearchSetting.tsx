@@ -177,12 +177,10 @@ export const SearchSetting = () => {
 								</label>
 							</ModalBody>
 							<ModalFooter>
-								<Button color="danger" variant="light" onPress={onClose}>
+								<Button variant="light" onPress={onClose}>
 									Close
 								</Button>
-								<Button color="primary" onPress={onClose}>
-									Save
-								</Button>
+								
 							</ModalFooter>
 						</>
 					)}
