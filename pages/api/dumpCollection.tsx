@@ -7,9 +7,9 @@ import { Collection } from "@/models/Collection";
 import type { NextApiRequest, NextApiResponse } from "next/types";
 import path from "path";
 
-import mongoose from "mongoose";
-import fs from "fs";
 import * as crypto from "crypto";
+import fs from "fs";
+import mongoose from "mongoose";
 
 const DUMP_PATH = process.env.DUMP_PATH as string;
 
@@ -22,6 +22,7 @@ type Data = {
   result?: Object;
 };
 
+// @TODO(Robin): rename this endpoint file name to `compileCollection`.
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   const { id: collectionId } = DumpCollectionSchema.parse(req.body);
   __debug("collectionId:", collectionId);
@@ -43,7 +44,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   let fileName = `${col.name}.json`;
 
   if (dataType === "rm") {
-    fileName = `comparison_${col.name}.json`
+    fileName = `comparison_${col.name}.json`;
   }
 
   const dumpPath = path.join(DUMP_PATH, fileName);
@@ -141,7 +142,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
             history: "history",
             query: "input",
           },
-          stage: dataType
+          stage: dataType,
         };
       }
 

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import CollectionSelector from "@/components/CollectionSelector";
 import { post } from "@/lib/FetchWrapper";
 import {
@@ -62,7 +62,7 @@ const CollectionOpsButtons = () => {
       return;
     }
 
-    Loading.hourglass(`Dumping collection ${currentCollection.name}...`);
+    Loading.hourglass(`Compiling collection ${currentCollection.name}...`);
     post(`/api/dumpCollection`, {
       id: currentCollection.id,
     })
@@ -70,8 +70,8 @@ const CollectionOpsButtons = () => {
         __debug("resp:", resp);
         if (resp.result) {
           Report.success(
-            "Dump Success",
-            `Total ${resp.result.total} records dumped from collection ${currentCollection.name}`,
+            "Compile Success",
+            `Total ${resp.result.total} records compiled from collection ${currentCollection.name}`,
             "Okay"
           );
         }
@@ -79,7 +79,7 @@ const CollectionOpsButtons = () => {
       .catch((err: any) => {
         Report.failure(
           "Failed!",
-          `Cannot dump collection: <br/><br/>${err}`,
+          `Cannot compile collection: <br/><br/>${err}`,
           "Okay"
         );
       })
@@ -94,7 +94,7 @@ const CollectionOpsButtons = () => {
     }
     Confirm.show(
       "Confirmation",
-      `Are you sure to dump the collection ${currentCollection.name}?`,
+      `Are you sure to compile the collection ${currentCollection.name}? This may take a while for a large collection.`,
       "Yes",
       "No",
       () => {
@@ -107,7 +107,7 @@ const CollectionOpsButtons = () => {
     <>
       <div className="flex items-end justify-end gap-3">
         <Button size="sm" onClick={onDumpClick}>
-          Dump
+          Compile
         </Button>
         <div className="border-l-1 h-full bg-slate-300"></div>
         <Button size="sm" onClick={onAddCollectionModalOpen}>
@@ -242,12 +242,15 @@ const AddCollectionModal: FC<any> = ({
                   errors={errors}
                 />
 
-                <CSelect control={control} name="dataType" errors={errors} items={
-                  [
+                <CSelect
+                  control={control}
+                  name="dataType"
+                  errors={errors}
+                  items={[
                     { key: "sft", value: "sft", name: "SFT" },
                     { key: "rm", value: "rm", name: "Reward Modeling" },
-                  ]
-                } />
+                  ]}
+                />
 
                 {error && <ErrorLabel message={error} />}
                 {/* <code>
