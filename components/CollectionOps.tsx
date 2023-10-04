@@ -18,11 +18,12 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@nextui-org/modal";
+import { Avatar, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@nextui-org/react";
 import { signOut, useSession } from "next-auth/react";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
 import { Report } from "notiflix/build/notiflix-report-aio";
-import { FC, useContext, useEffect, useRef, useState } from "react";
+import { FC, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import CInput from "./CInput";
 import CSelect from "./CSelect";
@@ -56,6 +57,9 @@ const CollectionOpsButtons = () => {
 
   const { currentCollection, setCurrentCollection } =
     useContext(CollectionContext);
+
+  const { data: session } = useSession();
+  const user = useMemo(() => session?.user, [session]);
 
   const doDump = () => {
     if (!currentCollection) {
@@ -105,7 +109,7 @@ const CollectionOpsButtons = () => {
 
   return (
     <>
-      <div className="flex items-end justify-end gap-3">
+      <div className="flex items-center justify-end gap-3">
         <Button size="sm" onClick={onDumpClick}>
           Compile
         </Button>
@@ -119,12 +123,33 @@ const CollectionOpsButtons = () => {
         <Button size="sm" isIconOnly>
           <GearIcon width="2em" />
         </Button>
-        <Button size="sm" isIconOnly onClick={() => signOut()}>
-          <LogoutIcon width="1.8em" />
-        </Button>
         <Button size="sm" isIconOnly>
           <ThemeSwitch />
         </Button>
+        <Dropdown placement="bottom-end" radius="sm">
+          <DropdownTrigger>
+            <Avatar
+              isBordered
+              as="button"
+              className="transition-transform"
+              src={`${user?.image}`}
+            />
+          </DropdownTrigger>
+          <DropdownMenu aria-label="Profile Actions" variant="flat">
+            <DropdownItem key="profile" className="h-14 gap-2">
+              <p className="font-semibold">{user?.name}</p>
+              <p className="font-normal">{user?.email}</p>
+            </DropdownItem>
+            <DropdownItem
+              key="logout"
+              color="danger"
+              onClick={() => signOut()}
+              startContent={<LogoutIcon width="1.4em" height="1.4em" />}
+            >
+              Log Out
+            </DropdownItem>
+          </DropdownMenu>
+        </Dropdown>
       </div>
       <AddCollectionModal
         isAddCollectionModalOpen={isAddCollectionModalOpen}
