@@ -59,7 +59,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   const db = mongoose.connection.db;
 
   let counter = 0;
-  const cursor = db.collection(col.name).find();
+  const cursor = db.collection(col.name).find().sort({ _id: -1 });
   let fout = null;
   try {
     const hash = crypto.createHash("sha1");
