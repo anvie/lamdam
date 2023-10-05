@@ -17,6 +17,38 @@ import moment from "moment";
 import { FC, useContext, useEffect, useState } from "react";
 import { SearchIcon } from "./icon/SearchIcon";
 
+type SearchData = {
+	id: string;
+} & Partial<{
+	keyword: string;
+	toId: string;
+	fromId: string;
+}>;
+
+const revalidateSearch = ({ id, keyword, toId, fromId }: SearchData) => {
+	let uri = new URL(`/api/records?collectionId=${id}`, window.origin);
+
+	const creators = getLocalStorage<string[]>("search-settings.creator", []);
+	const features = getLocalStorage<string[]>("search-settings.features", []);
+
+	if (keyword) {
+		uri.searchParams.set("q", keyword);
+	}
+
+	for (const creator of creators) {
+		uri.searchParams.append("creators", creator);
+	}
+
+	for (const feature of features) {
+		uri.searchParams.append("features", feature);
+	}
+
+	if (toId) uri.searchParams.set("toId", toId);
+	if (fromId) uri.searchParams.set("fromId", fromId);
+
+	return uri.toString();
+};
+
 const RecordsExplorer: FC = () => {
 	const { currentCollection, setCurrentCollection } =
 		useContext(CollectionContext);
@@ -100,26 +132,7 @@ const RecordsExplorer: FC = () => {
 			return;
 		}
 
-		const creators = getLocalStorage<string[]>("search-settings.creator", []);
-		const features = getLocalStorage<string[]>("search-settings.features", []);
-
-		let uri = new URL(
-			`/api/records?collectionId=${currentCollection?.id}`,
-			window.origin
-		);
-		if (query) {
-			uri.searchParams.set("q", query);
-		}
-
-		for (const creator of creators) {
-			uri.searchParams.append("creators", creator);
-		}
-
-		for (const feature of features) {
-			uri.searchParams.append("features", feature);
-		}
-
-		void get(uri.toString())
+		void get(revalidateSearch({ id: currentCollection.id, keyword: query }))
 			.then((data) => {
 				setData(data.result);
 			})
@@ -137,25 +150,30 @@ const RecordsExplorer: FC = () => {
 			return;
 		}
 		// __debug("refreshing data for collectionId:", id);
-		let uri = `/api/records?collectionId=${currentCollection?.id}`;
-		if (query) {
-			uri = `/api/records?collectionId=${currentCollection?.id}&q=${query}`;
-		}
+		let options: SearchData = {
+			id: currentCollection!.id,
+		};
+
+		if (query) options.keyword = query;
 		if (lastId.length > 0 && !noLastId) {
 			if (lastId[1] !== "") {
-				uri = `${uri}&toId=${lastId[1]}`;
+				options.toId = lastId[1];
 			}
 			if (lastId[0] !== "") {
-				uri = `${uri}&fromId=${lastId[0]}`;
+				options.fromId = lastId[0];
 			}
 		}
+
 		return await get(
 			// `/api/records?collectionId=${id}${query ? `&q=${query}` : ""}`
-			uri
+			revalidateSearch(options)
 		).then((data) => {
 			setData(data.result);
 			if (data.result.length > 0) {
-				setLastId([data.result[0].id, data.result[data.result.length - 1].id]);
+				setLastId([
+					data.result[0].id,
+					data.result[data.result.length - 1].id,
+				]);
 			} else {
 				// setLastId([lastId.shift() as string, lastId[0]]);
 			}
@@ -166,14 +184,12 @@ const RecordsExplorer: FC = () => {
 		if (!currentCollection) {
 			return;
 		}
-		let uri = `/api/records?collectionId=${currentCollection?.id}`;
-		if (query) {
-			uri = `/api/records?collectionId=${currentCollection?.id}&q=${query}`;
-		}
-		if (lastId.length > 0) {
-			uri = `${uri}&toId=${lastId[1]}`;
-		}
-		void get(uri)
+		let options: SearchData = {
+			id: currentCollection!.id,
+		};
+		if (query) options.keyword = query;
+		if (lastId.length > 0) options.toId = lastId[1];
+		void get(revalidateSearch(options))
 			.then((data) => {
 				setData(data.result);
 				if (data.result.length > 0) {
@@ -194,14 +210,12 @@ const RecordsExplorer: FC = () => {
 		if (!currentCollection) {
 			return;
 		}
-		let uri = `/api/records?collectionId=${currentCollection?.id}`;
-		if (query) {
-			uri = `/api/records?collectionId=${currentCollection?.id}&q=${query}`;
-		}
-		if (lastId.length > 0) {
-			uri = `${uri}&fromId=${lastId[0]}`;
-		}
-		void get(uri)
+		let options: SearchData = {
+			id: currentCollection!.id,
+		};
+		if (query) options.keyword = query;
+		if (lastId.length > 0) options.fromId = lastId[0];
+		void get(revalidateSearch(options))
 			.then((data) => {
 				setData(data.result);
 				if (data.result.length > 0) {
