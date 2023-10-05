@@ -27,9 +27,6 @@ const Features = () => {
         "search-settings.features",
         [items[0]]
     );
-    useEffect(() => {
-        console.log(selected);
-    }, [selected]);
 
     const onValueChange: Dispatch<SetStateAction<string[]>> = (items) => {
         if (items.length == 0) {

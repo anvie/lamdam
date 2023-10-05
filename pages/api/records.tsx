@@ -68,7 +68,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
             ...query,
             $and: $and,
         };
-        console.log(query);
     }
 
     let sortOrder: any = { _id: -1 };
