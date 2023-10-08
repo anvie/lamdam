@@ -339,12 +339,12 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
 
     return rec ? (
         <div
-            className={`border-b-1 pb-1 cursor-pointer hover:bg-slate-50 dark:hover:dark:text-black border-l-8 pl-2 ${
+            className={`border-b-1 pb-1 cursor-pointer hover:bg-slate-200 dark:hover:dark:text-black border-l-8 pl-2 ${
                 currentRecord && currentRecord!.id === rec.id
                     ? `${
                           rec.dirty
                               ? "border-l-orange-400"
-                              : "border-l-green-600 bg-slate-100 dark:text-black"
+                              : "border-l-green-600 bg-slate-300 dark:text-black font-semibold"
                       }`
                     : "border-gray-100 "
             }`}

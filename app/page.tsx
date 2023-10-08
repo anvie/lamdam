@@ -16,12 +16,14 @@ import {
     SelectedRecordContext,
 } from "@/lib/context";
 import { __error } from "@/lib/logger";
+import { cn } from "@nextui-org/react";
 
 export default function Home() {
     const [currentRecord, setCurrentRecord] = useState<DataRecord | null>(null);
     const [currentCollection, setCurrentCollection] =
         useState<Collection | null>(null);
     const [needUpdate, setNeedUpdate] = useState<boolean>(false);
+    const [showExplorer, setShowExplorer] = useState<boolean>(false);
     const needUpdateState = { needUpdate, setNeedUpdate };
     const [globalState, setGlobalState] = useState<GlobalState>({
         currentCollection: null,
@@ -36,6 +38,25 @@ export default function Home() {
     useEffect(() => {
         Notify.init({ position: "center-top" });
     }, []);
+
+    useEffect(() => {
+        if (globalState.showExplorer) {
+            setShowExplorer(!showExplorer);
+            setTimeout(() => {
+                setGlobalState({ ...globalState, showExplorer: false });
+            }, 1000);
+        }
+    }, [globalState.showExplorer]);
+
+    useEffect(() => {
+        if (currentRecord) {
+            if (currentRecord) {
+                if (showExplorer) {
+                    setShowExplorer(false);
+                }
+            }
+        }
+    }, [currentRecord]);
 
     const currentRecordSetter: Dispatch<DataRecord | null> | null = (value) => {
         if (currentCollection?.meta?.dataType === "rm") {
@@ -72,8 +93,13 @@ export default function Home() {
                         >
                             <CollectionOps />
 
-                            <div className="grid grid-cols-4">
-                                <RecordsExplorer className="border min-h-screen w-full hidden md:block" />
+                            <div className="grid grid-cols-4 relative">
+                                <RecordsExplorer
+                                    className={cn(
+                                        "border min-h-screen w-full md:block absolute md:relative bg-white dark:bg-black z-10 top-[4em] md:top-0",
+                                        showExplorer ? "" : "hidden"
+                                    )}
+                                />
 
                                 <div className="col-span-4 md:col-span-2">
                                     <PromptEditor />
