@@ -61,6 +61,11 @@ function apiHandler<T>(
       let user: User | undefined = undefined;
       // global middleware, aktifkan ini kalau mau pakai jwt based authentication
       // await jwtMiddleware(req, res);
+
+      if (!(process.env.NUID_CLIENT_ID && process.env.NUID_CLIENT_SECRET)) {
+        opts = { withAuth: false };
+      }
+
       if (opts?.withAuth) {
         const session = await getServerSession(req, res, authOptions)
 
