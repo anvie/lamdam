@@ -1,7 +1,7 @@
 "use client";
 
+import { Collection, DataRecord } from "@/types";
 import { Dispatch, SetStateAction, createContext } from "react";
-import { DataRecord, Collection } from "@/types";
 
 
 export const SelectedRecordContext = createContext<{
@@ -25,6 +25,8 @@ export interface GlobalState {
     newRecord: DataRecord | null;
     deleteRecord: DataRecord | null;
     updatedRecord: DataRecord | null;
+    addNewRecord: boolean;
+    showExplorer: boolean;
 }
 
 export const GlobalContext = createContext<{
@@ -37,6 +39,8 @@ export const GlobalContext = createContext<{
         newRecord: null,
         deleteRecord: null,
         updatedRecord: null,
+        addNewRecord: false,
+        showExplorer: false,
     },
     setGlobalState: () => { },
 });
