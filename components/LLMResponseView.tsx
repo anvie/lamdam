@@ -192,7 +192,9 @@ const LLMResponseView: FC<Props> = ({
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader>Kitab-AI Response</ModalHeader>
+            <ModalHeader>
+              {process.env.NEXT_PUBLIC_INTERNAL_MODEL_NAME} Response
+            </ModalHeader>
             <ModalBody>
               {sourceError && (
                 <div>
@@ -225,7 +227,10 @@ const LLMResponseView: FC<Props> = ({
                   <Button
                     color="success"
                     onClick={() => {
-                      onCopy({ target: "good", text: data });
+                      onCopy({
+                        target: "good",
+                        text: data,
+                      });
                       onClose();
                     }}
                   >
@@ -234,7 +239,10 @@ const LLMResponseView: FC<Props> = ({
                   <Button
                     color="warning"
                     onClick={() => {
-                      onCopy({ target: "bad", text: data });
+                      onCopy({
+                        target: "bad",
+                        text: data,
+                      });
                       onClose();
                     }}
                   >
@@ -246,7 +254,10 @@ const LLMResponseView: FC<Props> = ({
                 <Button
                   color="success"
                   onClick={() => {
-                    onCopy({ target: "response", text: data });
+                    onCopy({
+                      target: "response",
+                      text: data,
+                    });
                     onClose();
                   }}
                 >
