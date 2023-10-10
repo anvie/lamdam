@@ -14,10 +14,12 @@ import { Divider, useDisclosure } from "@nextui-org/react";
 import { Confirm, Notify } from "notiflix";
 import { FC, useContext, useEffect, useState } from "react";
 import ChatModePromptEditor from "./ChatModePromptEditor";
+import GPTResponseView from "./GPTResponseView";
 import LLMResponseView, { LLMResponseData } from "./LLMResponseView";
 import { AnnotationIcon } from "./icon/AnnotationIcon";
 import ArrowRightCircleIcon from "./icon/ArrowRightCircleIcon";
 import { BarsArrowDownIcon } from "./icon/BarsArrowDownIcon";
+import ChipIcon from "./icon/ChipIcon";
 import { ClipboardIcon } from "./icon/ClipboardIcon";
 import { DocumentPlus } from "./icon/DocumentPlus";
 import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
@@ -41,6 +43,11 @@ const PromptEditor: FC = () => {
     isOpen: llmResponseModalVisible,
     onOpen: onLlmResponseModalOpen,
     onOpenChange: onLlmResponseModalChange,
+  } = useDisclosure();
+  const {
+    isOpen: gptResponseModalVisible,
+    onOpen: onGptResponseModalOpen,
+    onOpenChange: onGptResponseModalChange,
   } = useDisclosure();
 
   const [newHistory, setNewHistory] = useState<QAPair[]>([]);
@@ -296,7 +303,7 @@ const PromptEditor: FC = () => {
     <div className="border pb-4">
       {/* ID */}
 
-      <div className="border-b p-4 grid grid-cols-3 md:grid-cols-4 items-center align-middle">
+      <div className="border-b p-4 flex gap-8 items-center align-middle justify-between">
         <div className="hidden md:block">
           id:{" "}
           {currentRecord && (
@@ -316,11 +323,11 @@ const PromptEditor: FC = () => {
             <SearchIcon width="2em" />
           </Button>
         </div>
-        <div className="ml-3 flex gap-1">
+        <div className="ml-3 flex gap-4">
           <Button size="sm" isIconOnly className="hidden md:block">
             <ArrowRightCircleIcon
               width="2em"
-              className="cursor-pointer"
+              className="cursor-pointer ml-1"
               onClick={showJumpToRecordDialog}
             />
           </Button>
@@ -354,7 +361,7 @@ const PromptEditor: FC = () => {
           </Button>
           <Divider orientation="vertical" />
         </div>
-        <div className="w-auto flex justify-end items-end md:hidden gap-1">
+        <div className="w-auto flex justify-end items-end md:hidden gap-2">
           <Button
             size="sm"
             title="Add new"
@@ -364,21 +371,13 @@ const PromptEditor: FC = () => {
           >
             <DocumentPlus width="2em" />
           </Button>
-          <Button
-            size="sm"
-            onClick={onLlmResponseModalOpen}
-            isIconOnly
-            className="md:hidden"
-          >
-            <BarsArrowDownIcon width="2em" />
-          </Button>
         </div>
       </div>
 
-      {/* PROMPT */}
-
       {!chatMode ? (
         <div>
+          {/* PROMPT */}
+
           <div className="px-4 pt-2">
             <Textarea
               label="Prompt:"
@@ -388,6 +387,25 @@ const PromptEditor: FC = () => {
               value={(currentRecord && currentRecord.prompt) || ""}
               onValueChange={throttledSaveChanges("prompt")}
             />
+
+            <div className="md:hidden flex flex-row gap-4 py-2 justify-end">
+              <Button
+                size="sm"
+                onClick={onLlmResponseModalOpen}
+                isIconOnly
+                className="md:hidden"
+              >
+                <BarsArrowDownIcon width="2em" />
+              </Button>
+              <Button
+                size="sm"
+                onClick={onGptResponseModalOpen}
+                isIconOnly
+                className="md:hidden"
+              >
+                <ChipIcon width="2em" />
+              </Button>
+            </div>
           </div>
 
           {/* RESPONSE */}
@@ -487,6 +505,16 @@ const PromptEditor: FC = () => {
         <LLMResponseView
           isOpen={llmResponseModalVisible}
           onOpenChange={onLlmResponseModalChange}
+          currentRecord={currentRecord}
+          onCopy={onCopyLLMResponse}
+          mode={currentCollection?.meta?.dataType || "sft"}
+        />
+      )}
+
+      {currentRecord && (
+        <GPTResponseView
+          isOpen={gptResponseModalVisible}
+          onOpenChange={onGptResponseModalChange}
           currentRecord={currentRecord}
           onCopy={onCopyLLMResponse}
           mode={currentCollection?.meta?.dataType || "sft"}
