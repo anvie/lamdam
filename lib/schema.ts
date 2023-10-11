@@ -22,7 +22,7 @@ export const GetRecordSchema = z.object({
 
 export const AddRecordSchema = z.object({
     prompt: z.string().min(3),
-    response: z.string().min(10),
+    response: z.string().min(2),
     input: z.string().default(""),
     // creator: z.string().min(3),
     history: z.array(z.array(z.string())),

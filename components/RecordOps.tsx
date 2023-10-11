@@ -145,7 +145,7 @@ const RecordOps: FC<{ className: string }> = ({ className }) => {
       rec,
       currentCollection?.meta?.dataType || "sft"
     );
-    __debug("formattedResponse:", formattedResponse);
+    // __debug("formattedResponse:", formattedResponse);
 
     post("/api/addRecord", {
       prompt: rec.prompt,
@@ -168,7 +168,7 @@ const RecordOps: FC<{ className: string }> = ({ className }) => {
       .catch((err) => {
         if (err) {
           __error(typeof err);
-          alert("Cannot add record :(. " + errorMessage(err));
+          alert("Cannot add record. " + errorMessage(err));
         }
       });
   };

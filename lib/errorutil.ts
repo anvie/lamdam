@@ -16,21 +16,24 @@ type ValidationError = {
     path: string[];
 }
 
-export function errorMessage(errs: any):string {
+export function errorMessage(errs: any): string {
+    let _errs: ValidationError[] | string = errs;
     if (typeof errs === "string") {
-        return errs
+        // try to parse
+        try {
+            _errs = JSON.parse(errs)
+        } catch (e) {
+            return errs
+        }
     }
-    if (errs.error){
+    if (errs.error) {
         return errs.error
     }
-    let _errs:ValidationError[] | string = errs;
-    if (typeof errs === "string") {
-        _errs = JSON.parse(errs)
-    }
+
     __debug('_errs:', _errs)
-    let messages:string[] = []
+    let messages: string[] = []
     for (let i = 0; i < _errs.length; i++) {
-        const e:ValidationError = _errs[i] as ValidationError;
+        const e: ValidationError = _errs[i] as ValidationError;
         __debug("e.path:", e)
         messages.push(`${e.path[0]} ${e.message}`)
     }
