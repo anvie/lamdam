@@ -121,6 +121,8 @@ const RecordOps: FC<{ className: string }> = ({ className }) => {
     setEnableOps(currentRecord !== null && currentRecord.id !== "");
   }, [currentRecord]);
 
+  // Effect ini digunakan untuk memproses operasi `add record` yg di-trigger dari
+  // komponen lain seperti PromptEditor.
   useEffect(() => {
     if (globalState.addNewRecord === true) {
       globalState.addNewRecord = false;
@@ -163,6 +165,9 @@ const RecordOps: FC<{ className: string }> = ({ className }) => {
         setGlobalState({
           ...globalState,
           newRecord: doc,
+        });
+        Notify.success("Record added successfully", {
+          position: "center-top",
         });
       })
       .catch((err) => {
