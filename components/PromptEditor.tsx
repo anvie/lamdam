@@ -386,6 +386,15 @@ const PromptEditor: FC = () => {
               className="w-full"
               value={(currentRecord && currentRecord.prompt) || ""}
               onValueChange={throttledSaveChanges("prompt")}
+              onKeyDown={(e) => {
+                // handle Command+enter or Ctrl+enter
+                if (
+                  (e.ctrlKey || e.metaKey || e.key === "Meta") &&
+                  e.key === "Enter"
+                ) {
+                  onLlmResponseModalOpen();
+                }
+              }}
             />
 
             <div className="md:hidden flex flex-row gap-4 py-2 justify-end">

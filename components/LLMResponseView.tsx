@@ -67,7 +67,8 @@ const LLMResponseView: FC<Props> = ({
 
     if (content.indexOf("---") > -1) {
       const s = content.split("\n");
-      setPrompt(s[s.length - 1]);
+      let _content = s[s.length - 1];
+      setPrompt(_content);
     } else {
       setPrompt(content);
     }
@@ -217,7 +218,11 @@ const LLMResponseView: FC<Props> = ({
                   />
                 </div>
               )}
-              <div className="font-semibold">{prompt}</div>
+              <div className="font-semibold">
+                {prompt.length > 160
+                  ? prompt.substring(0, 160) + "..."
+                  : prompt}
+              </div>
               <Textarea minRows={10} maxRows={20} value={data} />
             </ModalBody>
 
