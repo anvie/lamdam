@@ -18,16 +18,16 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@nextui-org/modal";
-import { Avatar, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@nextui-org/react";
 import { signOut, useSession } from "next-auth/react";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
 import { Report } from "notiflix/build/notiflix-report-aio";
-import { FC, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { FC, useContext, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import CInput from "./CInput";
 import CSelect from "./CSelect";
 import CTextarea from "./CTextarea";
+import CompileAllModal from "./CompileAllModal";
 import { ErrorLabel } from "./ErrorLabel";
 import { GearIcon } from "./icon/GearIcon";
 import LogoutIcon from "./icon/LogoutIcon";
@@ -53,6 +53,11 @@ const CollectionOpsButtons = () => {
     isOpen: isAddCollectionModalOpen,
     onOpen: onAddCollectionModalOpen,
     onOpenChange: onAddCollectionModalOpenChange,
+  } = useDisclosure();
+  const {
+    isOpen: isCompileAllModalOpen,
+    onOpen: onCompileAllModalOpen,
+    onOpenChange: onCompileAllModalOpenChange,
   } = useDisclosure();
 
   const { currentCollection, setCurrentCollection } =
@@ -108,11 +113,18 @@ const CollectionOpsButtons = () => {
     }
   };
 
+  const showCompileAllModal = () => {
+    onCompileAllModalOpen();
+  };
+
   return (
     <>
       <div className="flex items-end justify-end gap-3">
         <Button size="sm" onClick={onDumpClick}>
           Compile
+        </Button>
+        <Button size="sm" onClick={showCompileAllModal}>
+          Compile All
         </Button>
         <div className="border-l-1 h-full bg-slate-300"></div>
         <Button
@@ -145,6 +157,11 @@ const CollectionOpsButtons = () => {
         isAddCollectionModalOpen={isAddCollectionModalOpen}
         onAddCollectionModal={onAddCollectionModalOpen}
         onAddCollectionModalOpenChange={onAddCollectionModalOpenChange}
+      />
+      <CompileAllModal
+        isCompileAllModalOpen={isCompileAllModalOpen}
+        onCompileAllModal={onCompileAllModalOpen}
+        onCompileAllModalOpenChange={onCompileAllModalOpenChange}
       />
     </>
   );
