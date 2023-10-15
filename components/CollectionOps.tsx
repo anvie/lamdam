@@ -18,11 +18,12 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@nextui-org/modal";
+import { Avatar, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@nextui-org/react";
 import { signOut, useSession } from "next-auth/react";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
 import { Report } from "notiflix/build/notiflix-report-aio";
-import { FC, useContext, useEffect, useRef, useState } from "react";
+import { FC, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import CInput from "./CInput";
 import CSelect from "./CSelect";
