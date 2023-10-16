@@ -1,7 +1,7 @@
 "use client";
 
 import { get } from "@/lib/FetchWrapper";
-import { useLocalStorage } from "@/lib/state";
+import { getLocalStorage } from "@/lib/state";
 import { useFloating } from "@floating-ui/react-dom";
 import {
     Button,
@@ -20,13 +20,17 @@ import { Dispatch, Key, SetStateAction, useEffect, useState } from "react";
 import { CloseIcon } from "./icon/CloseIcon";
 import { SettingsIcon } from "./icon/SettingsIcon";
 
-const Features = () => {
+const Features = ({
+    state,
+}: {
+    state: [string[], Dispatch<SetStateAction<string[]>>];
+}) => {
     const items = ["prompt", "response", "input", "history"];
 
-    const [selected, setSelected] = useLocalStorage(
-        "search-settings.features",
-        [items[0]]
-    );
+    const [selected, setSelected] = state;
+    useEffect(() => {
+        setSelected(getLocalStorage("search-settings.features", [items[0]]));
+    }, []);
 
     const onValueChange: Dispatch<SetStateAction<string[]>> = (items) => {
         if (items.length == 0) {
@@ -38,26 +42,31 @@ const Features = () => {
 
     return (
         <CheckboxGroup value={selected} onValueChange={onValueChange}>
-            {items.map((item) => (
-                <>
-                    <Checkbox value={item}>{item.toLocaleUpperCase()}</Checkbox>
-                </>
+            {items.map((item, i) => (
+                <Checkbox key={item} value={item}>
+                    {item.toLocaleUpperCase()}
+                </Checkbox>
             ))}
         </CheckboxGroup>
     );
 };
 
-const InputCreator = () => {
+const InputCreator = ({
+    state,
+}: {
+    state: [string[], Dispatch<SetStateAction<string[]>>];
+}) => {
     const [open, setOpen] = useState(false);
     const [inputValue, setInputValue] = useState("");
 
     const { refs, floatingStyles } = useFloating({
         placement: "bottom-start",
     });
-    const [creators, setCreators] = useLocalStorage<string[]>(
-        "search-settings.creator",
-        []
-    );
+    const [creators, setCreators] = state;
+
+    useEffect(() => {
+        setCreators(getLocalStorage("search-settings.creators", []));
+    }, []);
 
     const [data, setData] = useState<string[]>([]);
     useEffect(() => {
@@ -92,16 +101,17 @@ const InputCreator = () => {
     return (
         <>
             <section className="flex flex-wrap border p-4 rounded-lg gap-2">
-                {creators.map((creator) => (
-                    <>
-                        <div className="flex items-center border rounded-lg px-2 py-1 pt-0 gap-2">
-                            <p>{creator}</p>
-                            <CloseIcon
-                                className="cursor-pointer"
-                                onClick={() => onDeleteTagCreator(creator)}
-                            ></CloseIcon>
-                        </div>
-                    </>
+                {creators.map((creator, i) => (
+                    <div
+                        key={i + creator}
+                        className="flex items-center border rounded-lg px-2 py-1 pt-0 gap-2"
+                    >
+                        <p>{creator}</p>
+                        <CloseIcon
+                            className="cursor-pointer"
+                            onClick={() => onDeleteTagCreator(creator)}
+                        ></CloseIcon>
+                    </div>
                 ))}
                 <input
                     id="search-setting.creators"
@@ -152,6 +162,24 @@ const InputCreator = () => {
 export const SearchSetting = () => {
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
+    const featureState = useState<string[]>([]);
+    const creatorState = useState<string[]>([]);
+
+    const handleSubmit = (onClose: () => void) => {
+        return () => {
+            localStorage.setItem(
+                "search-settings.features",
+                JSON.stringify(featureState[0])
+            );
+
+            localStorage.setItem(
+                "search-settings.creators",
+                JSON.stringify(creatorState[0])
+            );
+            onClose();
+        };
+    };
+
     return (
         <>
             <button type="button" onClick={onOpen} className="p-2 outline-none">
@@ -175,15 +203,24 @@ export const SearchSetting = () => {
                                 Search Settings
                             </ModalHeader>
                             <ModalBody>
-                                <Features></Features>
+                                <Features state={featureState}></Features>
                                 <label className="mt-4">
                                     <p className="mb-2">Creator</p>
-                                    <InputCreator></InputCreator>
+                                    <InputCreator
+                                        state={creatorState}
+                                    ></InputCreator>
                                 </label>
                             </ModalBody>
                             <ModalFooter>
-                                <Button variant="light" onPress={onClose}>
+                                <Button variant="bordered" onPress={onClose}>
                                     Close
+                                </Button>
+                                <Button
+                                    variant="bordered"
+                                    color="primary"
+                                    onPress={handleSubmit(onClose)}
+                                >
+                                    Save
                                 </Button>
                             </ModalFooter>
                         </>
