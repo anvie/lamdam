@@ -1,11 +1,12 @@
 "use client";
 
-import * as React from "react";
+import { ModalProvider } from "@/components/hooks/useModal";
 import { NextUIProvider } from "@nextui-org/system";
+import { Session } from "next-auth";
+import { SessionProvider } from "next-auth/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { ThemeProviderProps } from "next-themes/dist/types";
-import { Session } from "next-auth";
-import { SessionProvider } from "next-auth/react"
+import * as React from "react";
 
 export interface ProvidersProps {
 	children: React.ReactNode;
@@ -17,7 +18,11 @@ export function Providers({ children, themeProps, session }: ProvidersProps) {
 	return (
 		<SessionProvider session={session}>
 			<NextUIProvider>
-				<NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
+				<NextThemesProvider {...themeProps}>
+					<ModalProvider>
+						{children}
+					</ModalProvider>
+				</NextThemesProvider>
 			</NextUIProvider>
 		</SessionProvider>
 	);

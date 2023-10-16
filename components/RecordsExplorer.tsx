@@ -234,9 +234,9 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
 
     return (
         <div className={className}>
-            <div className="pb-2 border-b-1 p-2 flex gap-1">
+            <div className="pb-2 p-2 flex gap-1 border-b-1">
                 <Input
-                    className="pb-2 border-b-1 p-2"
+                    className="pb-2 p-2"
                     type="email"
                     placeholder="search records"
                     labelPlacement="outside"
@@ -263,7 +263,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
                 <SearchSetting />
             </div>
 
-            <div className="h-[600px] overflow-scroll">
+            <div className="h-[calc(100vh-300px)] overflow-scroll">
                 {data &&
                     data.map((data, index) => {
                         return (
@@ -339,15 +339,13 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
 
     return rec ? (
         <div
-            className={`border-b-1 pb-1 cursor-pointer hover:bg-slate-200 dark:hover:dark:text-black border-l-8 pl-2 ${
-                currentRecord && currentRecord!.id === rec.id
-                    ? `${
-                          rec.dirty
-                              ? "border-l-orange-400"
-                              : "border-l-green-600 bg-slate-300 dark:text-black font-semibold"
-                      }`
-                    : "border-gray-100 "
-            }`}
+            className={`border-b-1 pb-1 cursor-pointer hover:bg-slate-200 dark:hover:dark:text-black border-l-8 pl-2 ${currentRecord && currentRecord!.id === rec.id
+                ? `${rec.dirty
+                    ? "border-l-orange-400"
+                    : "border-l-green-600 bg-slate-300 dark:text-black font-semibold"
+                }`
+                : "border-gray-100 "
+                }`}
             onClick={onClick}
         >
             <div>{truncate(rec.prompt, 100)}</div>

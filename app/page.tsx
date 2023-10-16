@@ -96,7 +96,7 @@ export default function Home() {
                             <div className="grid grid-cols-4 relative">
                                 <RecordsExplorer
                                     className={cn(
-                                        "border min-h-screen w-full md:block absolute md:relative bg-white dark:bg-black z-10 top-[4em] md:top-0",
+                                        "border min-h-[calc(100vh-121px)] w-full md:block absolute md:relative bg-white dark:bg-black z-10 top-[4em] md:top-0",
                                         showExplorer ? "" : "hidden"
                                     )}
                                 />

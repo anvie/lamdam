@@ -13,6 +13,21 @@ export const DumpCollectionSchema = z.object({
     id: z.string()
 });
 
+export const ExportRecordsSchema = z.object({
+    collection_id: z.string(),
+    ids: z.array(z.string())
+});
+
+export const ImportRecordsSchema = z.object({
+    collection_id: z.string(),
+    records: z.array(z.object({
+        instruction: z.string(),
+        response: z.string(),
+        input: z.string().optional(),
+        history: z.array(z.array(z.string())).optional()
+    }))
+});
+
 
 export const GetRecordSchema = z.object({
     id: z.string().min(3),

@@ -29,8 +29,11 @@ import CInput from "./CInput";
 import CSelect from "./CSelect";
 import CTextarea from "./CTextarea";
 import { ErrorLabel } from "./ErrorLabel";
+import { useModal } from "./hooks/useModal";
 import { GearIcon } from "./icon/GearIcon";
 import LogoutIcon from "./icon/LogoutIcon";
+import ExportModal from "./modals/ExportModal";
+import ImportModal from "./modals/ImportModal";
 import { ThemeSwitch } from "./theme-switch";
 
 const CollectionOps: FC = () => {
@@ -55,8 +58,14 @@ const CollectionOpsButtons = () => {
         onOpenChange: onAddCollectionModalOpenChange,
     } = useDisclosure();
 
-    const { currentCollection, setCurrentCollection } =
-        useContext(CollectionContext);
+    const { currentCollection, setCurrentCollection } = useContext(CollectionContext);
+    const { setNeedUpdate } = useContext(NeedUpdateContext);
+    const { globalState, setGlobalState } = useContext(GlobalContext);
+
+    const { data: session } = useSession();
+    const user = useMemo(() => session?.user, [session]);
+
+    const { showModal } = useModal()
 
     const doDump = () => {
         if (!currentCollection) {
@@ -106,7 +115,7 @@ const CollectionOpsButtons = () => {
 
     return (
         <>
-            <div className="flex items-end justify-end gap-3">
+            <div className="flex justify-end gap-3 items-center">
                 <Button size="sm" onClick={onDumpClick}>
                     Compile
                 </Button>
@@ -121,21 +130,62 @@ const CollectionOpsButtons = () => {
                 <Button size="sm" className="hidden md:block">
                     Edit
                 </Button>
-                <Button size="sm" className="hidden md:block">
+                <Button size="sm" className="hidden md:block" onPress={() => {
+                    showModal('Export', ExportModal, {
+                        currentCollection: currentCollection ?? undefined,
+                    })
+                }}>
                     Export
                 </Button>
-                <Button size="sm" className="hidden md:block">
+                <Button size="sm" className="hidden md:block" onPress={() => {
+                    showModal('Import', ImportModal, {
+                        currentCollection: currentCollection ?? undefined,
+                        onImportSuccess: (importedCount) => {
+                            const currentCollectionTmp = {
+                                id: currentCollection!.id,
+                                count: currentCollection!.count + importedCount,
+                                meta: currentCollection!.meta,
+                                name: currentCollection!.name,
+                            };
+                            setCurrentCollection?.(currentCollectionTmp);
+                            setNeedUpdate(true);
+                        },
+                    })
+                }}>
                     Import
                 </Button>
-                <Button size="sm" isIconOnly className="hidden md:block">
-                    <GearIcon width="2em" />
-                </Button>
-                <Button size="sm" isIconOnly onClick={() => signOut()}>
-                    <LogoutIcon width="1.8em" />
+                <Button size="sm" isIconOnly className="hidden md:inline-flex text-center justify-center items-center">
+                    <GearIcon width="24px" />
                 </Button>
                 <Button size="sm" isIconOnly>
                     <ThemeSwitch />
                 </Button>
+                {user && (
+                    <Dropdown placement="bottom-end" radius="sm">
+                        <DropdownTrigger>
+                            <Avatar
+                                isBordered
+                                as="button"
+                                className="transition-transform"
+                                src={`${user.image}`}
+                            />
+                        </DropdownTrigger>
+                        <DropdownMenu aria-label="Profile Actions" variant="flat">
+                            <DropdownItem key="profile" className="h-14 gap-2">
+                                <p className="font-semibold">{user.name}</p>
+                                <p className="font-normal">{user.email}</p>
+                            </DropdownItem>
+                            <DropdownItem
+                                key="logout"
+                                color="danger"
+                                onClick={() => signOut()}
+                                startContent={<LogoutIcon width="1.4em" height="1.4em" />}
+                            >
+                                Log Out
+                            </DropdownItem>
+                        </DropdownMenu>
+                    </Dropdown>
+                )}
             </div>
             <AddCollectionModal
                 isAddCollectionModalOpen={isAddCollectionModalOpen}
@@ -249,7 +299,7 @@ const AddCollectionModal: FC<any> = ({
                                     name="creator"
                                     defaultValue={session?.user?.name}
                                     errors={errors}
-                                    readOnly
+                                    readOnly={session?.user?.name !== undefined}
                                 />
                                 <CTextarea
                                     control={control}

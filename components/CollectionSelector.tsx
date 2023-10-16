@@ -1,10 +1,10 @@
 "use client";
 
+import { get } from "@/lib/FetchWrapper";
 import { CollectionContext, NeedUpdateContext } from "@/lib/context";
+import { __debug, __error } from "@/lib/logger";
 import { Collection } from "@/types";
 import { useContext, useEffect, useState } from "react";
-import { get } from "@/lib/FetchWrapper";
-import { __debug, __error } from "@/lib/logger";
 
 const CollectionSelector = () => {
   const [data, setData] = useState<Collection[]>([]);
@@ -22,15 +22,15 @@ const CollectionSelector = () => {
         __debug("data:", data);
         setData(data.result);
         if (!currentCollection) {
-          if (setCurrentCollection){
+          if (setCurrentCollection) {
             if (localStorage.getItem("currentCollectionId")) {
-              const col = data.result.find((col:any) => col.id === localStorage.getItem("currentCollectionId"));
-              if (!col){
+              const col = data.result.find((col: any) => col.id === localStorage.getItem("currentCollectionId"));
+              if (!col) {
                 setCurrentCollection(data.result[0])
                 return;
               }
               setCurrentCollection(col);
-            }else{
+            } else {
               setCurrentCollection(data.result[0])
             }
           }
@@ -74,14 +74,14 @@ const CollectionSelector = () => {
 };
 
 function toDataTypeName(dataType: string | undefined) {
-  if (dataType === undefined){
+  if (dataType === undefined) {
     return "SFT";
   }
-  if (dataType === "rm"){
+  if (dataType === "rm") {
     return "Reward Modeling";
-  }else if (dataType === "sft"){
+  } else if (dataType === "sft") {
     return "SFT";
-  }else{
+  } else {
     return "SFT";
   }
 }
