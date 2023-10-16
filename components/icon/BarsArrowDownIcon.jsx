@@ -1,9 +1,9 @@
-const _Obj = (props) => {
+export const BarsArrowDownIcon = (props) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
-      viewBox="0 0 24 24"
+      viewBox="0 0 20 20"
       strokeWidth={1.5}
       stroke="currentColor"
       width={props.width || "1em"}
@@ -12,9 +12,8 @@ const _Obj = (props) => {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25"
       />
     </svg>
   );
 };
-export default _Obj;

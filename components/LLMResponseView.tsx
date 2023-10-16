@@ -67,7 +67,8 @@ const LLMResponseView: FC<Props> = ({
 
     if (content.indexOf("---") > -1) {
       const s = content.split("\n");
-      setPrompt(s[s.length - 1]);
+      let _content = s[s.length - 1];
+      setPrompt(_content);
     } else {
       setPrompt(content);
     }
@@ -192,7 +193,9 @@ const LLMResponseView: FC<Props> = ({
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader>Kitab-AI Response</ModalHeader>
+            <ModalHeader>
+              {process.env.NEXT_PUBLIC_INTERNAL_MODEL_NAME} Response
+            </ModalHeader>
             <ModalBody>
               {sourceError && (
                 <div>
@@ -215,7 +218,11 @@ const LLMResponseView: FC<Props> = ({
                   />
                 </div>
               )}
-              <div className="font-semibold">{prompt}</div>
+              <div className="font-semibold">
+                {prompt.length > 160
+                  ? prompt.substring(0, 160) + "..."
+                  : prompt}
+              </div>
               <Textarea minRows={10} maxRows={20} value={data} />
             </ModalBody>
 
@@ -225,7 +232,10 @@ const LLMResponseView: FC<Props> = ({
                   <Button
                     color="success"
                     onClick={() => {
-                      onCopy({ target: "good", text: data });
+                      onCopy({
+                        target: "good",
+                        text: data,
+                      });
                       onClose();
                     }}
                   >
@@ -234,7 +244,10 @@ const LLMResponseView: FC<Props> = ({
                   <Button
                     color="warning"
                     onClick={() => {
-                      onCopy({ target: "bad", text: data });
+                      onCopy({
+                        target: "bad",
+                        text: data,
+                      });
                       onClose();
                     }}
                   >
@@ -246,7 +259,10 @@ const LLMResponseView: FC<Props> = ({
                 <Button
                   color="success"
                   onClick={() => {
-                    onCopy({ target: "response", text: data });
+                    onCopy({
+                      target: "response",
+                      text: data,
+                    });
                     onClose();
                   }}
                 >

@@ -28,6 +28,11 @@ export const ImportRecordsSchema = z.object({
     }))
 });
 
+export const CompileCollectionBatchSchema = z.object({
+    ids: z.array(z.string()),
+    batchId: z.string().length(16)
+});
+
 
 export const GetRecordSchema = z.object({
     id: z.string().min(3),
@@ -37,7 +42,7 @@ export const GetRecordSchema = z.object({
 
 export const AddRecordSchema = z.object({
     prompt: z.string().min(3),
-    response: z.string().min(10),
+    response: z.string().min(2),
     input: z.string().default(""),
     // creator: z.string().min(3),
     history: z.array(z.array(z.string())),

@@ -22,6 +22,7 @@ export const metadata: Metadata = {
     shortcut: "/favicon-16x16.png",
     apple: "/apple-touch-icon.png",
   },
+  viewport: "width=device-width, initial-scale=1, user-scalable=no",
 };
 
 export default async function RootLayout({
@@ -40,7 +41,10 @@ export default async function RootLayout({
           fontSans.variable
         )}
       >
-        <Providers themeProps={{ attribute: "class", defaultTheme: "light" }} session={session}>
+        <Providers
+          themeProps={{ attribute: "class", defaultTheme: "light" }}
+          session={session}
+        >
           <div className="relative flex flex-col h-screen">{children}</div>
         </Providers>
       </body>
