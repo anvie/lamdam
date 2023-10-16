@@ -26,6 +26,7 @@ type NotifyType = {
   processing: (col: any) => void;
   done: (col: any) => void;
   failed: (col: any) => void;
+  completed: (col: any) => void;
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
@@ -89,6 +90,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
       //   res.end();
       // }
     },
+    completed: (col: any) => {
+      notify("completed", col);
+    },
   };
 
   return new Promise(async (resolve, reject) => {
@@ -103,6 +107,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
         failed.push(col.name);
       }
     }
+    Notify.completed("success");
     res.end();
     resolve(true);
   });

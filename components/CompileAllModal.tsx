@@ -12,6 +12,7 @@ import {
   ModalHeader,
 } from "@nextui-org/modal";
 import { Checkbox } from "@nextui-org/react";
+import { Report } from "notiflix/build/notiflix-report-aio";
 import { FC, useEffect, useState } from "react";
 import { ErrorLabel } from "./ErrorLabel";
 import LoadingCompilation from "./LoadingCompilation";
@@ -94,6 +95,10 @@ const CompileAllModal: FC<any> = ({
             // _newList.push(colId);
             _doneState.push(colId);
             setDoneState([..._doneState, colId]);
+          }
+          if (data.state === "completed") {
+            Report.success("Success", "Compilation Completed.", "Okay");
+            onClose();
           }
         },
         setSourceError: (error: boolean) => {},
