@@ -13,6 +13,11 @@ export const DumpCollectionSchema = z.object({
     id: z.string()
 });
 
+export const CompileCollectionBatchSchema = z.object({
+    ids: z.array(z.string()),
+    batchId: z.string().length(16)
+});
+
 
 export const GetRecordSchema = z.object({
     id: z.string().min(3),
