@@ -207,14 +207,14 @@ export const SearchSetting = () => {
               </ModalBody>
               <ModalFooter>
                 <Button variant="bordered" onPress={onClose}>
-                  Close
+                  Cancel
                 </Button>
                 <Button
                   variant="bordered"
                   color="primary"
                   onPress={handleSubmit(onClose)}
                 >
-                  Save
+                  OK
                 </Button>
               </ModalFooter>
             </>

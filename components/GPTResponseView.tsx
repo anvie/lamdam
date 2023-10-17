@@ -297,10 +297,11 @@ const GPTResponseView: FC<Props> = ({
                   />
                 </div>
               )}
-              <div
-                className="font-semibold"
-                dangerouslySetInnerHTML={{ __html: prompt }}
-              ></div>
+              <div className="font-semibold">
+                {prompt.length > 160
+                  ? prompt.substring(0, 160) + "..."
+                  : prompt}
+              </div>
               <Textarea value={data} minRows={15} maxRows={15} />
             </ModalBody>
 
