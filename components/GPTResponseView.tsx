@@ -80,7 +80,7 @@ const GPTResponseView: FC<Props> = ({
       const s = content.split("\n");
       setPrompt(s[s.length - 1]);
     } else {
-      setPrompt(`${content}<br />${currentRecord.input}`.trim());
+      setPrompt(`${content}\n\n${currentRecord.input}`.trim());
     }
 
     const messages = [
