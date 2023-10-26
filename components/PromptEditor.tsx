@@ -16,11 +16,11 @@ import { FC, useContext, useEffect, useState } from "react";
 import ChatModePromptEditor from "./ChatModePromptEditor";
 import GPTResponseView from "./GPTResponseView";
 import LLMResponseView, { LLMResponseData } from "./LLMResponseView";
-import { AnnotationIcon } from "./icon/AnnotationIcon";
+import AnnotationIcon from "./icon/AnnotationIcon";
 import ArrowRightCircleIcon from "./icon/ArrowRightCircleIcon";
 import { BarsArrowDownIcon } from "./icon/BarsArrowDownIcon";
 import ChipIcon from "./icon/ChipIcon";
-import { ClipboardIcon } from "./icon/ClipboardIcon";
+import ClockIcon from "./icon/ClockIcon";
 import { DocumentPlus } from "./icon/DocumentPlus";
 import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
 import { SearchIcon } from "./icons";
@@ -346,7 +346,7 @@ const PromptEditor: FC = () => {
             isIconOnly
             className={`cursor-pointer`}
           >
-            <ClipboardIcon width="2em" />
+            <ClockIcon width="2em" />
           </Button>
           <Divider orientation="vertical" />
           <Button

@@ -1,4 +1,4 @@
-export const AnnotationIcon = (props) => {
+export const _Component = (props) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -17,3 +17,5 @@ export const AnnotationIcon = (props) => {
     </svg>
   );
 };
+
+export default _Component;
