@@ -26,6 +26,7 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@nextui-org/modal";
+import { cn } from "@nextui-org/react";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
 import { Notify } from "notiflix/build/notiflix-notify-aio";
 import { FC, Key, useContext, useEffect, useRef, useState } from "react";
@@ -36,7 +37,7 @@ import LLMResponseView, { LLMResponseData } from "./LLMResponseView";
 import { ArrowRightIcon } from "./icon/ArrowRightIcon";
 import { CheckIcon } from "./icon/CheckIcon";
 import { DocumentPlus } from "./icon/DocumentPlus";
-import { XMarkIcon } from "./icon/XMarkIcon";
+import TrashIcon from "./icon/TrashIcon";
 
 function compileHistory(rawHistory: string): string[][] {
   if (!rawHistory || rawHistory == null || rawHistory.trim() === "") {
@@ -359,13 +360,21 @@ const RecordOps: FC<{ className: string }> = ({ className }) => {
         <div className="p-2 border-b-1 w-full"></div>
 
         <Button
-          size="md"
-          className="bg-red-500 text-white"
-          startContent={<XMarkIcon />}
-          disabled={!enableOps}
+          size="lg"
+          className={cn(
+            "text-white",
+            currentRecord === null || currentRecord?.id === ""
+              ? "bg-gray-400"
+              : "bg-red-500"
+          )}
+          startContent={<TrashIcon />}
+          disabled={
+            !enableOps || currentRecord === null || currentRecord?.id === ""
+          }
           onClick={onDeleteClick}
+          title="Delete current record"
         >
-          Delete Record
+          Delete
         </Button>
       </div>
 

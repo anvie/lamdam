@@ -1,4 +1,4 @@
-import { get } from "@/lib/FetchWrapper";
+import { get, post } from "@/lib/FetchWrapper";
 import {
   CollectionContext,
   GlobalContext,
@@ -6,11 +6,12 @@ import {
   SelectedHistoryContext,
   SelectedRecordContext,
 } from "@/lib/context";
+import { errorMessage } from "@/lib/errorutil";
 import { __debug, __error } from "@/lib/logger";
 import { DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
 import { Textarea } from "@nextui-org/input";
-import { Divider, useDisclosure } from "@nextui-org/react";
+import { Divider, cn, useDisclosure } from "@nextui-org/react";
 import { Confirm, Notify } from "notiflix";
 import { FC, useContext, useEffect, useState } from "react";
 import ChatModePromptEditor from "./ChatModePromptEditor";
@@ -22,6 +23,7 @@ import { BarsArrowDownIcon } from "./icon/BarsArrowDownIcon";
 import ChipIcon from "./icon/ChipIcon";
 import ClockIcon from "./icon/ClockIcon";
 import { DocumentPlus } from "./icon/DocumentPlus";
+import TrashIcon from "./icon/TrashIcon";
 import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
 import { SearchIcon } from "./icons";
 
@@ -299,6 +301,48 @@ const PromptEditor: FC = () => {
     }
   };
 
+  const onDeleteRecordClick = () => {
+    if (!currentRecord) {
+      Notify.info("Please specify record first");
+      return;
+    }
+
+    const rec: DataRecord = currentRecord!;
+
+    if (!rec.id) {
+      Notify.info("Please specify record first");
+      return;
+    }
+
+    Confirm.show(
+      "Confirmation",
+      `Are you sure you want to delete record "${rec.prompt}"?`,
+      "Yes",
+      "No",
+      () => {
+        post("/api/deleteRecord", {
+          id: rec.id,
+          collectionId: currentCollection?.id,
+        })
+          .then((data) => {
+            __debug("data:", data);
+            setGlobalState({
+              ...globalState,
+              deleteRecord: currentRecord,
+            });
+            setCurrentRecord!(null);
+            Notify.success("Record has been deleted");
+          })
+          .catch((err) => {
+            if (err) {
+              __error(typeof err);
+              Notify.failure("Cannot update record :(. " + errorMessage(err));
+            }
+          });
+      }
+    );
+  };
+
   return (
     <div className="border pb-4">
       {/* ID */}
@@ -329,6 +373,23 @@ const PromptEditor: FC = () => {
               width="2em"
               className="cursor-pointer ml-1"
               onClick={showJumpToRecordDialog}
+            />
+          </Button>
+          <Button
+            size="sm"
+            isIconOnly
+            title="Delete current record"
+            className="md:hidden"
+            disabled={currentRecord === null || currentRecord?.id === ""}
+          >
+            <TrashIcon
+              width="2em"
+              className={cn(
+                currentRecord !== null && currentRecord?.id !== ""
+                  ? "cursor-pointer text-red-500"
+                  : "text-gray-400"
+              )}
+              onClick={onDeleteRecordClick}
             />
           </Button>
           <Button size="sm" isIconOnly>
