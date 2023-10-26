@@ -1,6 +1,7 @@
 import { apiHandler } from "@/lib/ApiHandler";
+import { hashString } from "@/lib/crypto";
 import { toApiRespDoc } from "@/lib/docutil";
-import { __error } from "@/lib/logger";
+import { __debug, __error } from "@/lib/logger";
 import { AddRecordSchema } from "@/lib/schema";
 import { getCurrentTimeMillis } from "@/lib/timeutil";
 import { Collection } from "@/models/Collection";
@@ -14,9 +15,42 @@ type Data = {
   result?: Object[];
 };
 
-async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: User) {
-  const { prompt, response, input, history, collectionId, outputPositive, outputNegative } =
-    AddRecordSchema.parse(req.body);
+// Message formatter for hashing
+function formattedMessage(
+  prompt: string,
+  input: string,
+  response: string,
+  history: string[][]
+): string {
+  const formattedHistory = history
+    ? history.map(function (historyItem) {
+        if (historyItem.length === 0) {
+          return "\n";
+        }
+        return JSON.stringify(historyItem);
+      })
+    : [];
+  return `
+${formattedHistory.join("\n")}
+${prompt}
+${input}
+${response}`.trim();
+}
+
+async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>,
+  user?: User
+) {
+  const {
+    prompt,
+    response,
+    input,
+    history,
+    collectionId,
+    outputPositive,
+    outputNegative,
+  } = AddRecordSchema.parse(req.body);
 
   if (req.method !== "POST") {
     return res.status(405).end();
@@ -34,7 +68,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
     let formattedResponse = response;
 
     if (colDoc.meta.dataType === "rm") {
-      formattedResponse = outputPositive + "\n\n----------\n\n" + outputNegative;
+      formattedResponse =
+        outputPositive + "\n\n----------\n\n" + outputNegative;
+    }
+
+    const hash = hashString(formattedMessage(prompt, input, response, history));
+    __debug("hash:", hash);
+
+    // get collection's indices
+    const indices = await col.indexes();
+    __debug("indices:", indices);
+
+    // create index `hash` if not exists, and make it unique
+    if (!indices.find((index: any) => index.name === "hash_1")) {
+      await col.createIndex({ hash: 1 }, { unique: true });
     }
 
     return col
@@ -47,6 +94,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
         creatorId: user?.id,
         createdAt: getCurrentTimeMillis(),
         lastUpdated: getCurrentTimeMillis(),
+        hash,
         meta: {},
       })
       .then(async (resp: any) => {
@@ -67,6 +115,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
       })
       .catch((err: any) => {
         __error("err:", err);
+        if (err.code === 11000) {
+          return res.status(400).json({
+            error: "This record already exists",
+          });
+        }
         return res.status(500).json({
           error: err,
         });

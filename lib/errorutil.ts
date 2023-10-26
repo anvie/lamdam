@@ -26,6 +26,18 @@ export function errorMessage(errs: any): string {
             return errs
         }
     }
+    if (typeof errs.message === "string") {
+        // try to parse
+        try {
+            _errs = JSON.parse(errs.message)
+            if ((_errs as any).error) {
+                return (_errs as any).error as string
+            }
+        } catch (e) {
+            return errs.message
+        }
+        return errs.message
+    }
     if (errs.error) {
         return errs.error
     }

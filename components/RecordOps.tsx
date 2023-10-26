@@ -173,8 +173,8 @@ const RecordOps: FC<{ className: string }> = ({ className }) => {
       })
       .catch((err) => {
         if (err) {
-          __error(typeof err);
-          alert("Cannot add record. " + errorMessage(err));
+          console.log(err);
+          Notify.failure("Cannot add record: " + errorMessage(err));
         }
       });
   };
@@ -360,7 +360,7 @@ const RecordOps: FC<{ className: string }> = ({ className }) => {
         <div className="p-2 border-b-1 w-full"></div>
 
         <Button
-          size="lg"
+          size="md"
           className={cn(
             "text-white",
             currentRecord === null || currentRecord?.id === ""

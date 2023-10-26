@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:import": "ts-node --require tsconfig-paths/register --project tsconfig.script.json etc/script/importdata.js"
+    "db:import": "ts-node --require tsconfig-paths/register --project tsconfig.script.json etc/script/importdata.js",
+    "db:norm": "ts-node --require tsconfig-paths/register --project tsconfig.script.json etc/script/normalize_db_hash_unique.js"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^2.0.0",
