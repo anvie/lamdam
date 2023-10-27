@@ -57,7 +57,7 @@ export const AddRecordSchema = z.object({
 export const UpdateRecordSchema = z.object({
     id: z.string(),
     prompt: z.string().min(3),
-    response: z.string().min(10),
+    response: z.string().min(2),
     input: z.string().default(""),
     // creator: z.string().min(3),
     history: z.array(z.string()).or(z.array(z.array(z.string()))),
