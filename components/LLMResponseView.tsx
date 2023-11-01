@@ -339,10 +339,12 @@ const LLMResponseView: FC<Props> = ({
                         target: "response",
                         text: data,
                         history: [
-                          [
-                            EMBEDDING_INIT_MESSAGE,
-                            EMBEDDING_INIT_MESSAGE_RESPONSE,
-                          ],
+                          useEmbedding
+                            ? [
+                                EMBEDDING_INIT_MESSAGE,
+                                EMBEDDING_INIT_MESSAGE_RESPONSE,
+                              ]
+                            : [],
                         ],
                         rag: extractRag ? ragContent : undefined,
                       });
