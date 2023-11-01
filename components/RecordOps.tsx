@@ -9,6 +9,7 @@ import {
 import { errorMessage } from "@/lib/errorutil";
 import { __debug, __error } from "@/lib/logger";
 import { AddRecordSchema } from "@/lib/schema";
+import { DisclosureType } from "@/lib/types";
 import { Collection, DataRecord } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@nextui-org/button";
@@ -26,14 +27,12 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@nextui-org/modal";
-import { cn } from "@nextui-org/react";
+import { Checkbox, cn } from "@nextui-org/react";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
 import { Notify } from "notiflix/build/notiflix-notify-aio";
 import { FC, Key, useContext, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ErrorLabel } from "./ErrorLabel";
-import GPTResponseView from "./GPTResponseView";
-import LLMResponseView, { LLMResponseData } from "./LLMResponseView";
 import { ArrowRightIcon } from "./icon/ArrowRightIcon";
 import { CheckIcon } from "./icon/CheckIcon";
 import { DocumentPlus } from "./icon/DocumentPlus";
@@ -94,25 +93,36 @@ function formatResponse(rec: DataRecord, dataType: string): string {
   return formattedResponse;
 }
 
-const RecordOps: FC<{ className: string }> = ({ className }) => {
+interface RecordOpsProps {
+  className: string;
+  llmResponseViewDisclosure: DisclosureType;
+  gptResponseViewDisclosure: DisclosureType;
+}
+
+const RecordOps: FC<RecordOpsProps> = ({
+  className,
+  llmResponseViewDisclosure,
+  gptResponseViewDisclosure,
+}) => {
   const [error, setError] = useState("");
   let { globalState, setGlobalState } = useContext(GlobalContext);
   const { currentCollection, setCurrentCollection } =
     useContext(CollectionContext);
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   const modalState = useDisclosure();
+  const [useEmbedding, setUseEmbedding] = useState(false);
 
   const [enableOps, setEnableOps] = useState(false);
-  const {
-    isOpen: llmResponseModalVisible,
-    onOpen: onLlmResponseModalOpen,
-    onOpenChange: onLlmResponseModalChange,
-  } = useDisclosure();
-  const {
-    isOpen: gptResponseModalVisible,
-    onOpen: onGptResponseModalOpen,
-    onOpenChange: onGptResponseModalChange,
-  } = useDisclosure();
+  // const {
+  //   isOpen: llmResponseModalVisible,
+  //   onOpen: onLlmResponseModalOpen,
+  //   onOpenChange: onLlmResponseModalChange,
+  // } = useDisclosure();
+  // const {
+  //   isOpen: gptResponseModalVisible,
+  //   onOpen: onGptResponseModalOpen,
+  //   onOpenChange: onGptResponseModalChange,
+  // } = useDisclosure();
 
   useEffect(() => {
     Notify.init({ position: "center-top" });
@@ -292,29 +302,37 @@ const RecordOps: FC<{ className: string }> = ({ className }) => {
     );
   };
 
-  const onCopyLLMResponse = (data: LLMResponseData) => {
-    if (currentRecord) {
-      const rec = currentRecord;
+  // const onCopyLLMResponse = (data: LLMResponseData) => {
+  //   console.log("data:", data);
+  //   if (currentRecord) {
+  //     const rec = currentRecord;
 
-      if (data.target === "bad") {
-        rec.outputNegative = data.text;
-      } else if (data.target === "good") {
-        rec.outputPositive = data.text;
-      } else if (data.target === "response") {
-        rec.response = data.text;
-      }
+  //     if (data.target === "bad") {
+  //       rec.outputNegative = data.text;
+  //     } else if (data.target === "good") {
+  //       rec.outputPositive = data.text;
+  //     } else if (data.target === "response") {
+  //       rec.response = data.text;
+  //     }
+  //     if (data.history.length > 0) {
+  //       const _rawHistory = data.history
+  //         .map((d: string[]) => `a: ${d[0]}\nb: ${d[1]}`)
+  //         .join("\n-----\n");
+  //       rec.history = data.history;
+  //       rec.rawHistory = _rawHistory;
+  //     }
 
-      const formattedResponse = formatResponse(
-        rec,
-        currentCollection?.meta?.dataType || "sft"
-      );
+  //     const formattedResponse = formatResponse(
+  //       rec,
+  //       currentCollection?.meta?.dataType || "sft"
+  //     );
 
-      setCurrentRecord!({
-        ...rec,
-        response: formattedResponse,
-      });
-    }
-  };
+  //     setCurrentRecord!({
+  //       ...rec,
+  //       response: formattedResponse,
+  //     });
+  //   }
+  // };
 
   return (
     <div className={className}>
@@ -350,12 +368,23 @@ const RecordOps: FC<{ className: string }> = ({ className }) => {
 
         <div className="p-2 border-b-1 w-full"></div>
 
-        <Button size="md" onClick={onLlmResponseModalOpen}>
+        <Button size="md" onClick={llmResponseViewDisclosure.onOpen}>
           Get {process.env.NEXT_PUBLIC_INTERNAL_MODEL_NAME} Response
         </Button>
-        <Button size="md" onClick={onGptResponseModalOpen}>
+        <Button size="md" onClick={gptResponseViewDisclosure.onOpen}>
           Get GPT Response
         </Button>
+        <Checkbox
+          onValueChange={(selected) => {
+            setUseEmbedding(selected);
+            setGlobalState({
+              ...globalState,
+              useEmbedding: selected,
+            });
+          }}
+        >
+          <span>Use Embedding</span>
+        </Checkbox>
 
         <div className="p-2 border-b-1 w-full"></div>
 
@@ -381,7 +410,7 @@ const RecordOps: FC<{ className: string }> = ({ className }) => {
       {currentCollection && (
         <ConfirmModal onConfirm={doAddRecord} {...modalState} />
       )}
-
+      {/* 
       {currentRecord && (
         <LLMResponseView
           isOpen={llmResponseModalVisible}
@@ -389,6 +418,7 @@ const RecordOps: FC<{ className: string }> = ({ className }) => {
           currentRecord={currentRecord}
           onCopy={onCopyLLMResponse}
           mode={currentCollection?.meta?.dataType || "sft"}
+          useEmbedding={useEmbedding}
         />
       )}
 
@@ -400,7 +430,7 @@ const RecordOps: FC<{ className: string }> = ({ className }) => {
           onCopy={onCopyLLMResponse}
           mode={currentCollection?.meta?.dataType || "sft"}
         />
-      )}
+      )} */}
     </div>
   );
 };

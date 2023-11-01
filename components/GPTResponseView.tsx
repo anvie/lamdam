@@ -15,6 +15,7 @@ import { FC, useEffect, useState } from "react";
 export interface LLMResponseData {
   target: string;
   text: string;
+  history: string[][];
 }
 
 interface Props {
@@ -311,7 +312,7 @@ const GPTResponseView: FC<Props> = ({
                   <Button
                     color="success"
                     onClick={() => {
-                      onCopy({ target: "good", text: data });
+                      onCopy({ target: "good", text: data, history: [] });
                       onClose();
                     }}
                   >
@@ -320,7 +321,7 @@ const GPTResponseView: FC<Props> = ({
                   <Button
                     color="warning"
                     onClick={() => {
-                      onCopy({ target: "bad", text: data });
+                      onCopy({ target: "bad", text: data, history: [] });
                       onClose();
                     }}
                   >
@@ -332,7 +333,7 @@ const GPTResponseView: FC<Props> = ({
                 <Button
                   color="success"
                   onClick={() => {
-                    onCopy({ target: "response", text: data });
+                    onCopy({ target: "response", text: data, history: [] });
                     onClose();
                   }}
                 >

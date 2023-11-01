@@ -94,7 +94,7 @@ async function sendMessage(
   });
 
   let query = {
-    model: "output/Sidrap-7B-v1b",
+    model: "llama-2",
     messages,
     temperature: 0.3,
     top_p: 0.1,

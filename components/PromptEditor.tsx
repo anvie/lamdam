@@ -8,10 +8,11 @@ import {
 } from "@/lib/context";
 import { errorMessage } from "@/lib/errorutil";
 import { __debug, __error } from "@/lib/logger";
+import { DisclosureType } from "@/lib/types";
 import { DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
 import { Textarea } from "@nextui-org/input";
-import { Divider, cn, useDisclosure } from "@nextui-org/react";
+import { Divider, cn } from "@nextui-org/react";
 import { Confirm, Notify } from "notiflix";
 import { FC, useContext, useEffect, useState } from "react";
 import ChatModePromptEditor from "./ChatModePromptEditor";
@@ -27,30 +28,29 @@ import TrashIcon from "./icon/TrashIcon";
 import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
 import { SearchIcon } from "./icons";
 
-// function formatResponse(rec: DataRecord, dataType: string): string {
-//   let formattedResponse = rec.response;
-//   if (dataType === "rm") {
-//     formattedResponse =
-//       rec.outputPositive + "\n\n----------\n\n" + rec.outputNegative;
-//   }
-//   return formattedResponse;
-// }
+interface PromptEditorProps {
+  llmResponseViewDisclosure: DisclosureType;
+  gptResponseViewDisclosure: DisclosureType;
+}
 
-const PromptEditor: FC = () => {
+const PromptEditor: FC<PromptEditorProps> = ({
+  llmResponseViewDisclosure,
+  gptResponseViewDisclosure,
+}) => {
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   let { globalState, setGlobalState } = useContext(GlobalContext);
   const { currentCollection, setCurrentCollection } =
     useContext(CollectionContext);
-  const {
-    isOpen: llmResponseModalVisible,
-    onOpen: onLlmResponseModalOpen,
-    onOpenChange: onLlmResponseModalChange,
-  } = useDisclosure();
-  const {
-    isOpen: gptResponseModalVisible,
-    onOpen: onGptResponseModalOpen,
-    onOpenChange: onGptResponseModalChange,
-  } = useDisclosure();
+  // const {
+  //   isOpen: llmResponseModalVisible,
+  //   onOpen: onLlmResponseModalOpen,
+  //   onOpenChange: onLlmResponseModalChange,
+  // } = useDisclosure();
+  // const {
+  //   isOpen: gptResponseModalVisible,
+  //   onOpen: onGptResponseModalOpen,
+  //   onOpenChange: onGptResponseModalChange,
+  // } = useDisclosure();
 
   const [newHistory, setNewHistory] = useState<QAPair[]>([]);
 
@@ -67,7 +67,7 @@ const PromptEditor: FC = () => {
       let lines = [];
       for (let i = 0; i < currentRecord.history.length; i++) {
         const item = currentRecord.history[i];
-        __debug("item:", item);
+        // __debug("item:", item);
         lines.push(`a: ${item[0]}`);
         lines.push(`b: ${item[1]}`);
         if (currentRecord.history[i + 1]) {
@@ -278,6 +278,7 @@ const PromptEditor: FC = () => {
   };
 
   const onCopyLLMResponse = (data: LLMResponseData) => {
+    console.log("data:", data);
     if (currentRecord) {
       const rec = currentRecord;
 
@@ -287,6 +288,19 @@ const PromptEditor: FC = () => {
         rec.outputPositive = data.text;
       } else if (data.target === "response") {
         rec.response = data.text;
+      }
+      if (data.history.length > 0) {
+        for (let i = 0; i < data.history.length; i++) {
+          const item = data.history[i];
+          rec.history.push([item[0], item[1]]);
+        }
+        const _rawHistory = rec.history
+          .map((d: string[]) => `a: ${d[0]}\nb: ${d[1]}`)
+          .join("\n-----\n");
+        rec.rawHistory = _rawHistory;
+      }
+      if (data.rag && data.rag.length > 0) {
+        rec.prompt = data.rag;
       }
 
       const formattedResponse = formatResponse(
@@ -453,7 +467,7 @@ const PromptEditor: FC = () => {
                   (e.ctrlKey || e.metaKey || e.key === "Meta") &&
                   e.key === "Enter"
                 ) {
-                  onLlmResponseModalOpen();
+                  llmResponseViewDisclosure.onOpen();
                 }
               }}
             />
@@ -461,7 +475,7 @@ const PromptEditor: FC = () => {
             <div className="md:hidden flex flex-row gap-4 py-2 justify-end">
               <Button
                 size="sm"
-                onClick={onLlmResponseModalOpen}
+                onClick={llmResponseViewDisclosure.onOpen}
                 isIconOnly
                 className="md:hidden"
               >
@@ -469,7 +483,7 @@ const PromptEditor: FC = () => {
               </Button>
               <Button
                 size="sm"
-                onClick={onGptResponseModalOpen}
+                onClick={gptResponseViewDisclosure.onOpen}
                 isIconOnly
                 className="md:hidden"
               >
@@ -543,6 +557,15 @@ const PromptEditor: FC = () => {
               className="w-full"
               value={(currentRecord && currentRecord.input) || ""}
               onValueChange={throttledSaveChanges("input")}
+              onKeyDown={(e) => {
+                // handle Command+enter or Ctrl+enter
+                if (
+                  (e.ctrlKey || e.metaKey || e.key === "Meta") &&
+                  e.key === "Enter"
+                ) {
+                  llmResponseViewDisclosure.onOpen();
+                }
+              }}
             />
           </div>
 
@@ -573,18 +596,19 @@ const PromptEditor: FC = () => {
 
       {currentRecord && (
         <LLMResponseView
-          isOpen={llmResponseModalVisible}
-          onOpenChange={onLlmResponseModalChange}
+          isOpen={llmResponseViewDisclosure.isOpen}
+          onOpenChange={llmResponseViewDisclosure.onOpenChange}
           currentRecord={currentRecord}
           onCopy={onCopyLLMResponse}
           mode={currentCollection?.meta?.dataType || "sft"}
+          useEmbedding={globalState.useEmbedding}
         />
       )}
 
       {currentRecord && (
         <GPTResponseView
-          isOpen={gptResponseModalVisible}
-          onOpenChange={onGptResponseModalChange}
+          isOpen={gptResponseViewDisclosure.isOpen}
+          onOpenChange={gptResponseViewDisclosure.onOpenChange}
           currentRecord={currentRecord}
           onCopy={onCopyLLMResponse}
           mode={currentCollection?.meta?.dataType || "sft"}

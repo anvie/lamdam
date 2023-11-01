@@ -27,6 +27,7 @@ export interface GlobalState {
     updatedRecord: DataRecord | null;
     addNewRecord: boolean;
     showExplorer: boolean;
+    useEmbedding: boolean;
 }
 
 export const GlobalContext = createContext<{
@@ -41,6 +42,7 @@ export const GlobalContext = createContext<{
         updatedRecord: null,
         addNewRecord: false,
         showExplorer: false,
+        useEmbedding: false,
     },
     setGlobalState: () => { },
 });
