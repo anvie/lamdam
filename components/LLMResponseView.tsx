@@ -27,7 +27,7 @@ const EMBEDDING_INIT_MESSAGE_RESPONSE = "Siap.";
 export interface LLMResponseData {
   target: string;
   text: string;
-  history: string[][];
+  history?: string[][];
   rag?: string;
 }
 
@@ -338,14 +338,14 @@ const LLMResponseView: FC<Props> = ({
                       onCopy({
                         target: "response",
                         text: data,
-                        history: [
-                          useEmbedding
-                            ? [
+                        history: useEmbedding
+                          ? [
+                              [
                                 EMBEDDING_INIT_MESSAGE,
                                 EMBEDDING_INIT_MESSAGE_RESPONSE,
-                              ]
-                            : [],
-                        ],
+                              ],
+                            ]
+                          : undefined,
                         rag: extractRag ? ragContent : undefined,
                       });
                       onClose();

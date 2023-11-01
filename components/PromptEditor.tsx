@@ -289,7 +289,7 @@ const PromptEditor: FC<PromptEditorProps> = ({
       } else if (data.target === "response") {
         rec.response = data.text;
       }
-      if (data.history.length > 0) {
+      if (data.history && data.history.length > 0) {
         for (let i = 0; i < data.history.length; i++) {
           const item = data.history[i];
           rec.history.push([item[0], item[1]]);
