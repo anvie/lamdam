@@ -23,6 +23,8 @@ ${response}`.trim();
 async function normalizeRecords(colRecords) {
   const cursor = colRecords.find({});
 
+  var count = 0;
+
   await cursor.forEach(async function (record) {
     const id = record._id;
 
@@ -36,9 +38,12 @@ async function normalizeRecords(colRecords) {
     if (hash) {
       const rv = await colRecords.updateOne({ _id: id }, { $set: { hash } });
 
-      console.log("Updated:", rv.modifiedCount);
+      // console.log("Updated:", rv.modifiedCount);
+      count += rv.modifiedCount;
     }
   });
+
+  console.log("Updated:", count);
 }
 
 async function ensureIndex(colRecords) {
@@ -58,6 +63,7 @@ async function normalizeAllRecords() {
 
   for (var i = 0; i < collectionNames.length; i++) {
     const collectionName = collectionNames[i];
+    console.log(`Normalizing "${collectionName}"...`);
     const colRecords = mongoose.connection.collection(collectionName);
     await normalizeRecords(colRecords);
   }
