@@ -54,7 +54,6 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     useContext(CollectionContext);
 
   let { globalState, setGlobalState } = useContext(GlobalContext);
-  // let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   const [data, setData] = useState<DataRecord[]>([]);
   const [loaded, setLoaded] = useState<boolean>(false);
   const [query, setQuery] = useState<string>("");
@@ -86,7 +85,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     if (globalState.deleteRecord) {
       __debug("globalState.deleteRecord changed.");
       setLastId([]);
-      void refreshData(currentCollection?.id || "0", query, true);
+      void refreshData(currentCollection?.id || "0", query);
       setGlobalState({ ...globalState, deleteRecord: null });
     }
     if (globalState.updatedRecord) {
@@ -233,7 +232,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     <div className={className}>
       <div className="pb-2 border-b-1 p-2 flex gap-1">
         <Input
-          className="pb-2 border-b-1 p-2"
+          className="pb-2 p-2"
           type="email"
           placeholder="search records"
           labelPlacement="outside"
@@ -261,7 +260,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
         <SearchSetting />
       </div>
 
-      <div className="h-[600px] overflow-scroll">
+      <div className="h-[calc(100vh-250px)] overflow-scroll">
         {data &&
           data.map((data, index) => {
             return (

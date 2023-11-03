@@ -41,16 +41,6 @@ const PromptEditor: FC<PromptEditorProps> = ({
   let { globalState, setGlobalState } = useContext(GlobalContext);
   const { currentCollection, setCurrentCollection } =
     useContext(CollectionContext);
-  // const {
-  //   isOpen: llmResponseModalVisible,
-  //   onOpen: onLlmResponseModalOpen,
-  //   onOpenChange: onLlmResponseModalChange,
-  // } = useDisclosure();
-  // const {
-  //   isOpen: gptResponseModalVisible,
-  //   onOpen: onGptResponseModalOpen,
-  //   onOpenChange: onGptResponseModalChange,
-  // } = useDisclosure();
 
   const [newHistory, setNewHistory] = useState<QAPair[]>([]);
 
