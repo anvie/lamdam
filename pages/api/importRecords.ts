@@ -39,6 +39,7 @@ export default apiHandler(async (req, res: NextApiResponse<Data>) => {
             return {
                 prompt: record.instruction,
                 response: record.response,
+                hash: record.hash,
                 input: record.input,
                 history: record.history,
             }

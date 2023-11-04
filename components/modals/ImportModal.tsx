@@ -1,9 +1,11 @@
 import { post } from "@/lib/FetchWrapper";
+import { hashString } from "@/lib/crypto";
 import { __debug, __log } from "@/lib/logger";
-import { truncate } from "@/lib/stringutil";
+import { formattedMessage, truncate } from "@/lib/stringutil";
 import { Collection } from "@/types";
-import { Button, Input, ModalBody, ModalContent, ModalFooter, cn } from "@nextui-org/react";
+import { Button, Chip, Input, ModalBody, ModalContent, ModalFooter, cn } from "@nextui-org/react";
 import Image from "next/image";
+import { Confirm, Notify } from "notiflix";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
 import { Report } from "notiflix/build/notiflix-report-aio";
 import React, { FC, useRef, useState } from "react";
@@ -25,6 +27,8 @@ type ImportedRecord = {
     response: string,
     input: string,
     history: [string, string][],
+    hash: string,
+    isDuplicate?: boolean
 }
 
 interface ImportModalProps extends ModalProps {
@@ -33,6 +37,40 @@ interface ImportModalProps extends ModalProps {
 }
 
 const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
+
+    const checkHash = async (data: ImportedRecord[], callback: (...newData: ImportedRecord[]) => void) => {
+        if (!currentCollection || data.length === 0) {
+            return;
+        }
+
+        Loading.hourglass(`Checking hash...`);
+        await post(`/api/checkHash`, {
+            hashes: data.map(d => d.hash),
+            collection_id: currentCollection.id
+        })
+            .then((resp: any) => {
+                __debug("resp:", resp);
+                if (resp.result) {
+                    const newData = []
+                    const result = resp.result as string[];
+                    if (result.length > 0) {
+                        const _newData = data.map((data) => {
+                            const isDuplicate = result.includes(data.hash)
+                            return {
+                                ...data,
+                                isDuplicate
+                            }
+                        })
+                        newData.push(..._newData)
+                    } else {
+                        newData.push(...data)
+                    }
+
+                    callback(...newData)
+                }
+            })
+            .catch((e) => __debug("err:", e))
+    }
 
     const onFileDrop = (opts: FileDropProps) => {
         if (opts.fileRejections.length > 0) {
@@ -59,7 +97,11 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                 .map((d, i) => {
                     try {
                         let data: ImportedRecord = JSON.parse(d) as ImportedRecord
+                        const { instruction, input, response, history } = data
+                        const hash = hashString(formattedMessage(instruction, input, response, history));
+
                         data.id = String(i)
+                        data.hash = hash
                         return data
                     } catch (error) {
                         __log("[ERROR]", "🚀 ~ file: ImportModal.tsx:61 ~ reader.onload= ~ error:", error)
@@ -67,15 +109,15 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                     }
                 })
                 .filter(Boolean) as ImportedRecord[]
-            opts.addData(...data)
-            Loading.remove(500)
+            await checkHash(data, opts.addData).finally(() => Loading.remove(500))
         }
         reader.readAsText(file)
     }
 
-    const doImportData = async (records: ImportedRecord[]) => {
-        console.log("🚀 ~ file: ImportModal.tsx:77 ~ doImportData ~ records:", records.length)
+    const doImportData = async (rawRecords: ImportedRecord[]) => {
+        const records = rawRecords.filter(d => !d.isDuplicate)
         if (!currentCollection || records.length === 0) {
+            Notify.warning("No records to import");
             return;
         }
 
@@ -181,124 +223,141 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
     return (
         <ImportProvider>
             <ImportConsumer>
-                {(context: ImportConsumerProps<ImportedRecord>) => (
-                    <ModalContent>
-                        <ModalBody className="p-0 grid grid-cols-3 divide-x-1 gap-0 dark:divide-black/30">
-                            {context.importData.length > 0 ? (
-                                <React.Fragment>
-                                    <RecordsExplorer
-                                        className="min-h-full w-full col-span-1 p-0"
-                                    />
-                                    <div className="flex flex-col w-full col-span-2">
-                                        <div className="w-full border-b dark:border-b-black/30 py-3 px-4 flex justify-between items-center">
-                                            <div>
-                                                <div className="text-lg font-bold">Records to Import</div>
-                                                <div className="text-sm opacity-80">{context.selectedData.length} records</div>
-                                            </div>
-                                            <div className="inline-flex gap-2 items-center">
-                                                <Button
-                                                    radius="sm"
-                                                    color="warning"
-                                                    className="text-white dark:text-black"
-                                                    isDisabled={context.selectedData.length === 0}
-                                                    onClick={() => context.dispatch.clearSelectedData()}
-                                                >
-                                                    Clear Selected
-                                                </Button>
-                                                <Button
-                                                    radius="sm"
-                                                    color="danger"
-                                                    className="text-white dark:text-black"
-                                                    onClick={() => context.dispatch.clearAll()}
-                                                >
-                                                    Clear All
-                                                </Button>
-                                                <Button
-                                                    radius="sm"
-                                                    onPress={() => doImportData(context.importData)}
-                                                >
-                                                    Import All
-                                                </Button>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col gap-2 px-4 py-4 h-[660px] overflow-y-auto">
-                                            {context.selectedData.map((data, index) => {
-                                                return (
-                                                    <div
-                                                        key={index}
-                                                        className="shadow-none border dark:border-black/40 h-fit rounded-md"
+                {(context: ImportConsumerProps<ImportedRecord>) => {
+                    const duplicateCount = context.importData.filter(d => d.isDuplicate).length
+                    const validCount = context.importData.filter(d => !d.isDuplicate).length
+                    const canImportAll = validCount === 0
+
+                    const importAll = () => {
+                        Confirm.show(
+                            'Confirm',
+                            `${duplicateCount} duplicate records will be ignored. Only ${validCount} record(s) will be imported. Continue?`,
+                            'Yes',
+                            'No',
+                            () => doImportData(context.importData),
+                        );
+                    }
+
+                    return (
+                        <ModalContent>
+                            <ModalBody className="p-0 grid grid-cols-3 divide-x-1 gap-0 dark:divide-black/30">
+                                {context.importData.length > 0 ? (
+                                    <React.Fragment>
+                                        <RecordsExplorer
+                                            className="min-h-full w-full col-span-1 p-0"
+                                        />
+                                        <div className="flex flex-col w-full col-span-2">
+                                            <div className="w-full border-b dark:border-b-black/30 py-3 px-4 flex justify-between items-center">
+                                                <div>
+                                                    <div className="text-lg font-bold">Records to Import</div>
+                                                    <div className="text-sm opacity-80">{context.selectedData.length} records</div>
+                                                </div>
+                                                <div className="inline-flex gap-2 items-center">
+                                                    <Button
+                                                        radius="sm"
+                                                        color="warning"
+                                                        className="text-white dark:text-black"
+                                                        isDisabled={context.selectedData.length === 0}
+                                                        onClick={() => context.dispatch.clearSelectedData()}
                                                     >
-                                                        <div className="inline-flex items-center w-full justify-between border-b dark:border-b-black/40 px-4 py-2">
-                                                            <div className="text-base font-medium leading-none">{truncate(data.instruction, 100)}</div>
-                                                            <Button
-                                                                isIconOnly
-                                                                onPress={() => context.dispatch.removeData(index)}
-                                                                variant="light"
-                                                                size="sm"
-                                                                className="text-current"
-                                                            >
-                                                                <CloseIcon />
-                                                            </Button>
-                                                        </div>
-                                                        <div className="px-4 py-3 text-sm h-fit overflow-hidden">
-                                                            {truncate(data.response, 300)}
-                                                        </div>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-                                </React.Fragment>
-                            ) : (
-                                <Dropzone
-                                    maxFiles={1}
-                                    accept={{ "application/json": [".jsonl"] }}
-                                    onDrop={(acceptedFiles, fileRejections) => onFileDrop({
-                                        acceptedFiles,
-                                        fileRejections,
-                                        addData: context.dispatch.addData
-                                    })}
-                                >
-                                    {({ getRootProps, getInputProps }) => (
-                                        <section className="px-6 py-6 text-center min-h-[600px] col-span-3">
-                                            <div {...getRootProps()} className="flex w-full items-center justify-center flex-col gap-4 h-full border-2 border-dashed rounded-lg hover:bg-slate-200 hover:cursor-pointer">
-                                                <input {...getInputProps()} className="hidden" />
-                                                <Image
-                                                    width={200}
-                                                    height={200}
-                                                    objectFit="contain"
-                                                    src="/import_file.svg"
-                                                    alt="import"
-                                                />
-                                                <div className="text-center">
-                                                    <p className="text-lg">{"Drag 'n' drop some *.jsonl file here,"}</p>
-                                                    <p className="text-lg">{"or click to select *.jsonl file"}</p>
+                                                        Clear Selected
+                                                    </Button>
+                                                    <Button
+                                                        radius="sm"
+                                                        color="danger"
+                                                        className="text-white dark:text-black"
+                                                        onClick={() => context.dispatch.clearAll()}
+                                                    >
+                                                        Clear All
+                                                    </Button>
+                                                    <Button
+                                                        radius="sm"
+                                                        isDisabled={context.importData.filter(d => !d.isDuplicate).length === 0}
+                                                        onPress={importAll}
+                                                    >
+                                                        Import All
+                                                    </Button>
                                                 </div>
                                             </div>
-                                        </section>
-                                    )}
-                                </Dropzone>
-                            )}
-                        </ModalBody>
-                        <ModalFooter className="border-t dark:border-t-black/30">
-                            <Button
-                                onPress={props.closeModal}
-                                radius="sm"
-                                variant="ghost"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                color="primary"
-                                radius="sm"
-                                isDisabled={context.selectedData.length === 0}
-                                onPress={() => doImportData(context.selectedData)}
-                            >
-                                Import Selected
-                            </Button>
-                        </ModalFooter>
-                    </ModalContent>
-                )}
+                                            <div className="flex flex-col gap-2 px-4 py-4 h-[660px] overflow-y-auto">
+                                                {context.selectedData.map((data, index) => {
+                                                    return (
+                                                        <div
+                                                            key={index}
+                                                            className="shadow-none border dark:border-black/40 h-fit rounded-md"
+                                                        >
+                                                            <div className="inline-flex items-center w-full justify-between border-b dark:border-b-black/40 px-4 py-2">
+                                                                <div className="text-base font-medium leading-none">{truncate(data.instruction, 100)}</div>
+                                                                <Button
+                                                                    isIconOnly
+                                                                    onPress={() => context.dispatch.removeData(index)}
+                                                                    variant="light"
+                                                                    size="sm"
+                                                                    className="text-current"
+                                                                >
+                                                                    <CloseIcon />
+                                                                </Button>
+                                                            </div>
+                                                            <div className="px-4 py-3 text-sm h-fit overflow-hidden">
+                                                                {truncate(data.response, 300)}
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    </React.Fragment>
+                                ) : (
+                                    <Dropzone
+                                        maxFiles={1}
+                                        accept={{ "application/json": [".jsonl"] }}
+                                        onDrop={(acceptedFiles, fileRejections) => onFileDrop({
+                                            acceptedFiles,
+                                            fileRejections,
+                                            addData: context.dispatch.addData
+                                        })}
+                                    >
+                                        {({ getRootProps, getInputProps }) => (
+                                            <section className="px-6 py-6 text-center min-h-[600px] col-span-3">
+                                                <div {...getRootProps()} className="flex w-full items-center justify-center flex-col gap-4 h-full border-2 border-dashed rounded-lg hover:bg-slate-200 hover:cursor-pointer">
+                                                    <input {...getInputProps()} className="hidden" />
+                                                    <Image
+                                                        width={200}
+                                                        height={200}
+                                                        objectFit="contain"
+                                                        src="/import_file.svg"
+                                                        alt="import"
+                                                    />
+                                                    <div className="text-center">
+                                                        <p className="text-lg">{"Drag 'n' drop some *.jsonl file here,"}</p>
+                                                        <p className="text-lg">{"or click to select *.jsonl file"}</p>
+                                                    </div>
+                                                </div>
+                                            </section>
+                                        )}
+                                    </Dropzone>
+                                )}
+                            </ModalBody>
+                            <ModalFooter className="border-t dark:border-t-black/30">
+                                <Button
+                                    onPress={props.closeModal}
+                                    radius="sm"
+                                    variant="ghost"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    color="primary"
+                                    radius="sm"
+                                    isDisabled={canImportAll}
+                                    onPress={() => doImportData(context.selectedData)}
+                                >
+                                    Import Selected
+                                </Button>
+                            </ModalFooter>
+                        </ModalContent>
+                    )
+                }}
             </ImportConsumer>
         </ImportProvider>
     );
@@ -397,23 +456,31 @@ const RecordsExplorer: FC<{ className: string; }> = ({ className }) => {
                 )}
                 {paginatedData.map((data, index) => {
                     const isSelected = selectedData.includes(data);
+                    const onClick = () => {
+                        if (isSelected) {
+                            dispatch.removeData(index)
+                        } else {
+                            dispatch.addSelectedData(data)
+                        }
+                    }
 
                     return (
                         <div
-                            className={cn("border-b-1 pb-1 dark:border-b-black/30 dark:border-l-black/30 cursor-pointer dark:hover:bg-gray-600 hover:bg-slate-200 dark:hover:dark:text-black border-l-8 pl-2", {
+                            className={cn("border-b-1 flex flex-col gap-1.5 py-1.5 dark:border-b-black/30 dark:border-l-black/30 border-l-8 px-2", {
                                 "border-l-primary bg-primary bg-opacity-10": isSelected,
+                                "border-l-danger bg-danger bg-opacity-10 cursor-not-allowed": data.isDuplicate,
+                                "cursor-pointer dark:hover:bg-gray-600 hover:bg-slate-200 dark:hover:dark:text-black": !data.isDuplicate,
                             })}
                             key={index}
-                            onClick={() => {
-                                if (isSelected) {
-                                    dispatch.removeData(index)
-                                } else {
-                                    dispatch.addSelectedData(data)
-                                }
-                            }}
+                            onClick={data.isDuplicate ? undefined : onClick}
                         >
-                            <div>{truncate(data.instruction, 100)}</div>
-                            <div className="text-sm">{truncate(data.response, 100)}</div>
+                            <div className="leading-none flex flex-col gap-[2px]">
+                                <div className="text-black">{truncate(data.instruction, 50)}</div>
+                                <div className="text-sm text-slate-600">{truncate(data.response, 100)}</div>
+                            </div>
+                            {data.isDuplicate && (
+                                <Chip size="sm" variant="flat" color="danger">Duplicate</Chip>
+                            )}
                         </div>
                     );
                 })}

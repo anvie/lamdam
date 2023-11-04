@@ -23,9 +23,15 @@ export const ImportRecordsSchema = z.object({
     records: z.array(z.object({
         instruction: z.string(),
         response: z.string(),
+        hash: z.string(),
         input: z.string().optional(),
         history: z.array(z.array(z.string())).optional()
     }))
+});
+
+export const CheckHashSchema = z.object({
+    collection_id: z.string(),
+    hashes: z.string().array().min(1),
 });
 
 export const CompileCollectionBatchSchema = z.object({
