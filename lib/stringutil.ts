@@ -1,12 +1,7 @@
-
-
-
-
 export function truncate(str: string, n: number): string {
   if (!str) return "";
   return str.length > n ? str.substring(0, n - 1) + "…" : str;
 }
-
 
 export function generateRandomString(length: number): string {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -20,3 +15,18 @@ export function generateRandomString(length: number): string {
   return randomString;
 }
 
+export function formattedMessage(prompt: string, input?: string, response?: string, history?: string[][]) {
+  const formattedHistory = history
+    ? history.map(function (historyItem) {
+      if (historyItem.length === 0) {
+        return "\n";
+      }
+      return JSON.stringify(historyItem);
+    })
+    : [];
+  return `
+${formattedHistory.join("\n")}
+${prompt}
+${input}
+${response}`.trim();
+}

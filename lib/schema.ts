@@ -28,6 +28,11 @@ export const ImportRecordsSchema = z.object({
     }))
 });
 
+export const CheckHashSchema = z.object({
+    collection_id: z.string(),
+    hashes: z.string().array().min(1),
+});
+
 export const CompileCollectionBatchSchema = z.object({
     ids: z.array(z.string()),
     batchId: z.string().length(16)

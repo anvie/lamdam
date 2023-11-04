@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "deploy": "./etc/script/deploy-web.sh",
     "db:import": "ts-node --require tsconfig-paths/register --project tsconfig.script.json etc/script/importdata.js",
     "db:norm": "ts-node --require tsconfig-paths/register --project tsconfig.script.json etc/script/normalize_db_hash_unique.js"
   },
@@ -26,8 +27,8 @@
     "@nextui-org/select": "^2.1.3",
     "@nextui-org/snippet": "2.0.10",
     "@nextui-org/switch": "2.0.9",
-    "@nextui-org/system": "2.0.5",
-    "@nextui-org/theme": "2.0.4",
+    "@nextui-org/system": "^2.0.5",
+    "@nextui-org/theme": "^2.0.4",
     "@react-aria/ssr": "^3.7.1",
     "@react-aria/visually-hidden": "^3.8.3",
     "@types/node": "20.4.9",
@@ -57,6 +58,7 @@
   },
   "devDependencies": {
     "@types/mongoose": "^5.11.97",
+    "ts-node": "^10.9.1",
     "yargs": "^17.7.2"
   }
 }
