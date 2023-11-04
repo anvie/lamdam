@@ -1092,7 +1092,7 @@
   dependencies:
     clsx "^1.2.1"
 
-"@nextui-org/system@2.0.11", "@nextui-org/system@^2.0.11":
+"@nextui-org/system@2.0.11", "@nextui-org/system@^2.0.5":
   version "2.0.11"
   resolved "https://registry.yarnpkg.com/@nextui-org/system/-/system-2.0.11.tgz#a293f73cdf92ea536b4c56babec00d1afa6ee04e"
   integrity sha512-vP1lOi1AmfL01B1PDocze0/AnJsSQe0cK+5o/4GI24ZWMuE/t9ihREA+zIVg+oo9BiP0d9OWrDZQl1/WtXZtZQ==
@@ -1169,7 +1169,7 @@
     tailwind-variants "^0.1.13"
     tailwindcss "^3.2.7"
 
-"@nextui-org/theme@2.1.11", "@nextui-org/theme@^2.1.11":
+"@nextui-org/theme@2.1.11", "@nextui-org/theme@^2.0.4":
   version "2.1.11"
   resolved "https://registry.yarnpkg.com/@nextui-org/theme/-/theme-2.1.11.tgz#49d0d65f469fff03465ddabf019f80c1bee27168"
   integrity sha512-sF8x//9yImIwjG7rU0uoyvOGlEskqlHbHHY/R6xqSSLAp1h08jtDG1vvF/oNEVL7bxOgh2RyV8DTjq5Bi/oCAg==
@@ -3281,7 +3281,7 @@ fraction.js@^4.2.0:
   resolved "https://registry.yarnpkg.com/fraction.js/-/fraction.js-4.3.7.tgz#06ca0085157e42fda7f9e726e79fefc4068840f7"
   integrity sha512-ZsDfxO51wGAXREY55a7la9LScWpwv9RxIrYABrlvOFBlH/ShPnrtsXeuUIfXKKOVicNxQ+o8JTbJvjS4M89yew==
 
-framer-motion@^10.16.4:
+framer-motion@^10.15.1:
   version "10.16.4"
   resolved "https://registry.yarnpkg.com/framer-motion/-/framer-motion-10.16.4.tgz#30279ef5499b8d85db3a298ee25c83429933e9f8"
   integrity sha512-p9V9nGomS3m6/CALXqv6nFGMuFOxbWsmaOrdmhyQimMIlLl3LC7h7l86wge/Js/8cRu5ktutS/zlzgR7eBOtFA==

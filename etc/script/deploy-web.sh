@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-source $(pwd)/.env
+source $(pwd)/.env.production
 
 echo "Building app..."
 yarn build

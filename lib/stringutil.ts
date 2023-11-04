@@ -15,9 +15,9 @@ export function generateRandomString(length: number): string {
   return randomString;
 }
 
-export function formattedMessage(prompt: string, input: string, response: string, history: [string, string][]) {
+export function formattedMessage(prompt: string, input?: string, response?: string, history?: string[][]) {
   const formattedHistory = history
-    ? history.map(function (historyItem: Array<string>) {
+    ? history.map(function (historyItem) {
       if (historyItem.length === 0) {
         return "\n";
       }

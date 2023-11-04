@@ -1,16 +1,19 @@
 import { apiHandler } from "@/lib/ApiHandler";
+import { hashString } from "@/lib/crypto";
 import { __debug } from "@/lib/logger";
 import { ImportRecordsSchema } from "@/lib/schema";
+import { formattedMessage } from "@/lib/stringutil";
 import { Collection } from "@/models/Collection";
 import mongoose from "mongoose";
 import { NextApiResponse } from "next";
+import { User } from "next-auth";
 
 type Data = {
     error?: string;
     result?: Object;
 };
 
-export default apiHandler(async (req, res: NextApiResponse<Data>) => {
+export default apiHandler(async (req, res: NextApiResponse<Data>, user?: User) => {
     try {
         const { records, collection_id } = ImportRecordsSchema.parse(req.body);
         __debug("collectionId:", collection_id);
@@ -35,27 +38,39 @@ export default apiHandler(async (req, res: NextApiResponse<Data>) => {
 
         const db = mongoose.connection.db;
 
-        const new_records = records.map((record) => {
+        const new_records = records.map(({ instruction, response, input, history }) => {
+            const hash = hashString(formattedMessage(instruction, input, response, history));
+
             return {
-                prompt: record.instruction,
-                response: record.response,
-                hash: record.hash,
-                input: record.input,
-                history: record.history,
+                updateOne: {
+                    filter: { hash },
+                    update: {
+                        $set: {
+                            prompt: instruction,
+                            response,
+                            input,
+                            history,
+                            hash,
+                            creator: user?.name,
+                            creatorId: user?.id,
+                        }
+                    },
+                    upsert: true
+                },
             }
         })
-        const result = await db.collection(col.name).insertMany(new_records);
-        if (result.acknowledged) {
+        const result = await db.collection(col.name).bulkWrite(new_records);
+        if (result.isOk()) {
             // increase collection count
             await Collection.updateOne(
                 { _id: collection_id },
-                { $inc: { count: result.insertedCount } }
+                { $inc: { count: result.upsertedCount } }
             );
 
             return res.status(200).json({
                 result: {
-                    success: result.acknowledged ?? false,
-                    inserted: result.insertedCount
+                    success: result.isOk(),
+                    inserted: result.upsertedCount
                 }
             });
         } else {
@@ -67,4 +82,4 @@ export default apiHandler(async (req, res: NextApiResponse<Data>) => {
         __debug("error:", error);
         res.status(500).json({ error: error.message });
     }
-});
+}, { withAuth: true });

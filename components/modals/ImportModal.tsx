@@ -1,11 +1,10 @@
 import { post } from "@/lib/FetchWrapper";
-import { hashString } from "@/lib/crypto";
 import { __debug, __log } from "@/lib/logger";
-import { formattedMessage, truncate } from "@/lib/stringutil";
+import { truncate } from "@/lib/stringutil";
 import { Collection } from "@/types";
-import { Button, Chip, Input, ModalBody, ModalContent, ModalFooter, cn } from "@nextui-org/react";
+import { Button, Input, ModalBody, ModalContent, ModalFooter, cn } from "@nextui-org/react";
 import Image from "next/image";
-import { Confirm, Notify } from "notiflix";
+import { Notify } from "notiflix";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
 import { Report } from "notiflix/build/notiflix-report-aio";
 import React, { FC, useRef, useState } from "react";
@@ -27,8 +26,6 @@ type ImportedRecord = {
     response: string,
     input: string,
     history: [string, string][],
-    hash: string,
-    isDuplicate?: boolean
 }
 
 interface ImportModalProps extends ModalProps {
@@ -37,40 +34,6 @@ interface ImportModalProps extends ModalProps {
 }
 
 const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
-
-    const checkHash = async (data: ImportedRecord[], callback: (...newData: ImportedRecord[]) => void) => {
-        if (!currentCollection || data.length === 0) {
-            return;
-        }
-
-        Loading.hourglass(`Checking hash...`);
-        await post(`/api/checkHash`, {
-            hashes: data.map(d => d.hash),
-            collection_id: currentCollection.id
-        })
-            .then((resp: any) => {
-                __debug("resp:", resp);
-                if (resp.result) {
-                    const newData = []
-                    const result = resp.result as string[];
-                    if (result.length > 0) {
-                        const _newData = data.map((data) => {
-                            const isDuplicate = result.includes(data.hash)
-                            return {
-                                ...data,
-                                isDuplicate
-                            }
-                        })
-                        newData.push(..._newData)
-                    } else {
-                        newData.push(...data)
-                    }
-
-                    callback(...newData)
-                }
-            })
-            .catch((e) => __debug("err:", e))
-    }
 
     const onFileDrop = (opts: FileDropProps) => {
         if (opts.fileRejections.length > 0) {
@@ -97,11 +60,8 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                 .map((d, i) => {
                     try {
                         let data: ImportedRecord = JSON.parse(d) as ImportedRecord
-                        const { instruction, input, response, history } = data
-                        const hash = hashString(formattedMessage(instruction, input, response, history));
 
                         data.id = String(i)
-                        data.hash = hash
                         return data
                     } catch (error) {
                         __log("[ERROR]", "🚀 ~ file: ImportModal.tsx:61 ~ reader.onload= ~ error:", error)
@@ -109,13 +69,13 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                     }
                 })
                 .filter(Boolean) as ImportedRecord[]
-            await checkHash(data, opts.addData).finally(() => Loading.remove(500))
+            opts.addData(...data)
+            Loading.remove(500)
         }
         reader.readAsText(file)
     }
 
-    const doImportData = async (rawRecords: ImportedRecord[]) => {
-        const records = rawRecords.filter(d => !d.isDuplicate)
+    const doImportData = async (records: ImportedRecord[]) => {
         if (!currentCollection || records.length === 0) {
             Notify.warning("No records to import");
             return;
@@ -224,20 +184,6 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
         <ImportProvider>
             <ImportConsumer>
                 {(context: ImportConsumerProps<ImportedRecord>) => {
-                    const duplicateCount = context.importData.filter(d => d.isDuplicate).length
-                    const validCount = context.importData.filter(d => !d.isDuplicate).length
-                    const canImportAll = validCount === 0
-
-                    const importAll = () => {
-                        Confirm.show(
-                            'Confirm',
-                            `${duplicateCount} duplicate records will be ignored. Only ${validCount} record(s) will be imported. Continue?`,
-                            'Yes',
-                            'No',
-                            () => doImportData(context.importData),
-                        );
-                    }
-
                     return (
                         <ModalContent>
                             <ModalBody className="p-0 grid grid-cols-3 divide-x-1 gap-0 dark:divide-black/30">
@@ -272,8 +218,7 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                                                     </Button>
                                                     <Button
                                                         radius="sm"
-                                                        isDisabled={context.importData.filter(d => !d.isDuplicate).length === 0}
-                                                        onPress={importAll}
+                                                        onPress={() => doImportData(context.importData)}
                                                     >
                                                         Import All
                                                     </Button>
@@ -349,7 +294,7 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                                 <Button
                                     color="primary"
                                     radius="sm"
-                                    isDisabled={canImportAll}
+                                    isDisabled={context.selectedData.length === 0}
                                     onPress={() => doImportData(context.selectedData)}
                                 >
                                     Import Selected
@@ -466,21 +411,14 @@ const RecordsExplorer: FC<{ className: string; }> = ({ className }) => {
 
                     return (
                         <div
-                            className={cn("border-b-1 flex flex-col gap-1.5 py-1.5 dark:border-b-black/30 dark:border-l-black/30 border-l-8 px-2", {
+                            className={cn("border-b-1 cursor-pointer dark:hover:bg-gray-600 hover:bg-slate-200 dark:hover:dark:text-black flex flex-col gap-1.5 py-1.5 dark:border-b-black/30 dark:border-l-black/30 border-l-8 px-2", {
                                 "border-l-primary bg-primary bg-opacity-10": isSelected,
-                                "border-l-danger bg-danger bg-opacity-10 cursor-not-allowed": data.isDuplicate,
-                                "cursor-pointer dark:hover:bg-gray-600 hover:bg-slate-200 dark:hover:dark:text-black": !data.isDuplicate,
                             })}
                             key={index}
-                            onClick={data.isDuplicate ? undefined : onClick}
+                            onClick={onClick}
                         >
-                            <div className="leading-none flex flex-col gap-[2px]">
-                                <div className="text-black">{truncate(data.instruction, 50)}</div>
-                                <div className="text-sm text-slate-600">{truncate(data.response, 100)}</div>
-                            </div>
-                            {data.isDuplicate && (
-                                <Chip size="sm" variant="flat" color="danger">Duplicate</Chip>
-                            )}
+                            <div className="text-black">{truncate(data.instruction, 50)}</div>
+                            <div className="text-sm text-slate-600">{truncate(data.response, 100)}</div>
                         </div>
                     );
                 })}
