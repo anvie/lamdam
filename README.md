@@ -1,5 +1,7 @@
 # Lamdam
 
+![Lamdam](./lamdam-banner.jpg)
+
 Lamdam (Language Model Dataset Manager) is a web UI tool designed to facilitate the easy management of datasets for LLM (Language Model) training. Built with Next.js 13, NextUI, and Tailwind, Lamdam offers a user-friendly interface with powerful features to streamline dataset management tasks.
 
 ## Features
@@ -13,8 +15,8 @@ Lamdam (Language Model Dataset Manager) is a web UI tool designed to facilitate 
 
 ## Requirements
 
-* [NodeJS](https://nodejs.org)
-* [MongoDB](https://www.mongodb.com/)
+- [NodeJS](https://nodejs.org)
+- [MongoDB](https://www.mongodb.com/)
 
 ## Installation
 
