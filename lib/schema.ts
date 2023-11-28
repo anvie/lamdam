@@ -1,4 +1,5 @@
 
+import { UserRoles } from "@/models";
 import { z } from "zod";
 
 export const AddCollectionSchema = z.object({
@@ -82,3 +83,23 @@ export const DeleteRecordSchema = z.object({
     collectionId: z.string()
 });
 
+export const EditUserSchema = z.object({
+    id: z.string(),
+    role: z.enum(UserRoles),
+    status: z.enum(["active", "blocked"]),
+    meta: z.object({
+        monthlyTarget: z.number({
+            invalid_type_error: "Monthly target must be a number",
+        }).optional(),
+    })
+}).refine(({ role, meta: { monthlyTarget } }) => {
+    return role === 'annotator' && monthlyTarget && monthlyTarget > 0 || role !== 'annotator'
+}, {
+    message: "Monthly target is not set",
+    path: ["meta", "monthlyTarget"]
+});
+
+export const RecordStatusSchema = z.object({
+    status: z.enum(["approved", "rejected"]),
+    collectionId: z.string()
+});

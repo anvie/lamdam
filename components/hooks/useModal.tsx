@@ -7,6 +7,8 @@ export interface ModalProps {
     closeModal?: (e?: any) => void
     showCloseBtn?: boolean
     size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl"
+    placement?: "center" | "auto" | "top" | "bottom" | "top-center" | "bottom-center"
+    isDissmissable?: boolean
 }
 
 type ModalBodyType<T> = FunctionComponent<T & ModalProps>
@@ -82,8 +84,8 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
                 onClose={() => dispatch({ type: 'afterClosed' })}
                 radius="md"
                 size={state.modalProps?.size ?? "5xl"}
-                placement="top"
-                isDismissable={false}
+                placement={state.modalProps?.placement ?? "top"}
+                isDismissable={state.modalProps?.isDissmissable ?? false}
                 isKeyboardDismissDisabled
                 hideCloseButton
                 classNames={{

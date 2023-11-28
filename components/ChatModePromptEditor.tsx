@@ -5,10 +5,10 @@ import {
   SelectedRecordContext,
 } from "@/lib/context";
 import { __debug, __error } from "@/lib/logger";
-import { Button } from "@nextui-org/button";
-import { Textarea } from "@nextui-org/input";
+import { Button, Textarea } from "@nextui-org/react";
 import moment from "moment";
 import { FC, useContext, useEffect, useRef, useState } from "react";
+import { HiMiniPaperAirplane } from "react-icons/hi2";
 
 const CHAT_BOT_NAME =
   process.env.NEXT_PUBLIC_INTERNAL_MODEL_NAME || "Lamdam-AI";
@@ -27,11 +27,7 @@ const ChatModePromptEditor: FC<Props> = ({ initialMessage }) => {
   const [rawHistory, setRawHistory] = useState("");
 
   return (
-    <div className="border pb-4">
-      {/* CHAT BOX */}
-
-      <ChatBox initialMessage={initialMessage} />
-    </div>
+    <ChatBox initialMessage={initialMessage} />
   );
 };
 
@@ -326,26 +322,24 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
   };
 
   return (
-    <div className="p-4 w-full h-full">
+    <div className="p-4 w-full h-full min-h-full">
       <div
         id="ChatBox"
-        className="overflow-y-scroll border-2 border-gray-500 rounded p-4 h-[600px]"
+        className="overflow-y-scroll border border-divider rounded-lg p-4 h-full min-h-[calc(100vh-350px)]"
       >
         {messagesHistory
           .filter((m) => m.content.trim().length > 0)
           .map((message) => (
             <div
               key={message.id}
-              className={`flex flex-col p-2 rounded mb-2 ${
-                message.creator !== "me" ? "" : "bg-gray-300 dark:bg-gray-600"
-              }`}
+              className={`flex flex-col p-2 rounded-lg mb-2 ${message.creator !== "me" ? "" : "bg-gray-200 dark:bg-gray-600"
+                }`}
             >
               <span
-                className={`${
-                  message.creator !== "me"
-                    ? ""
-                    : "text-gray-600 dark:text-gray-300"
-                } font-semibol`}
+                className={`${message.creator !== "me"
+                  ? ""
+                  : "text-gray-600 dark:text-gray-300"
+                  } font-semibol`}
               >
                 {message.creator === CHAT_BOT_NAME
                   ? CHAT_BOT_NAME
@@ -353,11 +347,10 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
                 :
               </span>
               <p
-                className={`text-lg ${
-                  message.creator !== "me"
-                    ? "dark:text-green-500"
-                    : "dark:text-gray-300"
-                }`}
+                className={`text-lg ${message.creator !== "me"
+                  ? "dark:text-green-500"
+                  : "dark:text-gray-300"
+                  }`}
                 dangerouslySetInnerHTML={{
                   __html: formatMessageOutput(message.content),
                 }}
@@ -385,9 +378,14 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
       <div className="mt-4 flex gap-2 justify-between items-start">
         <Textarea
           size="lg"
-          labelPlacement="outside"
           placeholder="Enter your prompt"
-          className="w-full text-xl"
+          fullWidth
+          radius="md"
+          multiple
+          classNames={{
+            inputWrapper: "border dark:border-none pr-0 dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+            input: "bg-transparent",
+          }}
           value={inputMessage}
           onValueChange={setInputMessage}
           ref={inputRef}
@@ -404,20 +402,21 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
           }}
         />
         <Button
-          onClick={handleSendMessage}
+          isIconOnly
+          variant="solid"
+          color="success"
+          onPress={handleSendMessage}
           onKeyDown={(e) => {
-            // on key == space or enter then sendMessage
+            // handle enter or space
             if (e.key === "Enter" || e.key === " ") {
               handleSendMessage();
             }
           }}
-          className={`${
-            !inProcessingMessage ? "bg-green-500" : "bg-gray-500"
-          } text-white mt-1`}
           size="lg"
-          disabled={inProcessingMessage}
+          isDisabled={inProcessingMessage}
+          className="mt-1.5"
         >
-          Send
+          <HiMiniPaperAirplane className="w-6 h-6" />
         </Button>
       </div>
     </div>

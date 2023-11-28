@@ -84,7 +84,7 @@ export default function Home() {
   };
 
   return (
-    <section className="flex flex-col gap-4 md:py-4">
+    <section className="flex flex-col">
       <GlobalContext.Provider value={{ globalState, setGlobalState }}>
         <NeedUpdateContext.Provider value={needUpdateState}>
           <SelectedRecordContext.Provider
@@ -98,23 +98,26 @@ export default function Home() {
             >
               <CollectionOps />
 
-              <div className="grid grid-cols-4 relative">
-                <RecordsExplorer
-                  className={cn(
-                    "border min-h-[calc(100vh-121px)] w-full md:block absolute md:relative bg-white dark:bg-black z-10 top-[4em] md:top-0",
-                    showExplorer ? "" : "hidden"
-                  )}
-                />
-
-                <div className="col-span-4 md:col-span-2">
-                  <PromptEditor
-                    llmResponseViewDisclosure={llmResponseViewDisclosure}
-                    gptResponseViewDisclosure={gptResponseViewDisclosure}
-                  />
+              <div className="grid grid-cols-5 relative divide-x-1 divide-divider">
+                <div className="col-span-5 md:col-span-4">
+                  <div className="grid grid-cols-3 divide-x-1 divide-divider">
+                    <RecordsExplorer
+                      className={cn(
+                        "min-h-[calc(100vh-300px)] w-full md:block bg-background md:bg-transparent absolute md:relative z-10 top-[4em] md:top-0",
+                        showExplorer ? "" : "hidden"
+                      )}
+                    />
+                    <div className="col-span-2">
+                      <PromptEditor
+                        llmResponseViewDisclosure={llmResponseViewDisclosure}
+                        gptResponseViewDisclosure={gptResponseViewDisclosure}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <RecordOps
-                  className="border hidden md:block"
+                  className="hidden md:block"
                   llmResponseViewDisclosure={llmResponseViewDisclosure}
                   gptResponseViewDisclosure={gptResponseViewDisclosure}
                 />

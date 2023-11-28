@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+import type { Connection } from "mongoose";
 
 console.log("Connecting to DB...");
 console.log("   ", process.env.MONGODB_URI);
@@ -13,7 +14,7 @@ mongoose.connect(process.env.MONGODB_URI, {
   retryWrites: false,
 });
 
-const db = mongoose.connection;
+const db: Connection = mongoose.connection;
 
 db.on("error", console.error.bind(console, "connection error:"));
 

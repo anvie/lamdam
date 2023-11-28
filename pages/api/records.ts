@@ -19,7 +19,7 @@ type Data = {
 async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     // immutable
     const {
-        query: { collectionId, q, order, fromId, toId },
+        query: { collectionId, q, order, fromId, toId, status },
         method,
     } = req;
 
@@ -90,6 +90,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
         };
         sortOrder = { _id: 1 };
         // __debug('sortOrder:', sortOrder)
+    }
+
+    if (status && status !== "all") {
+        query = {
+            ...query,
+            status: Array.isArray(status) ? { $in: status.map(s => s.trim()) } : status.trim()
+        }
     }
 
     // __debug('query:', query)

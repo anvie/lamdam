@@ -72,6 +72,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
           history,
           lastUpdated: getCurrentTimeMillis(),
           collectionId,
+          status: 'pending'
         },
       }
     )

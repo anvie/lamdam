@@ -16,9 +16,9 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@nextui-org/react";
-import { Dispatch, Key, SetStateAction, useEffect, useState } from "react";
+import React, { Dispatch, Key, SetStateAction, useEffect, useState } from "react";
+import { HiOutlineAdjustmentsHorizontal } from "react-icons/hi2";
 import { CloseIcon } from "./icon/CloseIcon";
-import { SettingsIcon } from "./icon/SettingsIcon";
 
 const Features = ({
   state,
@@ -177,10 +177,14 @@ export const SearchSetting = () => {
   };
 
   return (
-    <>
-      <button type="button" onClick={onOpen} className="p-2 outline-none">
-        <SettingsIcon />
-      </button>
+    <React.Fragment>
+      <Button
+        type="button"
+        onPress={onOpen}
+        isIconOnly
+      >
+        <HiOutlineAdjustmentsHorizontal className="w-5 h-5" />
+      </Button>
 
       <Modal
         backdrop="blur"
@@ -221,6 +225,6 @@ export const SearchSetting = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </React.Fragment>
   );
 };

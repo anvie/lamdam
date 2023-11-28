@@ -12,21 +12,16 @@ import { DisclosureType } from "@/lib/types";
 import { DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
 import { Textarea } from "@nextui-org/input";
-import { Divider, cn } from "@nextui-org/react";
+import { Tooltip, cn } from "@nextui-org/react";
+import { useSession } from "next-auth/react";
 import { Confirm, Notify } from "notiflix";
 import { FC, useContext, useEffect, useState } from "react";
+import { HiArrowRight, HiOutlineChatBubbleLeftEllipsis, HiOutlineDocumentPlus, HiOutlineMagnifyingGlass, HiOutlineTrash, HiXMark } from "react-icons/hi2";
 import ChatModePromptEditor from "./ChatModePromptEditor";
 import GPTResponseView from "./GPTResponseView";
 import LLMResponseView, { LLMResponseData } from "./LLMResponseView";
-import AnnotationIcon from "./icon/AnnotationIcon";
-import ArrowRightCircleIcon from "./icon/ArrowRightCircleIcon";
 import { BarsArrowDownIcon } from "./icon/BarsArrowDownIcon";
 import ChipIcon from "./icon/ChipIcon";
-import ClockIcon from "./icon/ClockIcon";
-import { DocumentPlus } from "./icon/DocumentPlus";
-import TrashIcon from "./icon/TrashIcon";
-import { XMarkCircleIcon } from "./icon/XMarkCircleIcon";
-import { SearchIcon } from "./icons";
 
 interface PromptEditorProps {
   llmResponseViewDisclosure: DisclosureType;
@@ -47,6 +42,11 @@ const PromptEditor: FC<PromptEditorProps> = ({
   const [dirty, setDirty] = useState(false);
   const [rawHistory, setRawHistory] = useState("");
   const [chatMode, setChatMode] = useState(false);
+
+  const session = useSession()
+  const user = session.data?.user
+
+  const canDelete = (user?.role === "superuser" || currentRecord?.creatorId === user?.id) && currentRecord !== null
 
   useEffect(() => {
     if (currentRecord && dirty && !currentRecord.dirty) {
@@ -105,14 +105,12 @@ const PromptEditor: FC<PromptEditorProps> = ({
       }
       let newResponse = currentRecord?.response || "";
       if (name === "outputPositive") {
-        newResponse = `${value}\n\n----------\n\n${
-          currentRecord?.outputNegative || ""
-        }`;
+        newResponse = `${value}\n\n----------\n\n${currentRecord?.outputNegative || ""
+          }`;
       }
       if (name === "outputNegative") {
-        newResponse = `${
-          currentRecord?.outputPositive || ""
-        }\n\n----------\n\n${value}`;
+        newResponse = `${currentRecord?.outputPositive || ""
+          }\n\n----------\n\n${value}`;
       }
       // __debug("newResponse:", newResponse);
       if (currentRecord) {
@@ -264,7 +262,7 @@ const PromptEditor: FC<PromptEditorProps> = ({
     setGlobalState && setGlobalState({ ...globalState, addNewRecord: true });
   };
   const onShowExplorer = () => {
-    setGlobalState && setGlobalState({ ...globalState, showExplorer: true });
+    setGlobalState({ ...globalState, showExplorer: true });
   };
 
   const onCopyLLMResponse = (data: LLMResponseData) => {
@@ -347,108 +345,122 @@ const PromptEditor: FC<PromptEditorProps> = ({
     );
   };
 
+  const inputClassNames = {
+    inputWrapper: "border dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+    input: "bg-transparent",
+  }
+
   return (
-    <div className="border pb-4">
+    <div className="pb-4 min-h-full">
       {/* ID */}
 
-      <div className="border-b p-4 flex gap-8 items-center align-middle justify-between">
-        <div className="hidden md:block">
-          id:{" "}
-          {currentRecord && (
-            <span className={`font-semibold ${dirty ? "text-orange-500" : ""}`}>
+      <div className="border-b border-divider p-4 flex gap-8 items-center align-middle justify-between">
+        {currentRecord ? (
+          <div className="hidden md:block">
+            <span className="uppercase">id:{" "}</span>
+            <span className={`font-semibold ${dirty ? "text-orange-500" : "text-current"}`}>
               {currentRecord.id}
             </span>
-          )}
-        </div>
+          </div>
+        ) : <div />}
         <div className="w-full flex justify-start md:hidden">
           <Button
             size="sm"
             title="Explorer"
-            onClick={onShowExplorer}
-            className="md:hidden cursor-pointer"
-            isIconOnly
-          >
-            <SearchIcon width="2em" />
-          </Button>
-        </div>
-        <div className="ml-3 flex gap-4">
-          <Button size="sm" isIconOnly className="hidden md:block">
-            <ArrowRightCircleIcon
-              width="2em"
-              className="cursor-pointer ml-1"
-              onClick={showJumpToRecordDialog}
-            />
-          </Button>
-          <Button
-            size="sm"
-            isIconOnly
-            title="Delete current record"
+            onPress={onShowExplorer}
             className="md:hidden"
-            disabled={currentRecord === null || currentRecord?.id === ""}
-          >
-            <TrashIcon
-              width="2em"
-              className={cn(
-                currentRecord !== null && currentRecord?.id !== ""
-                  ? "cursor-pointer text-red-500"
-                  : "text-gray-400"
-              )}
-              onClick={onDeleteRecordClick}
-            />
-          </Button>
-          <Button size="sm" isIconOnly>
-            <XMarkCircleIcon
-              width="2em"
-              className="cursor-pointer"
-              onClick={clearPromptEditor}
-            />
-          </Button>
-          <Divider orientation="vertical" />
-          <Button
-            size="sm"
-            title="Add to history"
-            onClick={onAddToHistory}
-            isIconOnly
-            className={`cursor-pointer`}
-          >
-            <ClockIcon width="2em" />
-          </Button>
-          <Divider orientation="vertical" />
-          <Button
-            size="sm"
-            color={chatMode ? "primary" : "default"}
-            title="Swith to chat mode"
-            onClick={onSwithToChatMode}
-            className={`cursor-pointer ${chatMode ? "text-white" : ""}`}
             isIconOnly
           >
-            <AnnotationIcon width="2em" />
+            <HiOutlineMagnifyingGlass className="w-5 h-5" />
           </Button>
-          <Divider orientation="vertical" />
         </div>
-        <div className="w-auto flex justify-end items-end md:hidden gap-2">
+        <div className="flex gap-2">
+          <Tooltip showArrow content="Go to Record ID">
+            <Button
+              size="sm"
+              isIconOnly
+              onPress={showJumpToRecordDialog}
+            >
+              <HiArrowRight className="w-5 h-5" />
+            </Button>
+          </Tooltip>
+          {canDelete && (
+            <Tooltip showArrow content="Delete current record">
+              <Button
+                size="sm"
+                isIconOnly
+                className="flex md:hidden"
+                title="Delete current record"
+                isDisabled={currentRecord === null || currentRecord?.id === ""}
+                onPress={onDeleteRecordClick}
+              >
+                <HiOutlineTrash
+                  className={cn(
+                    currentRecord !== null && currentRecord?.id !== ""
+                      ? "cursor-pointer text-red-500"
+                      : "text-current", "w-5 h-5"
+                  )}
+                />
+              </Button>
+            </Tooltip>
+          )}
+          <Tooltip showArrow content="Clear Prompt Editor">
+            <Button
+              size="sm"
+              isIconOnly
+              onClick={clearPromptEditor}
+            >
+              <HiXMark className="w-5 h-5" />
+            </Button>
+          </Tooltip>
+          <Tooltip showArrow content="Add chat to History">
+            <Button
+              size="sm"
+              title="Add to history"
+              onClick={onAddToHistory}
+              isDisabled={!chatMode}
+            >
+              Add History
+            </Button>
+          </Tooltip>
+          <Tooltip showArrow content="Swith to chat mode">
+            <Button
+              size="sm"
+              color={chatMode ? "primary" : "default"}
+              title="Swith to chat mode"
+              onClick={onSwithToChatMode}
+              className={`cursor-pointer ${chatMode ? "text-white" : ""}`}
+              isIconOnly
+            >
+              <HiOutlineChatBubbleLeftEllipsis className="w-5 h-5" />
+            </Button>
+          </Tooltip>
+        </div>
+        <div className="w-auto flex md:hidden justify-end items-end gap-2">
           <Button
             size="sm"
             title="Add new"
-            onClick={onAddNewRecord}
-            className="md:hidden cursor-pointer"
+            onPress={onAddNewRecord}
             isIconOnly
           >
-            <DocumentPlus width="2em" />
+            <HiOutlineDocumentPlus className="w-5 h-5" />
           </Button>
         </div>
       </div>
 
       {!chatMode ? (
-        <div>
+        <div className="px-4 py-5 flex flex-col gap-4">
           {/* PROMPT */}
 
-          <div className="px-4 pt-2">
+          <div className="">
             <Textarea
-              label="Prompt:"
+              label="Prompt"
               labelPlacement="outside"
               placeholder="Enter your prompt"
-              className="w-full"
+              fullWidth
+              radius="md"
+              variant="flat"
+              classNames={inputClassNames}
               value={(currentRecord && currentRecord.prompt) || ""}
               onValueChange={throttledSaveChanges("prompt")}
               onKeyDown={(e) => {
@@ -465,7 +477,7 @@ const PromptEditor: FC<PromptEditorProps> = ({
             <div className="md:hidden flex flex-row gap-4 py-2 justify-end">
               <Button
                 size="sm"
-                onClick={llmResponseViewDisclosure.onOpen}
+                onPress={llmResponseViewDisclosure.onOpen}
                 isIconOnly
                 className="md:hidden"
               >
@@ -473,7 +485,7 @@ const PromptEditor: FC<PromptEditorProps> = ({
               </Button>
               <Button
                 size="sm"
-                onClick={gptResponseViewDisclosure.onOpen}
+                onPress={gptResponseViewDisclosure.onOpen}
                 isIconOnly
                 className="md:hidden"
               >
@@ -485,25 +497,26 @@ const PromptEditor: FC<PromptEditorProps> = ({
           {/* RESPONSE */}
 
           <div
-            className={`px-4 ${
-              currentCollection?.meta?.dataType === "rm"
-                ? "flex flex-col gap-2 border-2 border-blue-100 m-2 rounded-md pb-2"
-                : ""
-            }`}
+            className={`${currentCollection?.meta?.dataType === "rm"
+              ? "flex flex-col gap-4 border border-divider rounded-lg py-4 px-4"
+              : ""
+              }`}
           >
             <Textarea
               label={
                 currentCollection?.meta?.dataType === "rm"
-                  ? "Good Output:"
-                  : "Response:"
+                  ? "Good Output"
+                  : "Response"
               }
               labelPlacement="outside"
-              placeholder={`Enter AI ${
-                currentCollection?.meta?.dataType === "rm"
-                  ? "output for positive"
-                  : "response"
-              }`}
-              className="w-full"
+              placeholder={`Enter AI ${currentCollection?.meta?.dataType === "rm"
+                ? "output for positive"
+                : "response"
+                }`}
+              fullWidth
+              radius="md"
+              variant="flat"
+              classNames={inputClassNames}
               value={
                 (currentRecord &&
                   (currentCollection?.meta?.dataType === "rm"
@@ -521,10 +534,13 @@ const PromptEditor: FC<PromptEditorProps> = ({
 
             {currentCollection?.meta?.dataType === "rm" && (
               <Textarea
-                label={"Bad Output:"}
+                label={"Bad Output"}
                 labelPlacement="outside"
                 placeholder={`Enter AI output for negative`}
-                className="w-full"
+                fullWidth
+                radius="md"
+                variant="flat"
+                classNames={inputClassNames}
                 value={
                   (currentRecord &&
                     (currentCollection?.meta?.dataType === "rm"
@@ -539,47 +555,48 @@ const PromptEditor: FC<PromptEditorProps> = ({
 
           {/* input / CONTEXT */}
 
-          <div className="px-4">
-            <Textarea
-              label="input: (context)"
-              labelPlacement="outside"
-              placeholder="Enter input or context"
-              className="w-full"
-              value={(currentRecord && currentRecord.input) || ""}
-              onValueChange={throttledSaveChanges("input")}
-              onKeyDown={(e) => {
-                // handle Command+enter or Ctrl+enter
-                if (
-                  (e.ctrlKey || e.metaKey || e.key === "Meta") &&
-                  e.key === "Enter"
-                ) {
-                  llmResponseViewDisclosure.onOpen();
-                }
-              }}
-            />
-          </div>
+          <Textarea
+            label="Input (Context)"
+            labelPlacement="outside"
+            placeholder="Enter input or context"
+            fullWidth
+            radius="md"
+            variant="flat"
+            classNames={inputClassNames}
+            value={(currentRecord && currentRecord.input) || ""}
+            onValueChange={throttledSaveChanges("input")}
+            onKeyDown={(e) => {
+              // handle Command+enter or Ctrl+enter
+              if (
+                (e.ctrlKey || e.metaKey || e.key === "Meta") &&
+                e.key === "Enter"
+              ) {
+                llmResponseViewDisclosure.onOpen();
+              }
+            }}
+          />
 
           {/* HISTORY */}
 
-          <div className="px-4">
-            <Textarea
-              label="History:"
-              labelPlacement="outside"
-              placeholder={
-                "a: input\nb: response\n-----\na: input\nb: response"
-              }
-              className="w-full"
-              value={rawHistory}
-              onValueChange={throttledSaveChanges("history")}
-            />
-          </div>
+          <Textarea
+            label="History:"
+            labelPlacement="outside"
+            placeholder={
+              "a: input\nb: response\n-----\na: input\nb: response"
+            }
+            fullWidth
+            radius="md"
+            variant="flat"
+            classNames={inputClassNames}
+            value={rawHistory}
+            onValueChange={throttledSaveChanges("history")}
+          />
         </div>
       ) : (
         <SelectedHistoryContext.Provider value={{ newHistory, setNewHistory }}>
           <ChatModePromptEditor
-            initialMessage={`${currentRecord?.prompt || ""}\n${
-              currentRecord?.input || ""
-            }`.trim()}
+            initialMessage={`${currentRecord?.prompt || ""}\n${currentRecord?.input || ""
+              }`.trim()}
           />
         </SelectedHistoryContext.Provider>
       )}

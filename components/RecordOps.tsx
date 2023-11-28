@@ -27,16 +27,15 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@nextui-org/modal";
-import { Checkbox, cn } from "@nextui-org/react";
+import { Checkbox } from "@nextui-org/react";
+import { useSession } from "next-auth/react";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
 import { Notify } from "notiflix/build/notiflix-notify-aio";
 import { FC, Key, useContext, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import { HiArrowRightOnRectangle, HiOutlineCheck, HiOutlineDocumentCheck, HiOutlineDocumentPlus, HiOutlineTrash, HiXMark } from "react-icons/hi2";
 import { ErrorLabel } from "./ErrorLabel";
-import { ArrowRightIcon } from "./icon/ArrowRightIcon";
-import { CheckIcon } from "./icon/CheckIcon";
-import { DocumentPlus } from "./icon/DocumentPlus";
-import TrashIcon from "./icon/TrashIcon";
+import { RecordStatusType } from "@/models";
 
 function compileHistory(rawHistory: string): string[][] {
   if (!rawHistory || rawHistory == null || rawHistory.trim() === "") {
@@ -111,6 +110,15 @@ const RecordOps: FC<RecordOpsProps> = ({
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   const modalState = useDisclosure();
   const [useEmbedding, setUseEmbedding] = useState(false);
+
+  const session = useSession()
+  const user = session.data?.user
+
+  const basicRole = ["contributor", "annotator"].includes(user?.role!);
+
+  const canUpdate = basicRole && currentRecord?.creatorId === user?.id || !basicRole
+  const canReview = ["superuser", "corrector"].includes(user?.role!) && currentRecord?.status === "pending"
+  const canDelete = (user?.role === "superuser" || currentRecord?.creatorId === user?.id) && currentRecord !== null && currentRecord?.status === 'pending';
 
   const [enableOps, setEnableOps] = useState(false);
   // const {
@@ -230,7 +238,7 @@ const RecordOps: FC<RecordOpsProps> = ({
         __debug("data:", data);
         const doc = currentRecord!;
         doc.dirty = false;
-        const updatedRecord = {
+        const updatedRecord: DataRecord = {
           ...doc,
           prompt: rec.prompt,
           response: formattedResponse,
@@ -240,6 +248,7 @@ const RecordOps: FC<RecordOpsProps> = ({
           outputPositive: rec.outputPositive,
           outputNegative: rec.outputNegative,
           dirty: false,
+          status: 'pending'
         };
         setCurrentRecord!(updatedRecord);
         setGlobalState({
@@ -302,6 +311,56 @@ const RecordOps: FC<RecordOpsProps> = ({
     );
   };
 
+  const onSetStatusClick = (status: RecordStatusType) => {
+    setError("");
+
+    if (!currentRecord) {
+      alert("Please specify record first");
+      return;
+    }
+
+    const rec: DataRecord = currentRecord!;
+
+    if (!rec.id) {
+      alert("Please specify record first");
+      return;
+    }
+
+    Confirm.show(
+      "Confirmation",
+      `Are you sure you want to mark this record as ${status} "${rec.prompt}"?`,
+      "Yes",
+      "No",
+      () => {
+        post(`/api/records/${rec.id}/changeStatus`, {
+          status,
+          collectionId: currentCollection?.id,
+        })
+          .then((data) => {
+            __debug("data:", data);
+            const doc = currentRecord!;
+            doc.dirty = false;
+            const updatedRecord = {
+              ...doc,
+              status,
+            };
+            setCurrentRecord!(updatedRecord);
+            setGlobalState({
+              ...globalState,
+              updatedRecord,
+            });
+            Notify.success(`Record has been ${status}`);
+          })
+          .catch((err) => {
+            if (err) {
+              __error(typeof err);
+              Notify.failure("Cannot update record :(. " + errorMessage(err));
+            }
+          });
+      }
+    );
+  }
+
   // const onCopyLLMResponse = (data: LLMResponseData) => {
   //   console.log("data:", data);
   //   if (currentRecord) {
@@ -336,75 +395,116 @@ const RecordOps: FC<RecordOpsProps> = ({
 
   return (
     <div className={className}>
-      <div className="flex flex-col p-2 items-start justify-start gap-3">
-        {error && <ErrorLabel message={error} />}
-        <Button
-          size="md"
-          startContent={<DocumentPlus width="1.2em" />}
-          onClick={onAddClick}
-        >
-          Add New Record
-        </Button>
-        <Button
-          size="md"
-          disabled={!enableOps}
-          startContent={<CheckIcon />}
-          onClick={onUpdateClick}
-        >
-          Update Record
-        </Button>
+      <div className="flex flex-col items-start justify-start divide-y divide-divider">
+        <div className="px-4 py-5 flex flex-col self-stretch items-start justify-start gap-3">
+          {error && <ErrorLabel message={error} />}
+          <Button
+            size="lg"
+            radius="md"
+            variant="bordered"
+            startContent={<HiOutlineDocumentPlus className="w-6 h-6" />}
+            onClick={onAddClick}
+            fullWidth
+          >
+            Add New Record
+          </Button>
+          <Button
+            size="lg"
+            radius="md"
+            variant="bordered"
+            isDisabled={!enableOps || !canUpdate}
+            startContent={<HiOutlineDocumentCheck className="w-6 h-6" />}
+            fullWidth
+            onClick={onUpdateClick}
+          >
+            Update Record
+          </Button>
 
-        <MoveRecordButton
-          disabled={!enableOps}
-          currentRecord={currentRecord}
-          onMoveSuccess={() => {
-            setGlobalState({
-              ...globalState,
-              deleteRecord: currentRecord,
-            });
-            setCurrentRecord!(null);
-          }}
-        />
+          <MoveRecordButton
+            disabled={!enableOps}
+            currentRecord={currentRecord}
+            onMoveSuccess={() => {
+              setGlobalState({
+                ...globalState,
+                deleteRecord: currentRecord,
+              });
+              setCurrentRecord!(null);
+            }}
+          />
+        </div>
 
-        <div className="p-2 border-b-1 w-full"></div>
+        <div className="px-4 py-5 flex flex-col self-stretch items-start justify-start gap-3">
+          <Button size="lg" radius="md" color="primary" fullWidth onClick={llmResponseViewDisclosure.onOpen}>
+            Get {process.env.NEXT_PUBLIC_INTERNAL_MODEL_NAME} Response
+          </Button>
+          <Button size="lg" radius="md" color="primary" fullWidth onClick={gptResponseViewDisclosure.onOpen}>
+            Get GPT Response
+          </Button>
+          <Checkbox
+            onValueChange={(selected) => {
+              setUseEmbedding(selected);
+              setGlobalState({
+                ...globalState,
+                useEmbedding: selected,
+              });
+            }}
+          >
+            <span>Use Embedding</span>
+          </Checkbox>
+        </div>
 
-        <Button size="md" onClick={llmResponseViewDisclosure.onOpen}>
-          Get {process.env.NEXT_PUBLIC_INTERNAL_MODEL_NAME} Response
-        </Button>
-        <Button size="md" onClick={gptResponseViewDisclosure.onOpen}>
-          Get GPT Response
-        </Button>
-        <Checkbox
-          onValueChange={(selected) => {
-            setUseEmbedding(selected);
-            setGlobalState({
-              ...globalState,
-              useEmbedding: selected,
-            });
-          }}
-        >
-          <span>Use Embedding</span>
-        </Checkbox>
+        {canDelete && (
+          <div className="px-4 py-5 flex flex-col self-stretch items-start justify-start gap-3">
+            <Button
+              size="lg"
+              radius="md"
+              variant="bordered"
+              fullWidth
+              color="danger"
+              startContent={<HiOutlineTrash className="w-6 h-6" />}
+              isDisabled={
+                !enableOps || currentRecord === null || currentRecord?.id === ""
+              }
+              onClick={onDeleteClick}
+              title="Delete current record"
+            >
+              Delete Record
+            </Button>
+          </div>
+        )}
 
-        <div className="p-2 border-b-1 w-full"></div>
-
-        <Button
-          size="md"
-          className={cn(
-            "text-white",
-            currentRecord === null || currentRecord?.id === ""
-              ? "bg-gray-400"
-              : "bg-red-500"
-          )}
-          startContent={<TrashIcon />}
-          disabled={
-            !enableOps || currentRecord === null || currentRecord?.id === ""
-          }
-          onClick={onDeleteClick}
-          title="Delete current record"
-        >
-          Delete
-        </Button>
+        {canReview && (
+          <div className="px-4 py-5 flex flex-col self-stretch items-start justify-start gap-3">
+            <Button
+              size="lg"
+              radius="md"
+              fullWidth
+              color="success"
+              startContent={<HiOutlineCheck className="w-6 h-6 border-1.5 rounded-md p-0.5" />}
+              isDisabled={
+                !enableOps || currentRecord === null || currentRecord?.id === ""
+              }
+              title="Approve current record"
+              onPress={() => onSetStatusClick('approved')}
+            >
+              Approve Record
+            </Button>
+            <Button
+              size="lg"
+              radius="md"
+              fullWidth
+              color="danger"
+              startContent={<HiXMark className="w-6 h-6 border-1.5 rounded-md p-0.5" />}
+              isDisabled={
+                !enableOps || currentRecord === null || currentRecord?.id === ""
+              }
+              title="Reject current record"
+              onPress={() => onSetStatusClick('rejected')}
+            >
+              Reject Record
+            </Button>
+          </div>
+        )}
       </div>
 
       {currentCollection && (
@@ -487,8 +587,11 @@ const MoveRecordButton: FC<{
       <DropdownTrigger disabled={disabled}>
         <Button
           variant="bordered"
-          startContent={<ArrowRightIcon />}
-          disabled={disabled}
+          size="lg"
+          radius="md"
+          fullWidth
+          startContent={<HiArrowRightOnRectangle className="w-6 h-6" />}
+          isDisabled={disabled}
         >
           Move Record to
         </Button>

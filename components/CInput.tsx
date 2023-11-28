@@ -27,6 +27,11 @@ const CInput: FC<CInputProps> = ({
   errors,
   readOnly,
 }) => {
+  const inputClassNames = {
+    inputWrapper: "border dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+    input: "bg-transparent",
+  }
+
   return (
     <>
       <Controller
@@ -42,6 +47,7 @@ const CInput: FC<CInputProps> = ({
             value={value}
             onClear={!readOnly ? () => onChange("") : undefined}
             readOnly={readOnly}
+            classNames={inputClassNames}
           />
         )}
       />

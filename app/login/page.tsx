@@ -5,6 +5,7 @@ import LamdamIcon from "@/components/icon/LamdamIcon";
 import NUSidLogo from "@/components/icon/NUSidLogo";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Button } from "@nextui-org/button";
+import { Spinner } from "@nextui-org/react";
 import { BuiltInProviderType } from "next-auth/providers";
 import { ClientSafeProvider, LiteralUnion, getProviders, signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -21,7 +22,7 @@ export default function Login() {
     }, [])
 
     return (
-        <div className="w-full h-full flex items-center justify-center">
+        <div className="w-full h-screen flex items-center justify-center">
             <div className="w-[502px] flex flex-col space-y-8">
                 <div className="shadow-md rounded-2xl border-2 border-gray-200 relative px-8 py-12">
                     <div className="text-current text-4xl font-bold inline-flex space-x-3 items-center justify-center w-full mb-12">
@@ -29,6 +30,9 @@ export default function Login() {
                         <span>Lamdam</span>
                     </div>
                     <div className="flex flex-col space-y-2">
+                        {!providers && (
+                            <Spinner />
+                        )}
                         {providers && Object.values(providers).map((provider) => {
                             return (
                                 <Button

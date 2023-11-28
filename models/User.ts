@@ -1,9 +1,23 @@
 import mongoose, { Schema } from "mongoose";
+import { UserRoles } from ".";
 
 const UserModel = new Schema({
     name: { type: String, required: true },
     email: { type: String, required: true },
     image: { type: String, required: true },
+    status: {
+        type: String,
+        enum: ["blocked", "active"],
+        default: "active",
+    },
+    role: {
+        type: String,
+        enum: UserRoles,
+        default: "contributor",
+    },
+    meta: {
+        monthlyTarget: { type: Number, default: 0 },
+    }
 })
 
 const User = mongoose.models.User || mongoose.model("User", UserModel)

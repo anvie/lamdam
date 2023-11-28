@@ -10,8 +10,9 @@
     "strict": true,
     "sourceMap": true,
     "paths": {
-      "@models/*": ["models/*"],
-      "@lib/*": ["lib/*"]
+      "@/*": ["./*"],
+      "@/models/*": ["models/*"],
+      "@/lib/*": ["lib/*"]
     }
   },
   "include": ["src/**/*"]

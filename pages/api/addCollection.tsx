@@ -1,12 +1,12 @@
 import { apiHandler } from "@/lib/ApiHandler";
+import db from "@/lib/db";
 import { toApiRespDoc } from "@/lib/docutil";
 import { AddCollectionSchema } from "@/lib/schema";
 import { getCurrentTimeMillis } from "@/lib/timeutil";
 import { Collection } from "@/models/Collection";
+import { DataRecordModel } from "@/models/DataRecordRow";
 import { User } from "next-auth";
 import type { NextApiRequest, NextApiResponse } from "next/types";
-
-const db = require("../../lib/db");
 
 type Data = {
   error?: string;
@@ -34,6 +34,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
   })
     .save()
     .then((doc: any) => {
+      db.model(doc.name, DataRecordModel, doc.name);
+
       res.json({
         result: toApiRespDoc(doc),
       });

@@ -1,3 +1,4 @@
+import { UserRoleType } from "@/models";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { User, getServerSession } from "next-auth";
@@ -54,7 +55,10 @@ function apiHandler<T>(
     res: NextApiResponse,
     user?: User
   ) => NextApiResponse | Promise<T>,
-  opts?: { withAuth: boolean }
+  opts?: {
+    withAuth: boolean;
+    roles?: UserRoleType[];
+  }
 ) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     try {
@@ -74,6 +78,10 @@ function apiHandler<T>(
         }
 
         user = session?.user
+
+        if (opts?.roles && user && !opts?.roles.includes(user.role!)) {
+          throw { name: "UnauthorizedError" };
+        }
       }
 
       // route handler
