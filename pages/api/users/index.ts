@@ -26,129 +26,321 @@ export default apiHandler(async (req, res) => {
                     userId: { $toString: "$_id" },
                 }
             },
-            ...collections.map((col) => {
-                return {
-                    $lookup: {
-                        from: col,
-                        localField: "userId",
-                        foreignField: "creatorId",
-                        as: col,
-                        pipeline: [
-                            {
-                                $addFields: {
-                                    month: {
-                                        $month: {
-                                            $toDate: "$createdAt",
-                                        },
-                                    },
-                                    date: {
-                                        $dateToString: {
-                                            format: "%Y-%m-%d",
-                                            date: {
-                                                $toDate: "$createdAt",
-                                            },
-                                        },
-                                    },
+            {
+                $facet: {
+                    others: [
+                        {
+                            $match: {
+                                role: {
+                                    $nin: ["corrector"],
                                 },
                             },
-                        ],
-                    },
-                }
-            }),
-            {
-                $addFields: {
-                    records: {
-                        $concatArrays: collections.map((col) => `$${col}`),
-                    }
-                }
-            },
-            {
-                $project: {
-                    id: "$userId",
-                    name: 1,
-                    email: 1,
-                    image: 1,
-                    status: 1,
-                    role: 1,
-                    meta: 1,
-                    stats: {
-                        total: {
-                            $size: "$records",
                         },
-                        today: {
-                            $size: {
-                                $filter: {
-                                    input: "$records",
-                                    as: "rec",
-                                    cond: {
-                                        $eq: [
-                                            "$$rec.date",
-                                            {
-                                                $dateToString: {
-                                                    format: "%Y-%m-%d",
-                                                    date: new Date(),
+                        ...collections.map((col) => {
+                            return {
+                                $lookup: {
+                                    from: col,
+                                    localField: "userId",
+                                    foreignField: "creatorId",
+                                    as: col,
+                                    pipeline: [
+                                        {
+                                            $addFields: {
+                                                month: {
+                                                    $month: {
+                                                        $toDate: "$createdAt",
+                                                    },
+                                                },
+                                                date: {
+                                                    $dateToString: {
+                                                        format: "%Y-%m-%d",
+                                                        date: {
+                                                            $toDate: "$createdAt",
+                                                        },
+                                                    },
                                                 },
                                             },
-                                        ],
-                                    },
+                                        },
+                                    ],
                                 },
-                            },
+                            }
+                        }),
+                        {
+                            $addFields: {
+                                records: {
+                                    $concatArrays: collections.map((col) => `$${col}`),
+                                }
+                            }
                         },
-                        thisMonth: {
-                            $size: {
-                                $filter: {
-                                    input: "$records",
-                                    as: "rec",
-                                    cond: {
-                                        $eq: [
-                                            "$$rec.month",
-                                            {
-                                                $month: new Date(),
+                        {
+                            $project: {
+                                id: "$userId",
+                                name: 1,
+                                email: 1,
+                                image: 1,
+                                status: 1,
+                                role: 1,
+                                meta: 1,
+                                registeredAt: {
+                                    $ifNull: ["$registeredAt", null],
+                                },
+                                lastActivity: {
+                                    $ifNull: ["$lastActivity", null],
+                                },
+                                stats: {
+                                    total: {
+                                        $size: "$records",
+                                    },
+                                    today: {
+                                        $size: {
+                                            $filter: {
+                                                input: "$records",
+                                                as: "rec",
+                                                cond: {
+                                                    $eq: [
+                                                        "$$rec.date",
+                                                        {
+                                                            $dateToString: {
+                                                                format: "%Y-%m-%d",
+                                                                date: new Date(),
+                                                            },
+                                                        },
+                                                    ],
+                                                },
                                             },
-                                        ],
+                                        },
+                                    },
+                                    thisMonth: {
+                                        $size: {
+                                            $filter: {
+                                                input: "$records",
+                                                as: "rec",
+                                                cond: {
+                                                    $eq: [
+                                                        "$$rec.month",
+                                                        {
+                                                            $month: new Date(),
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    },
+                                    pending: {
+                                        $size: {
+                                            $filter: {
+                                                input: "$records",
+                                                as: "rec",
+                                                cond: {
+                                                    $eq: ["$$rec.status", "pending"],
+                                                },
+                                            },
+                                        },
+                                    },
+                                    rejected: {
+                                        $size: {
+                                            $filter: {
+                                                input: "$records",
+                                                as: "rec",
+                                                cond: {
+                                                    $eq: ["$$rec.status", "rejected"],
+                                                },
+                                            },
+                                        },
+                                    },
+                                    approved: {
+                                        $size: {
+                                            $filter: {
+                                                input: "$records",
+                                                as: "rec",
+                                                cond: {
+                                                    $eq: ["$$rec.status", "approved"],
+                                                },
+                                            },
+                                        },
                                     },
                                 },
                             },
                         },
-                        pending: {
-                            $size: {
-                                $filter: {
-                                    input: "$records",
-                                    as: "rec",
-                                    cond: {
-                                        $eq: ["$$rec.status", "pending"],
+                    ],
+                    corrector: [
+                        {
+                            $match: {
+                                role: "corrector",
+                            },
+                        },
+                        {
+                            $lookup: {
+                                from: "users",
+                                as: "meta_stats",
+                                pipeline: [
+                                    {
+                                        $match: {
+                                            role: "annotator",
+                                        },
+                                    },
+                                    {
+                                        $group: {
+                                            _id: null,
+                                            monthlyTarget: {
+                                                $sum: "$meta.monthlyTarget",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        $project: {
+                                            _id: 0,
+                                            monthlyTarget: 1,
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                        {
+                            $unwind: "$meta_stats",
+                        },
+                        ...collections.map((col) => {
+                            return {
+                                $lookup: {
+                                    from: col,
+                                    localField: "userId",
+                                    foreignField: "meta.lastModifiedBy",
+                                    as: col,
+                                    pipeline: [
+                                        {
+                                            $addFields: {
+                                                month: {
+                                                    $month: {
+                                                        $toDate: "$lastUpdated",
+                                                    },
+                                                },
+                                                date: {
+                                                    $dateToString: {
+                                                        format: "%Y-%m-%d",
+                                                        date: {
+                                                            $toDate: "$lastUpdated",
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                            }
+                        }),
+                        {
+                            $addFields: {
+                                records: {
+                                    $concatArrays: collections.map((col) => `$${col}`),
+                                }
+                            }
+                        },
+                        {
+                            $project: {
+                                id: "$userId",
+                                name: 1,
+                                email: 1,
+                                image: 1,
+                                status: 1,
+                                role: 1,
+                                meta: {
+                                    monthlyTarget: "$meta_stats.monthlyTarget",
+                                },
+                                registeredAt: {
+                                    $ifNull: ["$registeredAt", null],
+                                },
+                                lastActivity: {
+                                    $ifNull: ["$lastActivity", null],
+                                },
+                                stats: {
+                                    total: {
+                                        $size: "$records",
+                                    },
+                                    today: {
+                                        $size: {
+                                            $filter: {
+                                                input: "$records",
+                                                as: "rec",
+                                                cond: {
+                                                    $eq: [
+                                                        "$$rec.date",
+                                                        {
+                                                            $dateToString: {
+                                                                format: "%Y-%m-%d",
+                                                                date: new Date(),
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    },
+                                    thisMonth: {
+                                        $size: {
+                                            $filter: {
+                                                input: "$records",
+                                                as: "rec",
+                                                cond: {
+                                                    $eq: [
+                                                        "$$rec.month",
+                                                        {
+                                                            $month: new Date(),
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    },
+                                    pending: {
+                                        $size: {
+                                            $filter: {
+                                                input: "$records",
+                                                as: "rec",
+                                                cond: {
+                                                    $eq: ["$$rec.status", "pending"],
+                                                },
+                                            },
+                                        },
+                                    },
+                                    rejected: {
+                                        $size: {
+                                            $filter: {
+                                                input: "$records",
+                                                as: "rec",
+                                                cond: {
+                                                    $eq: ["$$rec.status", "rejected"],
+                                                },
+                                            },
+                                        },
+                                    },
+                                    approved: {
+                                        $size: {
+                                            $filter: {
+                                                input: "$records",
+                                                as: "rec",
+                                                cond: {
+                                                    $eq: ["$$rec.status", "approved"],
+                                                },
+                                            },
+                                        },
                                     },
                                 },
                             },
                         },
-                        rejected: {
-                            $size: {
-                                $filter: {
-                                    input: "$records",
-                                    as: "rec",
-                                    cond: {
-                                        $eq: ["$$rec.status", "rejected"],
-                                    },
-                                },
-                            },
-                        },
-                        approved: {
-                            $size: {
-                                $filter: {
-                                    input: "$records",
-                                    as: "rec",
-                                    cond: {
-                                        $eq: ["$$rec.status", "approved"],
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
+                    ],
+                }
             },
             {
                 $facet: {
                     entries: [
+                        {
+                            $project: {
+                                mergedArrays: {
+                                    $setUnion: ['$others', '$corrector']
+                                }
+                            }
+                        },
+                        { $unwind: '$mergedArrays' },
                         { $skip: skip },
                         { $limit: limit },
                     ],
@@ -158,7 +350,7 @@ export default apiHandler(async (req, res) => {
             { $unwind: '$count' },
             {
                 $project: {
-                    entries: "$entries",
+                    entries: "$entries.mergedArrays",
                     count: "$count.total",
                 }
             },

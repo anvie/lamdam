@@ -27,6 +27,29 @@ const methods: Record<string, any> = {
             res.status(500).json({ error: error.message });
         }
     },
+    patch: async (req: NextApiRequest, res: NextApiResponse, currentUser: UserAuth) => {
+        try {
+            const { id } = req.query;
+            const { status } = req.body;
+
+            const user = await User.findById(id);
+            if (!user) {
+                res.status(404).json({ error: "User not found" });
+                return;
+            }
+            if (!status) {
+                res.status(400).json({ error: "Status is required" });
+                return;
+            }
+
+            user.status = status;
+            await user.save();
+
+            res.status(200).json({ result: user });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    },
     get: async (req: NextApiRequest, res: NextApiResponse, currentUser: UserAuth) => {
         const { id } = req.query;
 
@@ -47,13 +70,11 @@ const methods: Record<string, any> = {
             return;
         }
 
-        const user = await User.findById(id);
+        const user = await User.findByIdAndDelete(id);
         if (!user) {
             res.status(404).json({ error: "User not found" });
             return;
         }
-
-        await user.delete();
 
         res.status(200).json({ result: "ok" });
     },

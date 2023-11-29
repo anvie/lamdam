@@ -14,12 +14,25 @@ mongoose.connect(process.env.MONGODB_URI, {
   retryWrites: false,
 });
 
-const db: Connection = mongoose.connection;
+let db: Connection = mongoose.connection;
 
 db.on("error", console.error.bind(console, "connection error:"));
 
 db.once("open", function callback() {
   console.log("MongoDB Connected.");
 });
+
+export const createConnection = async () => {
+  console.log("Connecting to DB...");
+  const conn = await mongoose.connect(process.env.MONGODB_URI, {
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+    retryWrites: false,
+  });
+
+  db = conn.connection;
+
+  return db
+}
 
 export default db;

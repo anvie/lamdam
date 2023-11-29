@@ -451,6 +451,21 @@ const PromptEditor: FC<PromptEditorProps> = ({
       {!chatMode ? (
         <div className="px-4 py-5 flex flex-col gap-4">
           {/* PROMPT */}
+          {currentRecord?.status === 'rejected' && (
+            <div className="w-full px-4 py-3.5 bg-rose-100 rounded-lg justify-start items-start gap-2 flex flex-col">
+              <div className="self-stretch justify-start items-center gap-2 inline-flex">
+                <div className="w-4 h-4 relative">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M9.00005 16.2C10.9096 16.2 12.741 15.4414 14.0912 14.0912C15.4415 12.7409 16.2 10.9096 16.2 9C16.2 7.09044 15.4415 5.2591 14.0912 3.90883C12.741 2.55857 10.9096 1.8 9.00005 1.8C7.09049 1.8 5.25914 2.55857 3.90888 3.90883C2.55862 5.2591 1.80005 7.09044 1.80005 9C1.80005 10.9096 2.55862 12.7409 3.90888 14.0912C5.25914 15.4414 7.09049 16.2 9.00005 16.2ZM12.3363 7.8363C12.5003 7.66656 12.591 7.43922 12.589 7.20324C12.5869 6.96727 12.4923 6.74153 12.3254 6.57467C12.1585 6.4078 11.9328 6.31315 11.6968 6.3111C11.4608 6.30905 11.2335 6.39976 11.0637 6.5637L8.10005 9.5274L6.93635 8.3637C6.76661 8.19976 6.53927 8.10905 6.30329 8.1111C6.06731 8.11315 5.84158 8.2078 5.67471 8.37467C5.50784 8.54153 5.41319 8.76727 5.41114 9.00324C5.40909 9.23922 5.49981 9.46656 5.66375 9.6363L7.46375 11.4363C7.63252 11.605 7.8614 11.6998 8.10005 11.6998C8.3387 11.6998 8.56757 11.605 8.73635 11.4363L12.3363 7.8363Z" fill="#C81E1E" />
+                  </svg>
+                </div>
+                <div className="grow shrink basis-0 text-red-700 text-base font-semibold leading-normal">Rejected Record </div>
+              </div>
+              {currentRecord?.meta?.rejectReason && (
+                <div className="text-red-700 text-sm font-normal leading-tight">{currentRecord?.meta?.rejectReason}</div>
+              )}
+            </div>
+          )}
 
           <div className="">
             <Textarea

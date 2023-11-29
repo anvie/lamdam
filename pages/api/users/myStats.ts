@@ -1,5 +1,6 @@
 import { apiHandler } from "@/lib/ApiHandler";
 import db from "@/lib/db";
+import { getDaysInCurrentMonth } from "@/lib/timeutil";
 import { User } from "@/models/User";
 
 export default apiHandler(async (req, res, user) => {
@@ -15,7 +16,53 @@ export default apiHandler(async (req, res, user) => {
             .toArray()
             .then((result: any) => result.map((c: any) => c.name));
 
-        const result = await User.aggregate([
+        const days = getDaysInCurrentMonth()
+        let result = {
+            total: 0,
+            today: 0,
+            thisMonth: 0,
+            pending: 0,
+            rejected: 0,
+            approved: 0,
+            targets: {}
+        }
+
+        let monthlyTarget = user?.meta?.monthlyTarget || 0;
+        let dailyTarget = monthlyTarget / days;
+
+        const isAnnotator = user?.role === 'annotator';
+
+        if (user?.role === 'corrector') {
+            const annotatorMonthlyTargets = await User.aggregate([
+                {
+                    $match: {
+                        role: 'annotator',
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        total: {
+                            $sum: "$meta.monthlyTarget"
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        total: 1,
+                    }
+                }
+            ])
+
+            if (annotatorMonthlyTargets.length > 0) {
+                monthlyTarget = annotatorMonthlyTargets[0].total;
+                dailyTarget = monthlyTarget / days;
+            }
+
+        }
+
+        const userStats = await User.aggregate([
             {
                 $addFields: {
                     userId: { $toString: "$_id" },
@@ -26,7 +73,7 @@ export default apiHandler(async (req, res, user) => {
                     $lookup: {
                         from: col,
                         localField: "userId",
-                        foreignField: "creatorId",
+                        foreignField: isAnnotator ? "creatorId" : "meta.lastModifiedBy",
                         as: col,
                         pipeline: [
                             {
@@ -41,6 +88,19 @@ export default apiHandler(async (req, res, user) => {
                                             format: "%Y-%m-%d",
                                             date: {
                                                 $toDate: "$createdAt",
+                                            },
+                                        },
+                                    },
+                                    monthModified: {
+                                        $month: {
+                                            $toDate: "$lastUpdated",
+                                        },
+                                    },
+                                    dateModified: {
+                                        $dateToString: {
+                                            format: "%Y-%m-%d",
+                                            date: {
+                                                $toDate: "$lastUpdated",
                                             },
                                         },
                                     },
@@ -71,7 +131,7 @@ export default apiHandler(async (req, res, user) => {
                                     as: "rec",
                                     cond: {
                                         $eq: [
-                                            "$$rec.date",
+                                            isAnnotator ? "$$rec.date" : "$$rec.dateModified",
                                             {
                                                 $dateToString: {
                                                     format: "%Y-%m-%d",
@@ -90,7 +150,7 @@ export default apiHandler(async (req, res, user) => {
                                     as: "rec",
                                     cond: {
                                         $eq: [
-                                            "$$rec.month",
+                                            isAnnotator ? "$$rec.month" : "$$rec.monthModified",
                                             {
                                                 $month: new Date(),
                                             },
@@ -138,20 +198,19 @@ export default apiHandler(async (req, res, user) => {
             { $match: { userId: user?.id } }
         ])
 
-        if (result.length == 0) {
-            return res.json({
-                result: {
-                    total: 0,
-                    today: 0,
-                    thisMonth: 0,
-                    pending: 0,
-                    rejected: 0,
-                    approved: 0,
-                }
-            })
+        if (userStats.length !== 0) {
+            result = userStats[0].stats;
         }
 
-        return res.json({ result: result[0].stats })
+        return res.json({
+            result: {
+                ...result,
+                targets: {
+                    monthly: monthlyTarget,
+                    daily: Math.round(dailyTarget),
+                },
+            }
+        })
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

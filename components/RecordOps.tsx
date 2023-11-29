@@ -10,6 +10,7 @@ import { errorMessage } from "@/lib/errorutil";
 import { __debug, __error } from "@/lib/logger";
 import { AddRecordSchema } from "@/lib/schema";
 import { DisclosureType } from "@/lib/types";
+import { RecordStatusType } from "@/models";
 import { Collection, DataRecord } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@nextui-org/button";
@@ -35,7 +36,8 @@ import { FC, Key, useContext, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { HiArrowRightOnRectangle, HiOutlineCheck, HiOutlineDocumentCheck, HiOutlineDocumentPlus, HiOutlineTrash, HiXMark } from "react-icons/hi2";
 import { ErrorLabel } from "./ErrorLabel";
-import { RecordStatusType } from "@/models";
+import { useModal } from "./hooks/useModal";
+import RejectReasonModal from "./modals/RejectReasonModal";
 
 function compileHistory(rawHistory: string): string[][] {
   if (!rawHistory || rawHistory == null || rawHistory.trim() === "") {
@@ -110,6 +112,7 @@ const RecordOps: FC<RecordOpsProps> = ({
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   const modalState = useDisclosure();
   const [useEmbedding, setUseEmbedding] = useState(false);
+  const modal = useModal()
 
   const session = useSession()
   const user = session.data?.user
@@ -119,6 +122,7 @@ const RecordOps: FC<RecordOpsProps> = ({
   const canUpdate = basicRole && currentRecord?.creatorId === user?.id || !basicRole
   const canReview = ["superuser", "corrector"].includes(user?.role!) && currentRecord?.status === "pending"
   const canDelete = (user?.role === "superuser" || currentRecord?.creatorId === user?.id) && currentRecord !== null && currentRecord?.status === 'pending';
+  const canMoveRecord = ["superuser", "corrector"].includes(user?.role!) || currentRecord?.creatorId === user?.id
 
   const [enableOps, setEnableOps] = useState(false);
   // const {
@@ -326,39 +330,55 @@ const RecordOps: FC<RecordOpsProps> = ({
       return;
     }
 
-    Confirm.show(
-      "Confirmation",
-      `Are you sure you want to mark this record as ${status} "${rec.prompt}"?`,
-      "Yes",
-      "No",
-      () => {
-        post(`/api/records/${rec.id}/changeStatus`, {
+    const onStatusChange = async (data: any) => {
+      return await post(`/api/records/${rec.id}/changeStatus`, data)
+        .then((data) => {
+          __debug("data:", data);
+          const doc = currentRecord!;
+          doc.dirty = false;
+          const updatedRecord = {
+            ...doc,
+            status,
+            meta: {
+              rejectReason: data.rejectReason,
+            }
+          };
+          setCurrentRecord!(updatedRecord);
+          setGlobalState({
+            ...globalState,
+            updatedRecord,
+          });
+          Notify.success(`Record has been ${status}`);
+        })
+        .catch((err) => {
+          if (err) {
+            __error(typeof err);
+            Notify.failure("Cannot update record :(. " + errorMessage(err));
+          }
+        })
+    }
+
+    if (status === 'rejected') {
+      modal.showModal('Reject Reason', RejectReasonModal, {
+        size: 'xl',
+        onSubmit: (rejectReason) => onStatusChange({
+          status,
+          collectionId: currentCollection?.id,
+          rejectReason,
+        }),
+      })
+    } else {
+      Confirm.show(
+        "Confirmation",
+        `Are you sure you want to mark this record as ${status} "${rec.prompt}"?`,
+        "Yes",
+        "No",
+        () => onStatusChange({
           status,
           collectionId: currentCollection?.id,
         })
-          .then((data) => {
-            __debug("data:", data);
-            const doc = currentRecord!;
-            doc.dirty = false;
-            const updatedRecord = {
-              ...doc,
-              status,
-            };
-            setCurrentRecord!(updatedRecord);
-            setGlobalState({
-              ...globalState,
-              updatedRecord,
-            });
-            Notify.success(`Record has been ${status}`);
-          })
-          .catch((err) => {
-            if (err) {
-              __error(typeof err);
-              Notify.failure("Cannot update record :(. " + errorMessage(err));
-            }
-          });
-      }
-    );
+      );
+    }
   }
 
   // const onCopyLLMResponse = (data: LLMResponseData) => {
@@ -421,7 +441,7 @@ const RecordOps: FC<RecordOpsProps> = ({
           </Button>
 
           <MoveRecordButton
-            disabled={!enableOps}
+            disabled={!enableOps || !canMoveRecord}
             currentRecord={currentRecord}
             onMoveSuccess={() => {
               setGlobalState({
