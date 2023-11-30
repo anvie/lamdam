@@ -43,6 +43,9 @@ export type DataRecord = {
 
   // client-only for helper format history from raw text (not actual filed from server).
   rawHistory: string;
+  meta?: {
+    rejectReason?: string;
+  }
 }
 
 export interface Result<T> {
@@ -59,4 +62,8 @@ export interface Statistic {
   approved: number;
   rejected: number;
   total: number;
+  targets: {
+    daily: number;
+    monthly: number;
+  }
 }

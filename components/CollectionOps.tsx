@@ -1,18 +1,17 @@
 "use client";
-import CollectionSelector from "@/components/CollectionSelector";
-import * as apiClient from "@/lib/FetchWrapper";
-import { post } from "@/lib/FetchWrapper";
+import CollectionSelector from "@/components/CollectionSelector"
+import * as apiClient from "@/lib/FetchWrapper"
+import { post } from "@/lib/FetchWrapper"
 import {
   CollectionContext,
   GlobalContext,
   NeedUpdateContext,
-} from "@/lib/context";
-import { __debug, __error } from "@/lib/logger";
-import { AddCollectionSchema } from "@/lib/schema";
-import { getDaysInCurrentMonth } from "@/lib/timeutil";
-import { Statistic } from "@/types";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@nextui-org/button";
+} from "@/lib/context"
+import { __debug, __error } from "@/lib/logger"
+import { AddCollectionSchema } from "@/lib/schema"
+import { Statistic } from "@/types"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Button } from "@nextui-org/button"
 import {
   Modal,
   ModalBody,
@@ -20,24 +19,24 @@ import {
   ModalFooter,
   ModalHeader,
   useDisclosure,
-} from "@nextui-org/modal";
-import { cn } from "@nextui-org/react";
-import { useSession } from "next-auth/react";
-import { Confirm } from "notiflix/build/notiflix-confirm-aio";
-import { Loading } from "notiflix/build/notiflix-loading-aio";
-import { Report } from "notiflix/build/notiflix-report-aio";
-import React, { FC, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { HiCalculator, HiCalendarDays, HiMiniCircleStack } from "react-icons/hi2";
-import useSWR from "swr";
-import CInput from "./CInput";
-import CSelect from "./CSelect";
-import CTextarea from "./CTextarea";
-import CompileAllModal from "./CompileAllModal";
-import { ErrorLabel } from "./ErrorLabel";
-import { useModal } from "./hooks/useModal";
-import ExportModal from "./modals/ExportModal";
-import ImportModal from "./modals/ImportModal";
+} from "@nextui-org/modal"
+import { cn } from "@nextui-org/react"
+import { useSession } from "next-auth/react"
+import { Confirm } from "notiflix/build/notiflix-confirm-aio"
+import { Loading } from "notiflix/build/notiflix-loading-aio"
+import { Report } from "notiflix/build/notiflix-report-aio"
+import React, { FC, useContext, useEffect, useRef, useState } from "react"
+import { useForm } from "react-hook-form"
+import { HiCalculator, HiCalendarDays, HiMiniCircleStack } from "react-icons/hi2"
+import useSWR from "swr"
+import CInput from "./CInput"
+import CSelect from "./CSelect"
+import CTextarea from "./CTextarea"
+import CompileAllModal from "./CompileAllModal"
+import { ErrorLabel } from "./ErrorLabel"
+import { useModal } from "./hooks/useModal"
+import ExportModal from "./modals/ExportModal"
+import ImportModal from "./modals/ImportModal"
 
 
 const CollectionOps: FC = () => {
@@ -202,19 +201,9 @@ const RecordsStats = () => {
     refreshInterval: 3000,
   })
 
-  const session = useSession()
-  const user = session.data?.user
-  const monthlyTarget = user?.meta?.monthlyTarget || 0
   const myStats = data?.result
-  const perDayTarget = useMemo(() => {
-    const now = new Date()
-    if (now.getDay() === 0) return 0
-
-    const days = getDaysInCurrentMonth()
-    const perDayTarget = Math.round(monthlyTarget ? monthlyTarget / days : 0)
-
-    return perDayTarget
-  }, [monthlyTarget])
+  const monthlyTarget = myStats?.targets.monthly || 0
+  const perDayTarget = myStats?.targets.daily || 0
 
   useEffect(() => {
     if (!currentCollection) {
@@ -264,7 +253,7 @@ const RecordsStats = () => {
         </div>
         <div className="flex flex-col">
           <span className="opacity-40 text-current text-xs font-normal">Monthly Target</span>
-          <span className="text-current text-sm font-medium">{myStats?.thisMonth ?? 0}/{monthlyTarget}</span>
+          <span className="text-current text-sm font-medium">{Number(myStats?.thisMonth ?? 0).toDisplay()}/{monthlyTarget.toDisplay()}</span>
         </div>
       </div>
       <div className="flex gap-2 items-center">
@@ -273,7 +262,7 @@ const RecordsStats = () => {
         </div>
         <div className="flex flex-col">
           <span className="opacity-40 text-current text-xs font-normal">Total Record</span>
-          <span className="text-current text-sm font-medium">{recordsCount}</span>
+          <span className="text-current text-sm font-medium">{recordsCount.toDisplay()}</span>
         </div>
       </div>
     </div>

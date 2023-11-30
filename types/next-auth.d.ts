@@ -8,6 +8,8 @@ interface IUser extends DefaultUser {
   image: string | null;
   status?: "blocked" | "active";
   role?: UserRoleType;
+  registeredAt?: number;
+  lastActivity?: number;
   meta?: {
     monthlyTarget?: number;
   };

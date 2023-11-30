@@ -101,5 +101,6 @@ export const EditUserSchema = z.object({
 
 export const RecordStatusSchema = z.object({
     status: z.enum(["approved", "rejected"]),
-    collectionId: z.string()
+    collectionId: z.string(),
+    rejectReason: z.string().optional(),
 });

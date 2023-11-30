@@ -2,12 +2,14 @@
 import { useModal } from "@/components/hooks/useModal";
 import EditUserModal from "@/components/modals/EditUserModal";
 import * as apiClient from "@/lib/FetchWrapper";
+import "@/lib/stringutil";
 import { getDaysInCurrentMonth } from "@/lib/timeutil";
 import { Result, Statistic } from "@/types";
 import { Button, Chip, ChipProps, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Pagination, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User as UserProfile } from "@nextui-org/react";
+import moment from "moment";
 import { User } from "next-auth";
 import { useSession } from "next-auth/react";
-import Notiflix from "notiflix";
+import { Confirm, Loading, Notify } from "notiflix";
 import React, { useCallback, useMemo, useState } from "react";
 import { HiEllipsisHorizontal } from "react-icons/hi2";
 import useSWR from "swr";
@@ -16,8 +18,10 @@ const columns = [
     { name: "Name", uid: "name" },
     { name: "Daily Target", uid: "dailyTarget" },
     { name: "Monthly Target", uid: "monthlyTarget" },
-    { name: "Total Datasets", uid: "dsCount" },
+    { name: "Total Records", uid: "dsCount" },
     { name: "Role", uid: "role" },
+    { name: "Last Activity", uid: "lastActivity" },
+    { name: "Registered At", uid: "registeredAt" },
     { name: "Status", uid: "status" },
     { name: "Actions", uid: "actions" },
 ];
@@ -29,6 +33,25 @@ const statusColorMap: Record<string, ChipProps["color"]> = {
 
 type UserWithStats = User & {
     stats: Statistic
+}
+
+async function modifyUser(method: string, url: string, body: any) {
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body)
+        })
+
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+
+        return data
+    } catch (error) {
+        throw error
+    }
 }
 
 const UsersPage = () => {
@@ -47,13 +70,22 @@ const UsersPage = () => {
         return data?.result.count ? Math.ceil(data.result.count / rowsPerPage) : 0;
     }, [data?.result.count, rowsPerPage]);
 
-    const changeUserStatus = async (status: string, term: string) => {
-        Notiflix.Confirm.show(
+    const changeUserStatus = async (userId: string, status: string, term: string) => {
+        Confirm.show(
             "Confirm Action",
             `Are you sure you want to ${term} this user?`,
             "Yes",
             "No",
             async () => {
+                try {
+                    Loading.hourglass('Processing...')
+                    await modifyUser('PATCH', `/api/users/${userId}`, { status })
+                    Notify.success(`User ${status === 'active' ? 'activated' : 'blocked'} successfully`)
+                } catch (error) {
+                    Notify.failure(`Failed to ${term} user`)
+                } finally {
+                    Loading.remove()
+                }
             }
         );
     }
@@ -68,12 +100,12 @@ const UsersPage = () => {
             if (columnKey === 'dailyTarget') {
                 if (monthlyTarget === 0) return (<span>-</span>);
 
-                const dailyTarget = Math.round(monthlyTarget / days);
+                const dailyTarget = Math.round(monthlyTarget / days).toDisplay();
 
                 return (
                     <div className="flex flex-col">
                         <p className="font-medium capitalize">{dailyTarget}</p>
-                        <p className="text-bold text-sm capitalize text-default-400">Datasets</p>
+                        <p className="text-bold text-sm capitalize text-default-400">Records</p>
                     </div>
                 )
             } else if (columnKey === 'monthlyTarget') {
@@ -81,20 +113,30 @@ const UsersPage = () => {
 
                 return (
                     <div className="flex flex-col">
-                        <p className="font-medium capitalize">{monthlyTarget}</p>
-                        <p className="text-bold text-sm capitalize text-default-400">Datasets</p>
+                        <p className="font-medium capitalize">{monthlyTarget.toDisplay()}</p>
+                        <p className="text-bold text-sm capitalize text-default-400">Records</p>
                     </div>
                 )
             } else if (columnKey === 'dsCount') {
                 return (
                     <div className="flex flex-col">
-                        <p className="font-medium capitalize">{user.stats.total}</p>
-                        <p className="text-bold text-sm capitalize text-default-400">Datasets</p>
+                        <p className="font-medium capitalize">{user.stats.total.toDisplay()}</p>
+                        <p className="text-bold text-sm capitalize text-default-400">Records</p>
+                    </div>
+                )
+            } else if (columnKey === 'lastActivity' || columnKey === 'registeredAt') {
+                return (
+                    <div className="flex flex-col">
+                        <p className="font-medium capitalize">{cellValue ? moment(Number(cellValue)).format('YYYY/MM/DD HH:mm') : '-'}</p>
                     </div>
                 )
             }
 
-            return null;
+            return (
+                <div className="flex flex-col">
+                    <p className="font-medium capitalize">-</p>
+                </div>
+            )
         }
 
         switch (columnKey) {
@@ -144,17 +186,42 @@ const UsersPage = () => {
                                     });
                                 } else if (key === 'setStatus') {
                                     return changeUserStatus(
+                                        user.id,
                                         user.status === 'blocked' ? 'active' : 'blocked',
                                         user.status === 'blocked' ? 'activate' : 'block',
+                                    );
+                                } else if(key === 'delete') {
+                                    Confirm.show(
+                                        "Confirm Action",
+                                        `Are you sure you want to delete this user?`,
+                                        "Yes",
+                                        "No",
+                                        async () => {
+                                            try {
+                                                Loading.hourglass('Deleting user...')
+                                                await modifyUser('DELETE', `/api/users/${user.id}`, {})
+                                                Notify.success(`User deleted successfully`)
+                                            } catch (error) {
+                                                Notify.failure(`Failed to delete user`)
+                                            } finally {
+                                                Loading.remove()
+                                            }
+                                        }
                                     );
                                 }
                             }}
                         >
                             <DropdownItem key="edit">Edit User</DropdownItem>
                             <DropdownItem key="showReports">Show Reports</DropdownItem>
-                            <DropdownItem key="setStatus" showDivider className="text-warning" color="warning">
-                                Block User
-                            </DropdownItem>
+                            {user.status === 'active' ? (
+                                <DropdownItem key="setStatus" showDivider className="text-warning" color="warning">
+                                    Block User
+                                </DropdownItem>
+                            ) : (
+                                <DropdownItem key="setStatus" showDivider className="text-success" color="success">
+                                    Activate User
+                                </DropdownItem>
+                            )}
                             <DropdownItem key="delete" className="text-danger" color="danger">
                                 Delete User
                             </DropdownItem>
