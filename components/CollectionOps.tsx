@@ -261,7 +261,7 @@ const RecordsStats = () => {
           <HiMiniCircleStack className="w-6 h-6 relative" />
         </div>
         <div className="flex flex-col">
-          <span className="opacity-40 text-current text-xs font-normal">Total Record</span>
+          <span className="opacity-40 text-current text-xs font-normal">Total Records</span>
           <span className="text-current text-sm font-medium">{recordsCount.toDisplay()}</span>
         </div>
       </div>
