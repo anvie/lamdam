@@ -1,25 +1,25 @@
 "use client";
 
-import { get, post } from "@/lib/FetchWrapper";
+import { get, post } from "@/lib/FetchWrapper"
 import {
   CollectionContext,
   GlobalContext,
   SelectedRecordContext,
-} from "@/lib/context";
-import { errorMessage } from "@/lib/errorutil";
-import { __debug, __error } from "@/lib/logger";
-import { AddRecordSchema } from "@/lib/schema";
-import { DisclosureType } from "@/lib/types";
-import { RecordStatusType } from "@/models";
-import { Collection, DataRecord } from "@/types";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@nextui-org/button";
+} from "@/lib/context"
+import { errorMessage } from "@/lib/errorutil"
+import { __debug, __error } from "@/lib/logger"
+import { AddRecordSchema } from "@/lib/schema"
+import { DisclosureType } from "@/lib/types"
+import { RecordStatusType } from "@/models"
+import { Collection, DataRecord } from "@/types"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Button } from "@nextui-org/button"
 import {
   Dropdown,
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
-} from "@nextui-org/dropdown";
+} from "@nextui-org/dropdown"
 import {
   Modal,
   ModalBody,
@@ -27,17 +27,17 @@ import {
   ModalFooter,
   ModalHeader,
   useDisclosure,
-} from "@nextui-org/modal";
-import { Checkbox } from "@nextui-org/react";
-import { useSession } from "next-auth/react";
-import { Confirm } from "notiflix/build/notiflix-confirm-aio";
-import { Notify } from "notiflix/build/notiflix-notify-aio";
-import { FC, Key, useContext, useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { HiArrowRightOnRectangle, HiOutlineCheck, HiOutlineDocumentCheck, HiOutlineDocumentPlus, HiOutlineTrash, HiXMark } from "react-icons/hi2";
-import { ErrorLabel } from "./ErrorLabel";
-import { useModal } from "./hooks/useModal";
-import RejectReasonModal from "./modals/RejectReasonModal";
+} from "@nextui-org/modal"
+import { Checkbox } from "@nextui-org/react"
+import { useSession } from "next-auth/react"
+import { Confirm } from "notiflix/build/notiflix-confirm-aio"
+import { Notify } from "notiflix/build/notiflix-notify-aio"
+import { FC, Key, useContext, useEffect, useRef, useState } from "react"
+import { useForm } from "react-hook-form"
+import { HiArrowRightOnRectangle, HiOutlineCheck, HiOutlineDocumentCheck, HiOutlineDocumentPlus, HiOutlineTrash, HiXMark } from "react-icons/hi2"
+import { ErrorLabel } from "./ErrorLabel"
+import { useModal } from "./hooks/useModal"
+import RejectReasonModal from "./modals/RejectReasonModal"
 
 function compileHistory(rawHistory: string): string[][] {
   if (!rawHistory || rawHistory == null || rawHistory.trim() === "") {
@@ -119,7 +119,8 @@ const RecordOps: FC<RecordOpsProps> = ({
 
   const basicRole = ["contributor", "annotator"].includes(user?.role!);
 
-  const canUpdate = basicRole && currentRecord?.creatorId === user?.id || !basicRole
+  const canUpdate = (basicRole && currentRecord?.creatorId === user?.id || !basicRole) && currentRecord?.status!='approved'
+
   const canReview = ["superuser", "corrector"].includes(user?.role!) && currentRecord?.status === "pending"
   const canDelete = (user?.role === "superuser" || currentRecord?.creatorId === user?.id) && currentRecord !== null && currentRecord?.status === 'pending';
   const canMoveRecord = ["superuser", "corrector"].includes(user?.role!) || currentRecord?.creatorId === user?.id
