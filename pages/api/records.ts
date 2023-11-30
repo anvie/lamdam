@@ -1,15 +1,16 @@
-import { apiHandler } from "@/lib/ApiHandler";
-import { toApiRespDoc } from "@/lib/docutil";
-import { DataRecord } from "@/types";
-import type { NextApiRequest, NextApiResponse } from "next/types";
+import { apiHandler } from "@/lib/ApiHandler"
+import { toApiRespDoc } from "@/lib/docutil"
+import { DataRecord } from "@/types"
+import type { NextApiRequest, NextApiResponse } from "next/types"
 
 // import db from "@/lib/db";
 const db = require("../../lib/db");
 const mongoose = require("mongoose");
 
-import { __error } from "@/lib/logger";
-import { Collection } from "@/models/Collection";
-import { Types } from "mongoose";
+import { __error } from "@/lib/logger"
+import { Collection } from "@/models/Collection"
+import { Types } from "mongoose"
+import { getSession } from "next-auth/react"
 
 type Data = {
     error?: string;
@@ -98,6 +99,24 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
             status: Array.isArray(status) ? { $in: status.map(s => s.trim()) } : status.trim()
         }
     }
+
+
+
+
+
+    const session = await getSession({req})
+
+    if(typeof session?.user?.role == 'undefined' || session?.user?.role == 'annotator') {
+      query = {...query, $or: [
+        {
+          creatorId: session?.user?.id
+        },
+        {
+          status: "approved"
+        }
+      ]}
+    }
+
 
     // __debug('query:', query)
 
