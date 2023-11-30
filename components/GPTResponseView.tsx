@@ -117,7 +117,7 @@ const GPTResponseView: FC<Props> = ({
     });
 
     let query = {
-      model: "gpt-4",
+      model: process.env.NEXT_PUBLIC_GPT_MODEL,
       messages,
       temperature: 0.6,
       top_p: 0,
