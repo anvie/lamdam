@@ -117,9 +117,9 @@ const RecordOps: FC<RecordOpsProps> = ({
   const session = useSession()
   const user = session.data?.user
 
-  const basicRole = ["contributor", "annotator"].includes(user?.role!);
+  const basicRole = ["contributor", "annotator"].includes(user?.role!) || typeof user?.role === 'undefined';
 
-  const canUpdate = (basicRole && currentRecord?.creatorId === user?.id || !basicRole) && currentRecord?.status!='approved'
+  const canUpdate = (basicRole && currentRecord?.creatorId === user?.id && currentRecord?.status!='approved') || !basicRole
 
   const canReview = ["superuser", "corrector"].includes(user?.role!) && currentRecord?.status === "pending"
   const canDelete = (user?.role === "superuser" || currentRecord?.creatorId === user?.id) && currentRecord !== null && currentRecord?.status === 'pending';
