@@ -63,7 +63,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     if (!currentCollection) {
       return;
     }
-    void refreshData(currentCollection?.id || "0", undefined, true);
+    void refreshData(currentCollection?.id || "0", undefined, []);
   }, [currentCollection]);
 
   useEffect(() => {
@@ -84,8 +84,9 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     }
     if (globalState.deleteRecord) {
       __debug("globalState.deleteRecord changed.");
+      __debug("deleteRecord:", globalState.deleteRecord);
       setLastId([]);
-      void refreshData(currentCollection?.id || "0", query);
+      void refreshData(currentCollection?.id || "0", query, []);
       setGlobalState({ ...globalState, deleteRecord: null });
     }
     if (globalState.updatedRecord) {
@@ -143,7 +144,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
   const refreshData = async (
     id: string,
     query?: string | undefined,
-    noLastId: boolean = false
+    useLastId?: string[] | undefined
   ) => {
     if (!id) {
       return;
@@ -154,12 +155,17 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     };
 
     if (query) options.keyword = query;
-    if (lastId.length > 0 && !noLastId) {
-      if (lastId[1] !== "") {
-        options.toId = lastId[1];
+    let _lastId = lastId;
+    __debug("_lastId:", _lastId);
+    if (useLastId !== undefined) {
+      _lastId = useLastId;
+    }
+    if (_lastId.length > 0) {
+      if (_lastId[1] !== "") {
+        options.toId = _lastId[1];
       }
-      if (lastId[0] !== "") {
-        options.fromId = lastId[0];
+      if (_lastId[0] !== "") {
+        options.fromId = _lastId[0];
       }
     }
 
@@ -244,7 +250,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
           onClear={() => {
             setQuery("");
             setLastId([]);
-            void refreshData(currentCollection?.id || "0", undefined, true);
+            void refreshData(currentCollection?.id || "0", undefined, []);
           }}
           onKeyUp={(e) => {
             // setQuery(e.currentTarget.value);
