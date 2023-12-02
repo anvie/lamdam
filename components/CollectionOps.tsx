@@ -18,6 +18,13 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@nextui-org/modal";
+import {
+  Avatar,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+} from "@nextui-org/react";
 import { signOut, useSession } from "next-auth/react";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
@@ -35,7 +42,6 @@ import LogoutIcon from "./icon/LogoutIcon";
 import ExportModal from "./modals/ExportModal";
 import ImportModal from "./modals/ImportModal";
 import { ThemeSwitch } from "./theme-switch";
-import { Avatar, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@nextui-org/react";
 
 const CollectionOps: FC = () => {
   return (
@@ -64,14 +70,15 @@ const CollectionOpsButtons = () => {
     onOpenChange: onCompileAllModalOpenChange,
   } = useDisclosure();
 
-  const { currentCollection, setCurrentCollection } = useContext(CollectionContext);
+  const { currentCollection, setCurrentCollection } =
+    useContext(CollectionContext);
   const { setNeedUpdate } = useContext(NeedUpdateContext);
   const { globalState, setGlobalState } = useContext(GlobalContext);
 
   const { data: session } = useSession();
   const user = useMemo(() => session?.user, [session]);
 
-  const { showModal } = useModal()
+  const { showModal } = useModal();
 
   const doDump = () => {
     if (!currentCollection) {
@@ -147,31 +154,43 @@ const CollectionOpsButtons = () => {
         <Button size="sm" className="hidden md:block">
           Edit
         </Button>
-        <Button size="sm" className="hidden md:block" onPress={() => {
-          showModal('Export', ExportModal, {
-            currentCollection: currentCollection ?? undefined,
-          })
-        }}>
+        <Button
+          size="sm"
+          className="hidden md:block"
+          onPress={() => {
+            showModal("Export", ExportModal, {
+              currentCollection: currentCollection ?? undefined,
+            });
+          }}
+        >
           Export
         </Button>
-        <Button size="sm" className="hidden md:block" onPress={() => {
-          showModal('Import', ImportModal, {
-            currentCollection: currentCollection ?? undefined,
-            onImportSuccess: (importedCount) => {
-              const currentCollectionTmp = {
-                id: currentCollection!.id,
-                count: currentCollection!.count + importedCount,
-                meta: currentCollection!.meta,
-                name: currentCollection!.name,
-              };
-              setCurrentCollection?.(currentCollectionTmp);
-              setNeedUpdate(true);
-            },
-          })
-        }}>
+        <Button
+          size="sm"
+          className="hidden md:block"
+          onPress={() => {
+            showModal("Import", ImportModal, {
+              currentCollection: currentCollection ?? undefined,
+              onImportSuccess: (importedCount) => {
+                const currentCollectionTmp = {
+                  id: currentCollection!.id,
+                  count: currentCollection!.count + importedCount,
+                  meta: currentCollection!.meta,
+                  name: currentCollection!.name,
+                };
+                setCurrentCollection?.(currentCollectionTmp);
+                setNeedUpdate(true);
+              },
+            });
+          }}
+        >
           Import
         </Button>
-        <Button size="sm" isIconOnly className="hidden md:inline-flex text-center justify-center items-center">
+        <Button
+          size="sm"
+          isIconOnly
+          className="hidden md:inline-flex text-center justify-center items-center"
+        >
           <GearIcon width="24px" />
         </Button>
         <Button size="sm" isIconOnly>
@@ -276,10 +295,8 @@ const AddCollectionModal: FC<any> = ({
   const onSubmit = (onClose: any) => {
     setError("");
     return (data: any) => {
-      __debug("data:", data);
       post("/api/addCollection", data)
         .then((data) => {
-          __debug("data:", data);
           // if (data.result && data.result.length > 0){
           setNeedUpdate(true);
           onClose();

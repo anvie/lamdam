@@ -227,7 +227,6 @@ const RecordOps: FC<RecordOpsProps> = ({
       collectionId: currentCollection!.id,
     })
       .then((data) => {
-        __debug("data:", data);
         const doc = currentRecord!;
         doc.dirty = false;
         const updatedRecord = {
@@ -284,7 +283,6 @@ const RecordOps: FC<RecordOpsProps> = ({
           collectionId: currentCollection?.id,
         })
           .then((data) => {
-            __debug("data:", data);
             setGlobalState({
               ...globalState,
               deleteRecord: currentRecord,
@@ -448,7 +446,6 @@ const MoveRecordButton: FC<{
   useEffect(() => {
     get("/api/collections")
       .then((data) => {
-        __debug("data:", data);
         let cols = data.result;
 
         if (currentCollection) {
@@ -576,90 +573,3 @@ const ConfirmModal: FC<Props> = ({
     </Modal>
   );
 };
-
-// const AddRecordModal: FC<any> = ({ isOpen, onOpen, onOpenChange }) => {
-//   const { currentCollection, setCurrentCollection } =
-//     useContext(CollectionContext);
-//   let { globalState, setGlobalState } = useContext(GlobalContext);
-//   const { needUpdate, setNeedUpdate } = useContext(NeedUpdateContext);
-//   const {
-//     register,
-//     handleSubmit,
-//     control,
-//     formState: { errors },
-//   } = useForm({
-//     resolver: zodResolver(AddRecordSchema),
-//   });
-//   const theForm = useRef(null);
-//   const [error, setError] = useState<string | null>(null);
-
-//   const onSubmit = (onClose: any) => {
-//     setError("");
-//     return (data: any) => {
-//       post("/api/addRecord", data)
-//         .then((data) => {
-//           __debug("data:", data);
-//           // if (data.result && data.result.length > 0){
-//           setNeedUpdate(true);
-//           setGlobalState({
-//             ...globalState,
-//             newRecord: data.result as DataRecord,
-//           })
-//           onClose();
-//           // }
-//         })
-//         .catch((err) => {
-//           if (err) {
-//             __error(err);
-//             setError("Cannot add collection :(");
-//           }
-//         });
-//     };
-//   };
-
-//   return (
-//     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-//       <ModalContent>
-//         {(onClose) => (
-//           <>
-//             <ModalHeader className="flex flex-col gap-1">
-//               Create new collection
-//             </ModalHeader>
-//             <ModalBody>
-//               <form
-//                 onSubmit={handleSubmit(onSubmit)}
-//                 className="flex flex-col gap-3"
-//                 ref={theForm}
-//               >
-//                 <CInput control={control} name="name" errors={errors} />
-//                 <CInput control={control} name="creator" errors={errors} />
-//                 <CTextarea
-//                   control={control}
-//                   name="description"
-//                   errors={errors}
-//                 />
-//                 {error && <ErrorLabel message={error} />}
-//                 {/* <code>
-//                   <pre>{JSON.stringify(errors, null, 2)}</pre>
-//                 </code> */}
-//               </form>
-//             </ModalBody>
-//             <ModalFooter>
-//               <Button color="danger" variant="light" onClick={onClose}>
-//                 Close
-//               </Button>
-//               <Button
-//                 color="primary"
-//                 onPress={(e) => {
-//                   handleSubmit(onSubmit(onClose))(theForm as any);
-//                 }}
-//               >
-//                 Submit
-//               </Button>
-//             </ModalFooter>
-//           </>
-//         )}
-//       </ModalContent>
-//     </Modal>
-//   );
-// };

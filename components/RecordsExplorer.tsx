@@ -103,25 +103,8 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     }
   }, [globalState]);
 
-  // useEffect(() => {
-  //   if (!currentRecord){
-  //     return;
-  //   }
-  //   const records = data.map((rec)=> {
-  //     if (!currentRecord){
-  //       return rec;
-  //     }
-  //     if (rec.id === currentRecord.id){
-  //       return currentRecord;
-  //     }else{
-  //       return rec;
-  //     }
-  //   });
-  //   setData(records);
-  // }, [currentRecord]);
-
   useEffect(() => {
-    __debug("data changed:", data);
+    // __debug("data changed:", data);
     if (!loaded) {
       setLoaded(true);
     }
@@ -322,12 +305,12 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
   }, [currentRecord]);
 
   useEffect(() => {
-    __debug("data changed:", data);
+    // __debug("data changed:", data);
     setRec(JSON.parse(JSON.stringify(data)));
   }, [data]);
 
   const onClick = () => {
-    __debug("rec:", rec);
+    // __debug("rec:", rec);
     setCurrentRecord && setCurrentRecord(rec);
 
     // uncomment this lines if you want to re-fetch the data from the server

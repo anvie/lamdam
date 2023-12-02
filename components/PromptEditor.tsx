@@ -268,7 +268,6 @@ const PromptEditor: FC<PromptEditorProps> = ({
   };
 
   const onCopyLLMResponse = (data: LLMResponseData) => {
-    console.log("data:", data);
     if (currentRecord) {
       const rec = currentRecord;
 
@@ -329,7 +328,6 @@ const PromptEditor: FC<PromptEditorProps> = ({
           collectionId: currentCollection?.id,
         })
           .then((data) => {
-            __debug("data:", data);
             setGlobalState({
               ...globalState,
               deleteRecord: currentRecord,

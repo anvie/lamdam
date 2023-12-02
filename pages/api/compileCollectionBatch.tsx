@@ -65,7 +65,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     //   encoder.encode(`data: ${JSON.stringify({ state, col: col.id })}\n\n`)
     // );
     const output = `data: ${JSON.stringify({ state, col: col.id })}\n\n`;
-    __debug("output:", output);
+    // __debug("output:", output);
     res.write(output);
   }
 
