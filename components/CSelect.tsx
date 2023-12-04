@@ -1,9 +1,7 @@
-import { Textarea } from "@nextui-org/input";
-import { FC } from "react";
-import { Control, Controller, FieldErrors, FieldValues } from "react-hook-form";
-import { __debug, __error } from "@/lib/logger";
 import { formatErrorMessage } from "@/lib/errorutil";
 import { Select, SelectItem } from "@nextui-org/select";
+import { FC } from "react";
+import { Control, Controller, FieldErrors, FieldValues } from "react-hook-form";
 
 interface CSelectProps {
   control: Control<FieldValues, any>;
@@ -34,15 +32,25 @@ const CSelect: FC<CSelectProps> = ({
           <Select
             label="Data type"
             placeholder="Select data type"
-            className="max-w-xs"
             name="dataType"
-            defaultValue={defaultValue}
+            selectionMode="single"
+            defaultSelectedKeys={defaultValue ? new Set([defaultValue]) : undefined}
             value={value}
+            fullWidth
             onChange={onChange}
+            classNames={{
+              trigger: "border hover:opacity-75 rounded-lg overflow-hidden dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+              popoverContent: "dark:bg-[#374151] bg-[#F9FAFB]",
+              value: "font-medium text-current",
+            }}
           >
             {items.map((item, index) => {
               return (
-                <SelectItem key={item.key} value={item.value}>
+                <SelectItem
+                  key={item.key}
+                  value={item.value}
+                  className="dark:hover:bg-white/10"
+                >
                   {item.name}
                 </SelectItem>
               );

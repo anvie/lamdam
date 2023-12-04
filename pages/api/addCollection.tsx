@@ -1,25 +1,28 @@
 import { apiHandler } from "@/lib/ApiHandler";
+import db from "@/lib/db";
 import { toApiRespDoc } from "@/lib/docutil";
 import { AddCollectionSchema } from "@/lib/schema";
 import { getCurrentTimeMillis } from "@/lib/timeutil";
 import { Collection } from "@/models/Collection";
-import { User } from "next-auth";
+import { DataRecordModel } from "@/models/DataRecordRow";
+import { User } from "@/models/User";
+import { User as UserAuth } from "next-auth";
 import type { NextApiRequest, NextApiResponse } from "next/types";
-
-const db = require("../../lib/db");
 
 type Data = {
   error?: string;
   result?: Object[];
 };
 
-async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: User) {
+async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: UserAuth) {
   const { name, description, creator, dataType } = AddCollectionSchema.parse(req.body);
 
   if (req.method !== "POST") {
     res.status(405).end();
     return;
   }
+
+  const dbUser = await User.findById(user?.id).exec();
 
   return Collection({
     name,
@@ -34,6 +37,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
   })
     .save()
     .then((doc: any) => {
+      db.model(doc.name, DataRecordModel, doc.name);
+      dbUser.updateLastActivity()
+
       res.json({
         result: toApiRespDoc(doc),
       });

@@ -1,3 +1,4 @@
+import { formatErrorMessage } from "@/lib/errorutil";
 import { Textarea } from "@nextui-org/input";
 import { FC } from "react";
 import {
@@ -6,8 +7,6 @@ import {
   FieldErrors,
   FieldValues,
 } from "react-hook-form";
-import { __debug, __error } from "@/lib/logger";
-import { formatErrorMessage } from "@/lib/errorutil";
 
 
 interface CInputProps {
@@ -27,6 +26,11 @@ const CTextarea: FC<CInputProps> = ({
   placeholder,
   errors,
 }) => {
+  const inputClassNames = {
+    inputWrapper: "border dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+    input: "bg-transparent",
+  }
+
   return (
     <>
       <Controller
@@ -40,6 +44,7 @@ const CTextarea: FC<CInputProps> = ({
             onChange={onChange}
             value={value}
             onClear={() => onChange("")}
+            classNames={inputClassNames}
           />
         )}
       />
@@ -54,7 +59,7 @@ const CTextarea: FC<CInputProps> = ({
   );
 };
 
-export default  CTextarea;
+export default CTextarea;
 
 
 

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+mv .env .env.bak
 source $(pwd)/.env.production
 
 echo "Building app..."
@@ -28,3 +29,4 @@ echo "Deploying web"
 ssh -i ${SSH_KEY} ${DEPLOY_SERVER} "su - www -c '${APP_DIR}/start.sh'"
 
 echo "Web deployed!".
+mv .env.bak .env

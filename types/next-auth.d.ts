@@ -1,3 +1,4 @@
+import { UserRoleType } from "@/models";
 import { type DefaultSession } from "next-auth";
 
 interface IUser extends DefaultUser {
@@ -5,6 +6,13 @@ interface IUser extends DefaultUser {
   name: string;
   email: string;
   image: string | null;
+  status?: "blocked" | "active";
+  role?: UserRoleType;
+  registeredAt?: number;
+  lastActivity?: number;
+  meta?: {
+    monthlyTarget?: number;
+  };
 }
 
 declare module "next-auth" {

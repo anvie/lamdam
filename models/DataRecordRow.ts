@@ -2,7 +2,7 @@ const mongoose = require("mongoose")
 const Schema = mongoose.Schema
 
 
-const DataRecordModel = new Schema({
+export const DataRecordModel = new Schema({
   prompt: { type: String, required: true },
   response: { type: String, default: "" },
   input: { type: String, required: true, default: "" },
@@ -14,6 +14,11 @@ const DataRecordModel = new Schema({
   hash: { type: String, unique: true }, // ini merupakan sha1 hash dari prompt, input, response, dan history.
   // collectionId: { type: String, required: true },
   meta: { type: Object, default: {} },
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
 })
 
 void (async () => {
@@ -23,5 +28,7 @@ void (async () => {
 const DataRecordRow =
   mongoose.models.DataRecordRow || mongoose.model("DataRecordRow", DataRecordModel)
 
-export { DataRecordRow }
+const getRecordModel = (collectionName: string) => mongoose.models[collectionName] || mongoose.model(collectionName, DataRecordModel, collectionName)
+
+export { DataRecordRow, getRecordModel }
 

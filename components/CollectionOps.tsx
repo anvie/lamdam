@@ -1,15 +1,17 @@
 "use client";
-import CollectionSelector from "@/components/CollectionSelector";
-import { post } from "@/lib/FetchWrapper";
+import CollectionSelector from "@/components/CollectionSelector"
+import * as apiClient from "@/lib/FetchWrapper"
+import { post } from "@/lib/FetchWrapper"
 import {
   CollectionContext,
   GlobalContext,
   NeedUpdateContext,
-} from "@/lib/context";
-import { __debug, __error } from "@/lib/logger";
-import { AddCollectionSchema } from "@/lib/schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@nextui-org/button";
+} from "@/lib/context"
+import { __debug, __error } from "@/lib/logger"
+import { AddCollectionSchema } from "@/lib/schema"
+import { Statistic } from "@/types"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Button } from "@nextui-org/button"
 import {
   Modal,
   ModalBody,
@@ -17,36 +19,30 @@ import {
   ModalFooter,
   ModalHeader,
   useDisclosure,
-} from "@nextui-org/modal";
-import {
-  Avatar,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-} from "@nextui-org/react";
-import { signOut, useSession } from "next-auth/react";
-import { Confirm } from "notiflix/build/notiflix-confirm-aio";
-import { Loading } from "notiflix/build/notiflix-loading-aio";
-import { Report } from "notiflix/build/notiflix-report-aio";
-import { FC, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import CInput from "./CInput";
-import CSelect from "./CSelect";
-import CTextarea from "./CTextarea";
-import CompileAllModal from "./CompileAllModal";
-import { ErrorLabel } from "./ErrorLabel";
-import { useModal } from "./hooks/useModal";
-import { GearIcon } from "./icon/GearIcon";
-import LogoutIcon from "./icon/LogoutIcon";
-import ExportModal from "./modals/ExportModal";
-import ImportModal from "./modals/ImportModal";
-import { ThemeSwitch } from "./theme-switch";
+} from "@nextui-org/modal"
+import { cn } from "@nextui-org/react"
+import { useSession } from "next-auth/react"
+import { Confirm } from "notiflix/build/notiflix-confirm-aio"
+import { Loading } from "notiflix/build/notiflix-loading-aio"
+import { Report } from "notiflix/build/notiflix-report-aio"
+import React, { FC, useContext, useEffect, useRef, useState } from "react"
+import { useForm } from "react-hook-form"
+import { HiCalculator, HiCalendarDays, HiMiniCircleStack } from "react-icons/hi2"
+import useSWR from "swr"
+import CInput from "./CInput"
+import CSelect from "./CSelect"
+import CTextarea from "./CTextarea"
+import CompileAllModal from "./CompileAllModal"
+import { ErrorLabel } from "./ErrorLabel"
+import { useModal } from "./hooks/useModal"
+import ExportModal from "./modals/ExportModal"
+import ImportModal from "./modals/ImportModal"
+
 
 const CollectionOps: FC = () => {
   return (
-    <div className="border grid grid-cols-2 gap-3 p-5">
-      <div>
+    <div className="border-b border-divider inline-flex justify-between items-center gap-3 px-4 md:px-4 py-3 flex-col md:flex-row">
+      <div className="inline-flex items-center gap-4 md:gap-8 w-full flex-col md:flex-row">
         <CollectionSelector />
         <RecordsStats />
       </div>
@@ -75,10 +71,7 @@ const CollectionOpsButtons = () => {
   const { setNeedUpdate } = useContext(NeedUpdateContext);
   const { globalState, setGlobalState } = useContext(GlobalContext);
 
-  const { data: session } = useSession();
-  const user = useMemo(() => session?.user, [session]);
-
-  const { showModal } = useModal();
+  const { showModal } = useModal()
 
   const doDump = () => {
     if (!currentCollection) {
@@ -135,15 +128,20 @@ const CollectionOpsButtons = () => {
   };
 
   return (
-    <>
-      <div className="flex items-end justify-end gap-3">
-        <Button size="sm" onClick={onDumpClick}>
+    <React.Fragment>
+      <div className="items-end justify-end gap-3 hidden md:flex">
+        <Button
+          size="sm"
+          onClick={onDumpClick}
+        >
           Compile
         </Button>
-        <Button size="sm" onClick={showCompileAllModal}>
+        <Button
+          size="sm"
+          onClick={showCompileAllModal}
+        >
           Compile All
         </Button>
-        <div className="border-l-1 h-full bg-slate-300"></div>
         <Button
           size="sm"
           className="hidden md:block"
@@ -186,42 +184,6 @@ const CollectionOpsButtons = () => {
         >
           Import
         </Button>
-        <Button
-          size="sm"
-          isIconOnly
-          className="hidden md:inline-flex text-center justify-center items-center"
-        >
-          <GearIcon width="24px" />
-        </Button>
-        <Button size="sm" isIconOnly>
-          <ThemeSwitch />
-        </Button>
-        {user && (
-          <Dropdown placement="bottom-end" radius="sm">
-            <DropdownTrigger>
-              <Avatar
-                isBordered
-                as="button"
-                className="transition-transform"
-                src={`${user.image}`}
-              />
-            </DropdownTrigger>
-            <DropdownMenu aria-label="Profile Actions" variant="flat">
-              <DropdownItem key="profile" className="h-14 gap-2">
-                <p className="font-semibold">{user.name}</p>
-                <p className="font-normal">{user.email}</p>
-              </DropdownItem>
-              <DropdownItem
-                key="logout"
-                color="danger"
-                onClick={() => signOut()}
-                startContent={<LogoutIcon width="1.4em" height="1.4em" />}
-              >
-                Log Out
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-        )}
       </div>
       <AddCollectionModal
         isAddCollectionModalOpen={isAddCollectionModalOpen}
@@ -233,7 +195,7 @@ const CollectionOpsButtons = () => {
         onCompileAllModal={onCompileAllModalOpen}
         onCompileAllModalOpenChange={onCompileAllModalOpenChange}
       />
-    </>
+    </React.Fragment>
   );
 };
 
@@ -243,6 +205,14 @@ const RecordsStats = () => {
   let { globalState, setGlobalState } = useContext(GlobalContext);
 
   const [recordsCount, setRecordsCount] = useState<number>(0);
+
+  const { data } = useSWR<{ result: Statistic }>('/api/users/myStats', apiClient.get, {
+    refreshInterval: 3000,
+  })
+
+  const myStats = data?.result
+  const monthlyTarget = myStats?.targets.monthly || 0
+  const perDayTarget = myStats?.targets.daily || 0
 
   useEffect(() => {
     if (!currentCollection) {
@@ -265,11 +235,47 @@ const RecordsStats = () => {
     }
   }, [globalState]);
 
-  return currentCollection ? (
-    <div className="text-sm">{recordsCount} total</div>
-  ) : (
-    <div></div>
-  );
+  if (!currentCollection) return (<div />)
+
+  return (
+    <div className="inline-flex items-center gap-2 md:gap-7 justify-between md:justify-start self-stretch md:self-auto">
+      <div className="flex gap-2 items-center">
+        <div className={cn("w-10 h-10 text-white dark:text-current rounded-lg flex items-center justify-center", {
+          "bg-success": (myStats?.today || 0) >= perDayTarget && perDayTarget > 0,
+          "bg-danger": (myStats?.today || 0) < perDayTarget && perDayTarget > 0,
+          "bg-primary": perDayTarget === 0,
+        })}>
+          <HiCalculator className="w-6 h-6 relative" />
+        </div>
+        <div className="flex flex-col">
+          <span className="opacity-40 text-current text-xs font-normal">Daily Target</span>
+          <span className="text-current text-sm font-medium">{myStats?.today ?? 0}/{perDayTarget}</span>
+        </div>
+      </div>
+      <div className="flex gap-2 items-center">
+        <div className={cn("w-10 h-10 text-white dark:text-current rounded-lg flex items-center justify-center", {
+          "bg-success": (myStats?.thisMonth || 0) >= monthlyTarget && monthlyTarget > 0,
+          "bg-danger": (myStats?.thisMonth || 0) < monthlyTarget && monthlyTarget > 0,
+          "bg-primary": monthlyTarget === 0,
+        })}>
+          <HiCalendarDays className="w-6 h-6 relative" />
+        </div>
+        <div className="flex flex-col">
+          <span className="opacity-40 text-current text-xs font-normal">Monthly Target</span>
+          <span className="text-current text-sm font-medium">{Number(myStats?.thisMonth ?? 0).toDisplay()}/{monthlyTarget.toDisplay()}</span>
+        </div>
+      </div>
+      <div className="flex gap-2 items-center">
+        <div className="w-10 h-10 bg-primary text-white dark:text-current rounded-lg flex items-center justify-center">
+          <HiMiniCircleStack className="w-6 h-6 relative" />
+        </div>
+        <div className="flex flex-col">
+          <span className="opacity-40 text-current text-xs font-normal">Total Records</span>
+          <span className="text-current text-sm font-medium">{recordsCount.toDisplay()}</span>
+        </div>
+      </div>
+    </div>
+  )
 };
 
 const AddCollectionModal: FC<any> = ({

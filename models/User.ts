@@ -1,9 +1,26 @@
+import { __log } from "@/lib/logger";
 import mongoose, { Schema } from "mongoose";
+import { UserRoles } from ".";
 
 const UserModel = new Schema({
     name: { type: String, required: true },
     email: { type: String, required: true },
     image: { type: String, required: true },
+    status: {
+        type: String,
+        enum: ["blocked", "active"],
+        default: "active",
+    },
+    role: {
+        type: String,
+        enum: UserRoles,
+        default: "contributor",
+    },
+    registeredAt: Number,
+    lastActivity: Number,
+    meta: {
+        monthlyTarget: { type: Number, default: 0 },
+    }
 })
 
 const User = mongoose.models.User || mongoose.model("User", UserModel)
@@ -30,3 +47,7 @@ const Account = mongoose.models.Account || mongoose.model("Account", AccountMode
 
 export { Account, Session, User };
 
+User.prototype.updateLastActivity = async function () {
+    __log('updateLastActivity', this._id)
+    await User.updateOne({ _id: this._id }, { lastActivity: Date.now() })
+}

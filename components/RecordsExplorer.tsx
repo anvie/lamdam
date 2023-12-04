@@ -10,11 +10,16 @@ import {
 import { __debug } from "@/lib/logger";
 import { getLocalStorage } from "@/lib/state";
 import { truncate } from "@/lib/stringutil";
-import { DataRecord } from "@/types";
+import { RecordStatuses } from "@/models";
+import { DataRecord, Statistic } from "@/types";
 import { Button } from "@nextui-org/button";
 import { Input } from "@nextui-org/input";
+import { Chip, ChipProps, RadioGroup, Tooltip } from "@nextui-org/react";
 import moment from "moment";
-import { FC, useContext, useEffect, useState } from "react";
+import React, { FC, useContext, useEffect, useState } from "react";
+import { HiArrowLeft, HiArrowRight } from "react-icons/hi2";
+import useSWR from "swr";
+import CRadio from "./CRadio";
 import { SearchIcon } from "./icon/SearchIcon";
 
 type SearchData = {
@@ -23,9 +28,10 @@ type SearchData = {
   keyword: string;
   toId: string;
   fromId: string;
+  status?: string | string[];
 }>;
 
-const revalidateSearch = ({ id, keyword, toId, fromId }: SearchData) => {
+const revalidateSearch = ({ id, keyword, toId, fromId, status }: SearchData) => {
   let uri = new URL(`/api/records?collectionId=${id}`, window.origin);
 
   const creators = getLocalStorage<string[]>("search-settings.creator", []);
@@ -43,11 +49,28 @@ const revalidateSearch = ({ id, keyword, toId, fromId }: SearchData) => {
     uri.searchParams.append("features", feature);
   }
 
+  if (status) {
+    if (Array.isArray(status)) {
+      for (const s of status) {
+        uri.searchParams.append("status", s);
+      }
+    } else {
+      uri.searchParams.set("status", status);
+    }
+  }
+
   if (toId) uri.searchParams.set("toId", toId);
   if (fromId) uri.searchParams.set("fromId", fromId);
 
   return uri.toString();
 };
+
+const colors: Record<string, ChipProps['color']> = {
+  all: 'primary',
+  approved: 'success',
+  rejected: 'danger',
+  pending: 'warning'
+}
 
 const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
   const { currentCollection, setCurrentCollection } =
@@ -59,11 +82,17 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
   const [query, setQuery] = useState<string>("");
   const [lastId, setLastId] = useState<string[]>([]);
 
+  const { data: stats } = useSWR<{ result: Statistic }>(`/api/records/stats?collectionId=${currentCollection?.id}`, get, {
+    refreshInterval: 3000,
+  })
+
+  const recordStats = stats?.result;
+
   useEffect(() => {
     if (!currentCollection) {
       return;
     }
-    void refreshData(currentCollection?.id || "0", undefined, []);
+    void refreshData(currentCollection?.id || "0", undefined, undefined, true);
   }, [currentCollection]);
 
   useEffect(() => {
@@ -127,6 +156,8 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
   const refreshData = async (
     id: string,
     query?: string | undefined,
+    status?: string | string[],
+    noLastId: boolean = false,
     useLastId?: string[] | undefined
   ) => {
     if (!id) {
@@ -154,7 +185,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
 
     return await get(
       // `/api/records?collectionId=${id}${query ? `&q=${query}` : ""}`
-      revalidateSearch(options)
+      revalidateSearch({ ...options, status })
     ).then((data) => {
       setData(data.result);
       if (data.result.length > 0) {
@@ -219,47 +250,91 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
 
   return (
     <div className={className}>
-      <div className="pb-2 border-b-1 p-2 flex gap-1">
-        <Input
-          className="pb-2 p-2"
-          type="email"
-          placeholder="search records"
-          labelPlacement="outside"
-          startContent={
-            <SearchIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
-          }
-          isClearable
-          value={query}
-          onClear={() => {
-            setQuery("");
-            setLastId([]);
-            void refreshData(currentCollection?.id || "0", undefined, []);
-          }}
-          onKeyUp={(e) => {
-            // setQuery(e.currentTarget.value);
-            // if enter pressed then search
-            if (e.key === "Enter") {
-              void doSearch();
+      <div className="flex flex-col gap-3.5 border-b-1 border-divider px-4 py-4">
+        <div className="flex gap-2 items-center">
+          <Input
+            type="email"
+            placeholder="Search"
+            labelPlacement="outside"
+            startContent={
+              <SearchIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
             }
-          }}
-          onChange={(e) => {
-            setQuery(e.currentTarget.value);
-          }}
-        />
-        <SearchSetting />
+            isClearable
+            classNames={{
+              inputWrapper: "border dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+              input: "bg-transparent",
+            }}
+            value={query}
+            onClear={() => {
+              setQuery("");
+              setLastId([]);
+              void refreshData(currentCollection?.id || "0", undefined, undefined, true);
+            }}
+            onKeyUp={(e) => {
+              // setQuery(e.currentTarget.value);
+              // if enter pressed then search
+              if (e.key === "Enter") {
+                void doSearch();
+              }
+            }}
+            onChange={(e) => {
+              setQuery(e.currentTarget.value);
+            }}
+          />
+          <SearchSetting />
+        </div>
+        <div className="inline-flex items-center gap-2">
+          <RadioGroup
+            orientation="horizontal"
+            defaultValue="all"
+            onValueChange={async (status) => {
+              await refreshData(currentCollection?.id || "0", undefined, status, true);
+            }}
+          >
+            {["all", ...RecordStatuses].map((status) => {
+              const color = status === "approved" ? "success" : status === "rejected" ? "danger" : "warning";
+              let renderText = status
+
+              if (status === 'pending' && (recordStats?.pending || 0) > 0) {
+                renderText = `(${recordStats?.pending}) ${status}`
+              } else if (status === 'rejected' && (recordStats?.rejected || 0) > 0) {
+                renderText = `(${recordStats?.rejected}) ${status}`
+              }
+
+              return (
+                <CRadio
+                  color={colors[status]}
+                  key={status}
+                  size="sm"
+                  classNames={{ label: "text-xs" }}
+                  value={status}
+                >
+                  {renderText}
+                </CRadio>
+              )
+            })}
+          </RadioGroup>
+        </div>
       </div>
 
-      <div className="h-[calc(100vh-250px)] overflow-scroll">
-        {data &&
-          data.map((data, index) => {
-            return (
-              <DataRecordRow
-                key={`data-record-${data.id}`}
-                collectionId={currentCollection?.id || "0"}
-                data={data}
-              />
-            );
-          })}
+      <div className="h-[calc(100vh-310px)] overflow-y-auto overflow-x-hidden custom-scrollbar">
+        {data.length === 0 && (
+          <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center">
+            <div className="text-2xl font-bold mb-2">No data found</div>
+            <div className="text-base leading-none text-gray-400">
+              Try to change your search settings
+            </div>
+          </div>
+        )}
+        {data.map((data, index) => {
+          return (
+            <DataRecordRow
+              key={`data-record-${data.id}`}
+              collectionId={currentCollection?.id || "0"}
+              data={data}
+            />
+          );
+        })}
       </div>
 
       {loaded && <Navigator onPrev={onPrevPage} onNext={onNextPage} />}
@@ -272,9 +347,19 @@ const Navigator: FC<{ onPrev: () => void; onNext: () => void }> = ({
   onNext,
 }) => {
   return (
-    <div className="flex justify-between p-2">
-      <Button onClick={onPrev}>Previous</Button>
-      <Button onClick={onNext}>Next</Button>
+    <div className="flex justify-between px-2.5 py-2 border-t border-divider">
+      <Button
+        isIconOnly
+        onPress={onPrev}
+      >
+        <HiArrowLeft strokeWidth={1} className="w-4 h-4" />
+      </Button>
+      <Button
+        isIconOnly
+        onPress={onNext}
+      >
+        <HiArrowRight strokeWidth={1} className="w-4 h-4" />
+      </Button>
     </div>
   );
 };
@@ -323,28 +408,37 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
     //   });
   };
 
-  return rec ? (
+  if (!rec) return <React.Fragment />;
+
+  const color = rec.status === "approved" ? "success" : rec.status === "rejected" ? "danger" : "warning";
+
+  return (
     <div
-      className={`border-b-1 pb-1 cursor-pointer hover:bg-slate-200 dark:hover:dark:text-black border-l-8 pl-2 ${
-        currentRecord && currentRecord!.id === rec.id
-          ? `${
-              rec.dirty
-                ? "border-l-orange-400"
-                : "border-l-green-600 bg-slate-300 dark:text-black font-semibold"
-            }`
-          : "border-gray-100 "
-      }`}
+      data-active={currentRecord && currentRecord!.id === rec.id}
+      data-dirty={rec.dirty}
+      className="group py-3.5 pr-3 border-b data-[active=true]:bg-primary/5 hover:bg-primary/5 data-[dirty=true]:bg-orange-400 dark:data-[dirty=true]:bg-orange-600 dark:hover:bg-[#374151] dark:data-[active=true]:bg-[#374151] border-divider pl-5 cursor-pointer select-none flex flex-col gap-1"
       onClick={onClick}
     >
-      <div>{truncate(rec.prompt, 100)}</div>
-      <div className="text-sm">{truncate(rec.response, 100)}</div>
-      <div className="text-xs inline-flex space-x-2 items-center opacity-80">
-        <span>{moment(rec.createdAt).format("YYYY/MM/DD")}</span>
-        <span>-</span>
-        <span>{rec.creator ?? "?"}</span>
+      <h1 className="font-medium group-data-[active=true]:font-semibold text-sm">{truncate(rec.prompt, 100)}</h1>
+      <span className="text-sm leading-tight text-gray-500 dark:group-data-[active=true]:text-gray-100 group-data-[active=true]:text-gray-900 dark:text-gray-400">{truncate(rec.response, 100)}</span>
+      <div className="text-xs inline-flex space-x-1.5 items-center mt-2">
+        {rec.status && (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={color}
+            radius="sm"
+            className="px-1.5 py-1 capitalize text-xs"
+          >
+            {rec.status}
+          </Chip>
+        )}
+        <span className="opacity-60">{moment(rec.createdAt).format("YYYY/MM/DD")}</span>
+        <span className="text-base opacity-60">•</span>
+        <Tooltip placement="right" showArrow content={rec.creator || "?"}>
+          <span className="opacity-60">{(rec.creator || "?").split(" ")[0]}</span>
+        </Tooltip>
       </div>
     </div>
-  ) : (
-    <></>
   );
 };

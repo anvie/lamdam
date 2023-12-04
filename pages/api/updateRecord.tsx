@@ -7,6 +7,8 @@ import { Collection } from "@/models/Collection";
 import type { NextApiRequest, NextApiResponse } from "next/types";
 
 import mongoose, { Types } from "mongoose";
+import { User as UserAuth } from "next-auth";
+import { User } from "@/models/User";
 
 const db = require("../../lib/db");
 
@@ -15,7 +17,7 @@ type Data = {
   result?: Object[];
 };
 
-async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: UserAuth) {
   const { id, prompt, response, input, history, collectionId } =
     UpdateRecordSchema.parse(req.body);
 
@@ -31,6 +33,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   }
 
   const col = mongoose.connection.db.collection(colDoc.name);
+
+  const dbUser = await User.findById(user?.id).exec();
 
   // let _normalizedHistory:any = history;
 
@@ -72,11 +76,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
           history,
           lastUpdated: getCurrentTimeMillis(),
           collectionId,
+          status: 'pending'
         },
       }
     )
     .then(async (resp: any) => {
       // __debug("resp:", resp);
+      await dbUser.updateLastActivity();
 
       const doc = await col.findOne({ _id: new Types.ObjectId(id) });
       // __debug("doc:", doc);

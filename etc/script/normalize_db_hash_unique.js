@@ -1,4 +1,4 @@
-import { hashString } from "@lib/crypto";
+import { hashString } from "@/lib/crypto";
 import mongoose from "mongoose";
 
 const yargs = require("yargs");

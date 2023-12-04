@@ -1,4 +1,4 @@
-import { __debug } from "@lib/logger";
+import { __debug } from "@/lib/logger";
 import mongoose from "mongoose";
 import { getCurrentTimeMillis } from "@lib/timeutil";
 

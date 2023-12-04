@@ -4,6 +4,7 @@ import { get } from "@/lib/FetchWrapper";
 import { CollectionContext, NeedUpdateContext } from "@/lib/context";
 import { __error } from "@/lib/logger";
 import { Collection } from "@/types";
+import { Select, SelectItem } from "@nextui-org/react";
 import { useContext, useEffect, useState } from "react";
 
 const CollectionSelector = () => {
@@ -45,34 +46,42 @@ const CollectionSelector = () => {
   }, [needUpdate]);
 
   return (
-    <div className="flex items-center">
-      <label className="sr-only" htmlFor="collection">
-        Collection
-      </label>
-      <select
-        className="outline-none border-0 bg-transparent text-default-400 text-small"
-        id="collection"
-        name="collection"
-        value={currentCollection ? currentCollection.id : undefined}
-        defaultValue={currentCollection ? currentCollection.id : undefined}
-        onChange={(e: any) => {
-          const col = data[e.target.selectedIndex];
-          if (col) {
-            setCurrentCollection && setCurrentCollection(col);
+    <Select
+      size="sm"
+      variant="flat"
+      className="max-w-full md:max-w-xs w-full md:w-72"
+      classNames={{
+        trigger: "border hover:opacity-75 rounded-lg overflow-hidden dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+        popoverContent: "dark:bg-[#374151] bg-[#F9FAFB]",
+        value: "font-medium text-current",
+      }}
+      selectionMode="single"
+      radius="none"
+      items={data ?? []}
+      placeholder="Select a collection"
+      selectedKeys={currentCollection ? new Set([currentCollection.id]) : undefined}
+      defaultSelectedKeys={currentCollection ? new Set([currentCollection.id]) : undefined}
+      onSelectionChange={(key) => {
+        const selectedId = (key as Set<string>).values().next().value;
+        const col = data.find((col) => col.id === selectedId);
+        if (col) {
+          setCurrentCollection?.(col);
 
-            // save to local storage
-            localStorage.setItem("currentCollectionId", col.id);
-          }
-        }}
-      >
-        {data &&
-          data.map((collection, index) => (
-            <option key={`collection-${index}`} value={collection.id}>
-              {collection.name} - {toDataTypeName(collection.meta?.dataType)}
-            </option>
-          ))}
-      </select>
-    </div>
+          // save to local storage
+          localStorage.setItem("currentCollectionId", col.id);
+        }
+      }}
+    >
+      {(collection) => (
+        <SelectItem
+          key={collection.id}
+          textValue={`${collection.name} (${toDataTypeName(collection.meta?.dataType)})`}
+          className="dark:hover:bg-white/10"
+        >
+          <span>{collection.name} ({toDataTypeName(collection.meta?.dataType)})</span>
+        </SelectItem>
+      )}
+    </Select>
   );
 };
 

@@ -24,11 +24,11 @@ function formattedMessage(
 ): string {
   const formattedHistory = history
     ? history.map(function (historyItem) {
-        if (historyItem.length === 0) {
-          return "\n";
-        }
-        return JSON.stringify(historyItem);
-      })
+      if (historyItem.length === 0) {
+        return "\n";
+      }
+      return JSON.stringify(historyItem);
+    })
     : [];
   return `
 ${formattedHistory.join("\n")}
@@ -95,6 +95,7 @@ async function handler(
         createdAt: getCurrentTimeMillis(),
         lastUpdated: getCurrentTimeMillis(),
         hash,
+        status: 'pending',
         meta: {},
       })
       .then(async (resp: any) => {

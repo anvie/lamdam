@@ -1,8 +1,7 @@
-import { fontSans } from "@/config/fonts";
+import MainNavbar from "@/components/MainNavbar";
 import { siteConfig } from "@/config/site";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import "@/styles/globals.css";
-import clsx from "clsx";
 import { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { Providers } from "./providers";
@@ -35,17 +34,13 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      <body
-        className={clsx(
-          "min-h-screen bg-background font-sans antialiased",
-          fontSans.variable
-        )}
-      >
+      <body className="min-h-screen lamdam-light dark:lamdam-dark bg-background text-foreground font-sans antialiased">
         <Providers
           themeProps={{ attribute: "class", defaultTheme: "light" }}
           session={session}
         >
-          <div className="relative flex flex-col h-screen">{children}</div>
+          <MainNavbar />
+          <main className="min-h-full">{children}</main>
         </Providers>
       </body>
     </html>

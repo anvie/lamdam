@@ -5,11 +5,16 @@ import LamdamIcon from "@/components/icon/LamdamIcon";
 import NUSidLogo from "@/components/icon/NUSidLogo";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Button } from "@nextui-org/button";
+import { Spinner } from "@nextui-org/react";
 import { BuiltInProviderType } from "next-auth/providers";
 import { ClientSafeProvider, LiteralUnion, getProviders, signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { HiOutlineInformationCircle } from "react-icons/hi2";
 
 export default function Login() {
+    const searchParams = useSearchParams()
+    const failedReason = searchParams?.get('reason')
     const [providers, setProviders] = useState<Record<LiteralUnion<BuiltInProviderType>, ClientSafeProvider> | null>(null)
 
     useEffect(() => {
@@ -21,14 +26,26 @@ export default function Login() {
     }, [])
 
     return (
-        <div className="w-full h-full flex items-center justify-center">
+        <div className="w-full h-screen flex items-center justify-center">
             <div className="w-[502px] flex flex-col space-y-8">
                 <div className="shadow-md rounded-2xl border-2 border-gray-200 relative px-8 py-12">
                     <div className="text-current text-4xl font-bold inline-flex space-x-3 items-center justify-center w-full mb-12">
                         <LamdamIcon width={30} height={40} />
                         <span>Lamdam</span>
                     </div>
+                    {failedReason?.toLowerCase() === 'blocked' && (
+                        <div className="w-full px-4 py-3.5 bg-rose-100 rounded-lg justify-start items-start gap-2 flex flex-col mb-4 text-red-700">
+                            <div className="self-stretch justify-start items-center gap-2 inline-flex ">
+                                <HiOutlineInformationCircle className="w-6 h-6 text-red-700" />
+                                <div className="grow shrink basis-0 text-red-700 text-base font-semibold leading-normal">Your Account has been Blocked</div>
+                            </div>
+                            <div className="text-sm font-normal leading-tight">Please contact Administrator!</div>
+                        </div>
+                    )}
                     <div className="flex flex-col space-y-2">
+                        {!providers && (
+                            <Spinner />
+                        )}
                         {providers && Object.values(providers).map((provider) => {
                             return (
                                 <Button
