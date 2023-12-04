@@ -190,7 +190,7 @@ const UsersPage = () => {
                                         user.status === 'blocked' ? 'active' : 'blocked',
                                         user.status === 'blocked' ? 'activate' : 'block',
                                     );
-                                } else if(key === 'delete') {
+                                } else if (key === 'delete') {
                                     Confirm.show(
                                         "Confirm Action",
                                         `Are you sure you want to delete this user?`,

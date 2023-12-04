@@ -47,7 +47,7 @@ export function getDaysInCurrentMonth(excludes = [Days.Sunday]) {
 
     const now = new Date();
     const year = now.getFullYear();
-    const month = now.getMonth() + 1;
+    const month = now.getMonth();
 
     day = 1;
     counter = 0;
