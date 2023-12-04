@@ -113,8 +113,9 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     }
     if (globalState.deleteRecord) {
       __debug("globalState.deleteRecord changed.");
+      __debug("deleteRecord:", globalState.deleteRecord);
       setLastId([]);
-      void refreshData(currentCollection?.id || "0", query);
+      void refreshData(currentCollection?.id || "0", query, []);
       setGlobalState({ ...globalState, deleteRecord: null });
     }
     if (globalState.updatedRecord) {
@@ -131,25 +132,8 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     }
   }, [globalState]);
 
-  // useEffect(() => {
-  //   if (!currentRecord){
-  //     return;
-  //   }
-  //   const records = data.map((rec)=> {
-  //     if (!currentRecord){
-  //       return rec;
-  //     }
-  //     if (rec.id === currentRecord.id){
-  //       return currentRecord;
-  //     }else{
-  //       return rec;
-  //     }
-  //   });
-  //   setData(records);
-  // }, [currentRecord]);
-
   useEffect(() => {
-    __debug("data changed:", data);
+    // __debug("data changed:", data);
     if (!loaded) {
       setLoaded(true);
     }
@@ -173,7 +157,8 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     id: string,
     query?: string | undefined,
     status?: string | string[],
-    noLastId: boolean = false
+    noLastId: boolean = false,
+    useLastId?: string[] | undefined
   ) => {
     if (!id) {
       return;
@@ -184,12 +169,17 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     };
 
     if (query) options.keyword = query;
-    if (lastId.length > 0 && !noLastId) {
-      if (lastId[1] !== "") {
-        options.toId = lastId[1];
+    let _lastId = lastId;
+    __debug("_lastId:", _lastId);
+    if (useLastId !== undefined) {
+      _lastId = useLastId;
+    }
+    if (_lastId.length > 0) {
+      if (_lastId[1] !== "") {
+        options.toId = _lastId[1];
       }
-      if (lastId[0] !== "") {
-        options.fromId = lastId[0];
+      if (_lastId[0] !== "") {
+        options.fromId = _lastId[0];
       }
     }
 
@@ -400,12 +390,12 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
   }, [currentRecord]);
 
   useEffect(() => {
-    __debug("data changed:", data);
+    // __debug("data changed:", data);
     setRec(JSON.parse(JSON.stringify(data)));
   }, [data]);
 
   const onClick = () => {
-    __debug("rec:", rec);
+    // __debug("rec:", rec);
     setCurrentRecord && setCurrentRecord(rec);
 
     // uncomment this lines if you want to re-fetch the data from the server

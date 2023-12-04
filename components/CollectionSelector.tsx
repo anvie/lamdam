@@ -2,14 +2,15 @@
 
 import { get } from "@/lib/FetchWrapper";
 import { CollectionContext, NeedUpdateContext } from "@/lib/context";
-import { __debug, __error } from "@/lib/logger";
+import { __error } from "@/lib/logger";
 import { Collection } from "@/types";
 import { Select, SelectItem } from "@nextui-org/react";
 import { useContext, useEffect, useState } from "react";
 
 const CollectionSelector = () => {
   const [data, setData] = useState<Collection[]>([]);
-  const { currentCollection, setCurrentCollection } = useContext(CollectionContext);
+  const { currentCollection, setCurrentCollection } =
+    useContext(CollectionContext);
   const { needUpdate, setNeedUpdate } = useContext(NeedUpdateContext);
   const [fresh, setFresh] = useState<boolean>(true);
 
@@ -20,19 +21,21 @@ const CollectionSelector = () => {
     setFresh(true);
     get("/api/collections")
       .then((data) => {
-        __debug("data:", data);
         setData(data.result);
         if (!currentCollection) {
           if (setCurrentCollection) {
             if (localStorage.getItem("currentCollectionId")) {
-              const col = data.result.find((col: any) => col.id === localStorage.getItem("currentCollectionId"));
+              const col = data.result.find(
+                (col: any) =>
+                  col.id === localStorage.getItem("currentCollectionId")
+              );
               if (!col) {
-                setCurrentCollection(data.result[0])
+                setCurrentCollection(data.result[0]);
                 return;
               }
               setCurrentCollection(col);
             } else {
-              setCurrentCollection(data.result[0])
+              setCurrentCollection(data.result[0]);
             }
           }
         }
@@ -96,4 +99,3 @@ function toDataTypeName(dataType: string | undefined) {
 }
 
 export default CollectionSelector;
-

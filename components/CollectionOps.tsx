@@ -66,7 +66,8 @@ const CollectionOpsButtons = () => {
     onOpenChange: onCompileAllModalOpenChange,
   } = useDisclosure();
 
-  const { currentCollection, setCurrentCollection } = useContext(CollectionContext);
+  const { currentCollection, setCurrentCollection } =
+    useContext(CollectionContext);
   const { setNeedUpdate } = useContext(NeedUpdateContext);
   const { globalState, setGlobalState } = useContext(GlobalContext);
 
@@ -151,28 +152,36 @@ const CollectionOpsButtons = () => {
         <Button size="sm" className="hidden md:block">
           Edit
         </Button>
-        <Button size="sm" className="hidden md:block" onPress={() => {
-          showModal('Export', ExportModal, {
-            currentCollection: currentCollection ?? undefined,
-          })
-        }}>
+        <Button
+          size="sm"
+          className="hidden md:block"
+          onPress={() => {
+            showModal("Export", ExportModal, {
+              currentCollection: currentCollection ?? undefined,
+            });
+          }}
+        >
           Export
         </Button>
-        <Button size="sm" className="hidden md:block" onPress={() => {
-          showModal('Import', ImportModal, {
-            currentCollection: currentCollection ?? undefined,
-            onImportSuccess: (importedCount) => {
-              const currentCollectionTmp = {
-                id: currentCollection!.id,
-                count: currentCollection!.count + importedCount,
-                meta: currentCollection!.meta,
-                name: currentCollection!.name,
-              };
-              setCurrentCollection?.(currentCollectionTmp);
-              setNeedUpdate(true);
-            },
-          })
-        }}>
+        <Button
+          size="sm"
+          className="hidden md:block"
+          onPress={() => {
+            showModal("Import", ImportModal, {
+              currentCollection: currentCollection ?? undefined,
+              onImportSuccess: (importedCount) => {
+                const currentCollectionTmp = {
+                  id: currentCollection!.id,
+                  count: currentCollection!.count + importedCount,
+                  meta: currentCollection!.meta,
+                  name: currentCollection!.name,
+                };
+                setCurrentCollection?.(currentCollectionTmp);
+                setNeedUpdate(true);
+              },
+            });
+          }}
+        >
           Import
         </Button>
       </div>
@@ -292,10 +301,8 @@ const AddCollectionModal: FC<any> = ({
   const onSubmit = (onClose: any) => {
     setError("");
     return (data: any) => {
-      __debug("data:", data);
       post("/api/addCollection", data)
         .then((data) => {
-          __debug("data:", data);
           // if (data.result && data.result.length > 0){
           setNeedUpdate(true);
           onClose();

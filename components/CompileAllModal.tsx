@@ -34,7 +34,6 @@ const CompileAllModal: FC<any> = ({
     __debug("isCompileAllModalOpen:", isCompileAllModalOpen);
     get("/api/collections")
       .then((data) => {
-        __debug("data:", data);
         setCols(data.result);
       })
       .catch((error) => {
