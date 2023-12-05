@@ -22,48 +22,56 @@ import useSWR from "swr";
 import CRadio from "./CRadio";
 import { SearchIcon } from "./icon/SearchIcon";
 
-type SearchData = {
-  id: string;
-} & Partial<{
-  keyword: string;
-  toId: string;
-  fromId: string;
-  status?: string | string[];
-}>;
 
-const revalidateSearch = ({ id, keyword, toId, fromId, status }: SearchData) => {
-  let uri = new URL(`/api/records?collectionId=${id}`, window.origin);
+/**
+ * DIubah menjadi objek untuk mempermudah state yang tidak harus berubah setiap saat
+ * misalnya status yang mana hanya berubah ketika user memilih statusnya apa
+ */
+const searchRecords = {
+  status: [] as string|string[],
+  collectionId: "",
+  keyword: "",
+  toId: undefined as  string|undefined,
+  fromId: undefined as unknown as  string||undefined,
+  resetPageNavigation() {
+    this.toId=undefined
+    this.fromId=undefined
+  },
+  toString() {
+    let uri = new URL(`/api/records?collectionId=${this.collectionId}`, window.origin);
 
-  const creators = getLocalStorage<string[]>("search-settings.creator", []);
-  const features = getLocalStorage<string[]>("search-settings.features", []);
-
-  if (keyword) {
-    uri.searchParams.set("q", keyword);
-  }
-
-  for (const creator of creators) {
-    uri.searchParams.append("creators", creator);
-  }
-
-  for (const feature of features) {
-    uri.searchParams.append("features", feature);
-  }
-
-  if (status) {
-    if (Array.isArray(status)) {
-      for (const s of status) {
-        uri.searchParams.append("status", s);
-      }
-    } else {
-      uri.searchParams.set("status", status);
+    const creators = getLocalStorage<string[]>("search-settings.creator", []);
+    const features = getLocalStorage<string[]>("search-settings.features", []);
+  
+    if (this.keyword) {
+      uri.searchParams.set("q", this.keyword);
     }
+  
+    for (const creator of creators) {
+      uri.searchParams.append("creators", creator);
+    }
+  
+    for (const feature of features) {
+      uri.searchParams.append("features", feature);
+    }
+  
+    if (this.status) {
+      if (Array.isArray(this.status)) {
+        for (const s of this.status) {
+          uri.searchParams.append("status", s);
+        }
+      } else {
+        uri.searchParams.set("status", this.status);
+      }
+    }
+  
+    if (this.toId) uri.searchParams.set("toId", this.toId);
+    if (this.fromId) uri.searchParams.set("fromId", this.fromId);
+  
+    return uri.toString();
   }
+}
 
-  if (toId) uri.searchParams.set("toId", toId);
-  if (fromId) uri.searchParams.set("fromId", fromId);
-
-  return uri.toString();
-};
 
 const colors: Record<string, ChipProps['color']> = {
   all: 'primary',
@@ -144,7 +152,11 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
       return;
     }
 
-    void get(revalidateSearch({ id: currentCollection.id, keyword: query }))
+    searchRecords.resetPageNavigation()
+    searchRecords.collectionId = currentCollection.id;
+    searchRecords.keyword = query;
+
+    void get(searchRecords.toString())
       .then((data) => {
         setData(data.result);
       })
@@ -164,28 +176,39 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
       return;
     }
     // __debug("refreshing data for collectionId:", id);
-    let options: SearchData = {
-      id: currentCollection!.id,
-    };
+    searchRecords.resetPageNavigation()
+    searchRecords.collectionId = currentCollection!.id;
+    searchRecords.keyword = query||'';
+    searchRecords.status=status||[]
 
-    if (query) options.keyword = query;
-    let _lastId = lastId;
-    __debug("_lastId:", _lastId);
-    if (useLastId !== undefined) {
-      _lastId = useLastId;
-    }
-    if (_lastId.length > 0) {
-      if (_lastId[1] !== "") {
-        options.toId = _lastId[1];
+    {
+      // check prev and next page
+      searchRecords.toId = undefined;
+      searchRecords.fromId = undefined;
+
+      let _lastId = lastId;
+      __debug("_lastId:", _lastId);
+      if (useLastId !== undefined) {
+        _lastId = useLastId;
       }
-      if (_lastId[0] !== "") {
-        options.fromId = _lastId[0];
+      if (_lastId.length > 0) {
+        if (_lastId[1] !== "") {
+          searchRecords.toId = _lastId[1];
+        }
+        if (_lastId[0] !== "") {
+          searchRecords.fromId = _lastId[0];
+        }
+      }
+  
+      if(noLastId) {
+        searchRecords.toId = undefined;
+        searchRecords.fromId = undefined;
       }
     }
 
     return await get(
       // `/api/records?collectionId=${id}${query ? `&q=${query}` : ""}`
-      revalidateSearch({ ...options, status })
+      searchRecords.toString()
     ).then((data) => {
       setData(data.result);
       if (data.result.length > 0) {
@@ -200,12 +223,16 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     if (!currentCollection) {
       return;
     }
-    let options: SearchData = {
-      id: currentCollection!.id,
-    };
-    if (query) options.keyword = query;
-    if (lastId.length > 0) options.toId = lastId[1];
-    void get(revalidateSearch(options))
+    
+    searchRecords.collectionId = currentCollection!.id;
+    searchRecords.keyword = query||'';
+
+    if (lastId.length > 0) {
+      searchRecords.toId = lastId[1];
+      searchRecords.fromId=undefined
+    }
+
+    void get(searchRecords.toString())
       .then((data) => {
         setData(data.result);
         if (data.result.length > 0) {
@@ -226,12 +253,14 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     if (!currentCollection) {
       return;
     }
-    let options: SearchData = {
-      id: currentCollection!.id,
-    };
-    if (query) options.keyword = query;
-    if (lastId.length > 0) options.fromId = lastId[0];
-    void get(revalidateSearch(options))
+    searchRecords.collectionId = currentCollection!.id;
+    searchRecords.keyword = query||'';
+
+    if (lastId.length > 0) {
+      searchRecords.fromId = lastId[0]
+      searchRecords.toId=undefined
+    }
+    void get(searchRecords.toString())
       .then((data) => {
         setData(data.result);
         if (data.result.length > 0) {
