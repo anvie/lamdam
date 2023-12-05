@@ -106,7 +106,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
 
     const session = await getSession({req})
 
-    if(typeof session?.user?.role == 'undefined' || session?.user?.role == 'annotator') {
+    const basicRole = ["contributor", "annotator"].includes(session?.user?.role!) || typeof session?.user?.role === 'undefined';
+    
+
+    if(basicRole) {
       query = {...query, $or: [
         {
           creatorId: session?.user?.id
