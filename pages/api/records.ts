@@ -71,7 +71,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
         };
     }
 
-    let sortOrder: any = { _id: -1 };
+    // let sortOrder: any = { _id: -1 };
 
     // if (order == "createdAt:1"){
     //   sortOrder = { createdAt: 1 };
@@ -80,6 +80,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     // }else if (order == "lastUpdated:-1"){
     //   sortOrder = { lastUpdated: -1 };
     // }
+    let sortOrder: any = { createdAt: 1 };
+
+
 
     if (toId) {
         query = { ...query, _id: { $lt: new Types.ObjectId(toId as string) } };
