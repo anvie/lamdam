@@ -1,6 +1,6 @@
 import { apiHandler } from "@/lib/ApiHandler";
-import db from "@/lib/db";
 import { User } from "@/models/User";
+import mongoose from "mongoose";
 
 export default apiHandler(async (req, res) => {
     try {
@@ -19,7 +19,7 @@ export default apiHandler(async (req, res) => {
         // get month from date
         const month = new Date(String(date)).getMonth() + 1;
 
-        const collections: string[] = await db.collection("collections")
+        const collections: string[] = await mongoose.connection.collection("collections")
             .find({})
             .project({ _id: 0, name: 1 })
             .toArray()

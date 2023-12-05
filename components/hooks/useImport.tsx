@@ -26,8 +26,7 @@ const importReducer = (state: ImportState, action: ImportAction): ImportState =>
             return { ...state, data };
         }
         case 'remove': {
-            const selectedData = [...state.selectedData];
-            selectedData.splice(action.payload, 1);
+            const selectedData = [...state.selectedData].filter(d => d.id !== action.payload);
             return { ...state, selectedData };
         }
         case 'clear': {
@@ -65,7 +64,7 @@ const ImportProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
 const dispatcher = <T,>(dispatch: Dispatch) => ({
     addData: (...newData: T[]) => dispatch({ type: 'add', payload: newData }),
-    removeData: (index: number) => dispatch({ type: 'remove', payload: index }),
+    removeData: (index: string) => dispatch({ type: 'remove', payload: index }),
     clearData: () => dispatch({ type: 'clear', payload: null }),
     setCanImport: (canImport: boolean) => dispatch({ type: 'setCanImport', payload: canImport }),
     addSelectedData: (data: T) => dispatch({ type: 'setSelected', payload: data }),

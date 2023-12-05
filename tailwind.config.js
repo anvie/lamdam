@@ -41,6 +41,10 @@ module.exports = {
               DEFAULT: "#EA4335",
               foreground: "#FFFFFF",
             },
+            secondary: {
+              DEFAULT: "#1C64F2",
+              foreground: "#FFFFFF",
+            },
           },
           layout: {
             disabledOpacity: "0.6",
@@ -81,6 +85,10 @@ module.exports = {
             },
             danger: {
               DEFAULT: "#EA4335",
+              foreground: "#FFFFFF",
+            },
+            secondary: {
+              DEFAULT: "#1C64F2",
               foreground: "#FFFFFF",
             },
           },

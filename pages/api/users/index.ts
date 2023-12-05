@@ -1,6 +1,6 @@
 import { apiHandler } from "@/lib/ApiHandler";
-import db from "@/lib/db";
 import { User } from "@/models/User";
+import mongoose from "mongoose";
 
 export default apiHandler(async (req, res) => {
     try {
@@ -14,7 +14,7 @@ export default apiHandler(async (req, res) => {
         const limit = Number(perPage || 10);
         const skip = (Number(page || 1) - 1) * limit;
 
-        const collections: string[] = await db.collection("collections")
+        const collections: string[] = await mongoose.connection.collection("collections")
             .find({})
             .project({ _id: 0, name: 1 })
             .toArray()

@@ -8,7 +8,6 @@ import { Collection } from "@/models/Collection";
 import mongoose from "mongoose";
 import { User } from "next-auth";
 import type { NextApiRequest, NextApiResponse } from "next/types";
-const db = require("../../lib/db");
 
 type Data = {
   error?: string;
@@ -63,7 +62,7 @@ async function handler(
       return res.status(404).end();
     }
 
-    const col = mongoose.connection.db.collection(colDoc.name);
+    const col = mongoose.connection.collection(colDoc.name);
 
     let formattedResponse = response;
 

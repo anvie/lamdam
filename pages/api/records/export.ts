@@ -34,11 +34,11 @@ export default apiHandler(async (req, res: NextApiResponse<Data>) => {
         if (ids.length > 0) {
             cursor = db
                 .collection(col.name)
-                .find({ _id: { $in: Object.freeze(ids.map(id => new mongoose.Types.ObjectId(id))) } })
+                .find({ _id: { $in: Object.freeze(ids.map(id => new mongoose.Types.ObjectId(id))) }, status: "approved" })
         } else {
             cursor = db
                 .collection(col.name)
-                .find()
+                .find({ status: "approved" })
         }
 
         const records = await cursor.toArray();

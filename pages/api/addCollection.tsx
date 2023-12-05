@@ -1,11 +1,11 @@
 import { apiHandler } from "@/lib/ApiHandler";
-import db from "@/lib/db";
 import { toApiRespDoc } from "@/lib/docutil";
 import { AddCollectionSchema } from "@/lib/schema";
 import { getCurrentTimeMillis } from "@/lib/timeutil";
 import { Collection } from "@/models/Collection";
 import { DataRecordModel } from "@/models/DataRecordRow";
 import { User } from "@/models/User";
+import mongoose from "mongoose";
 import { User as UserAuth } from "next-auth";
 import type { NextApiRequest, NextApiResponse } from "next/types";
 
@@ -37,7 +37,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
   })
     .save()
     .then((doc: any) => {
-      db.model(doc.name, DataRecordModel, doc.name);
+      mongoose.connection.model(doc.name, DataRecordModel, doc.name);
       dbUser.updateLastActivity()
 
       res.json({

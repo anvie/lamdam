@@ -207,7 +207,7 @@ const RecordsStats = () => {
   const [recordsCount, setRecordsCount] = useState<number>(0);
 
   const { data } = useSWR<{ result: Statistic }>('/api/users/myStats', apiClient.get, {
-    refreshInterval: 3000,
+    refreshInterval: 4000,
   })
 
   const myStats = data?.result

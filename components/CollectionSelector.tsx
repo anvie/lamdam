@@ -50,6 +50,7 @@ const CollectionSelector = () => {
       size="sm"
       variant="flat"
       className="max-w-full md:max-w-xs w-full md:w-72"
+      aria-labelledby="collection-selector"
       classNames={{
         trigger: "border hover:opacity-75 rounded-lg overflow-hidden dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
         popoverContent: "dark:bg-[#374151] bg-[#F9FAFB]",

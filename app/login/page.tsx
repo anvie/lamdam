@@ -15,6 +15,7 @@ import { HiOutlineInformationCircle } from "react-icons/hi2";
 export default function Login() {
     const searchParams = useSearchParams()
     const failedReason = searchParams?.get('reason')
+    const error = searchParams?.get('error')
     const [providers, setProviders] = useState<Record<LiteralUnion<BuiltInProviderType>, ClientSafeProvider> | null>(null)
 
     useEffect(() => {
@@ -40,6 +41,15 @@ export default function Login() {
                                 <div className="grow shrink basis-0 text-red-700 text-base font-semibold leading-normal">Your Account has been Blocked</div>
                             </div>
                             <div className="text-sm font-normal leading-tight">Please contact Administrator!</div>
+                        </div>
+                    )}
+                    {error === "OAuthAccountNotLinked" && (
+                        <div className="w-full px-4 py-3.5 bg-orange-100 rounded-lg justify-start items-start gap-2 flex flex-col mb-4 text-orange-700">
+                            <div className="self-stretch justify-start items-center gap-2 inline-flex ">
+                                <HiOutlineInformationCircle className="w-6 h-6 text-orange-700" />
+                                <div className="grow shrink basis-0 text-orange-700 text-base font-semibold leading-normal">Account is not Linked</div>
+                            </div>
+                            <div className="text-sm font-normal leading-tight">The selected provider is not linked with any accounts</div>
                         </div>
                     )}
                     <div className="flex flex-col space-y-2">

@@ -8,8 +8,6 @@ import NextAuth, { type NextAuthOptions } from "next-auth";
 import { OAuthConfig } from "next-auth/providers";
 import GoogleProvider from "next-auth/providers/google";
 
-createConnection()
-
 let providers: OAuthConfig<any>[] = []
 
 if (process.env.NUID_CLIENT_ID && process.env.NUID_CLIENT_SECRET) {
@@ -57,6 +55,7 @@ export const authOptions: NextAuthOptions = {
             return token;
         },
         signIn: async ({ user: { email } }) => {
+            await createConnection()
             const blockedUri = `/login?status=failed&reason=BLOCKED`;
             const user = await User.findOne({ email }).exec()
 
