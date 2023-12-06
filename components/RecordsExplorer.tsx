@@ -79,12 +79,12 @@ const revalidateStats = (params: SearchData) => {
   return uri.toString();
 }
 
-const colors: Record<string, ChipProps['color']> = {
-  all: 'primary',
-  approved: 'success',
-  rejected: 'danger',
-  pending: 'warning'
-}
+const colors: Record<string, ChipProps["color"]> = {
+  all: "primary",
+  approved: "success",
+  rejected: "danger",
+  pending: "warning",
+};
 
 const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
   const { currentCollection } = useContext(CollectionContext);
@@ -163,7 +163,8 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
               <SearchIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
             }
             classNames={{
-              inputWrapper: "border dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+              inputWrapper:
+                "border dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
               input: "bg-transparent",
             }}
             defaultValue={dataFilter.keyword}
@@ -206,7 +207,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
                 >
                   {renderText}
                 </CRadio>
-              )
+              );
             })}
           </RadioGroup>
         </div>
@@ -315,7 +316,12 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
 
   if (!rec) return <React.Fragment />;
 
-  const color = rec.status === "approved" ? "success" : rec.status === "rejected" ? "danger" : "warning";
+  const color =
+    rec.status === "approved"
+      ? "success"
+      : rec.status === "rejected"
+      ? "danger"
+      : "warning";
 
   return (
     <div
@@ -324,8 +330,12 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
       className="group py-3.5 pr-3 border-b data-[active=true]:bg-primary/5 hover:bg-primary/5 data-[dirty=true]:bg-orange-400 dark:data-[dirty=true]:bg-orange-600 dark:hover:bg-[#374151] dark:data-[active=true]:bg-[#374151] border-divider pl-5 cursor-pointer select-none flex flex-col gap-1"
       onClick={onClick}
     >
-      <h1 className="font-medium group-data-[active=true]:font-semibold text-sm">{truncate(rec.prompt, 100)}</h1>
-      <span className="text-sm leading-tight text-gray-500 dark:group-data-[active=true]:text-gray-100 group-data-[active=true]:text-gray-900 dark:text-gray-400">{truncate(rec.response, 100)}</span>
+      <h1 className="font-medium group-data-[active=true]:font-semibold text-sm">
+        {truncate(rec.prompt, 100)}
+      </h1>
+      <span className="text-sm leading-tight text-gray-500 dark:group-data-[active=true]:text-gray-100 group-data-[active=true]:text-gray-900 dark:text-gray-400">
+        {truncate(rec.response, 100)}
+      </span>
       <div className="text-xs inline-flex space-x-1.5 items-center mt-2">
         {rec.status && (
           <Chip
@@ -338,10 +348,14 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
             {rec.status}
           </Chip>
         )}
-        <span className="opacity-60">{moment(rec.createdAt).format("YYYY/MM/DD")}</span>
+        <span className="opacity-60">
+          {moment(rec.createdAt).format("YYYY/MM/DD")}
+        </span>
         <span className="text-base opacity-60">•</span>
         <Tooltip placement="right" showArrow content={rec.creator || "?"}>
-          <span className="opacity-60">{(rec.creator || "?").split(" ")[0]}</span>
+          <span className="opacity-60">
+            {(rec.creator || "?").split(" ")[0]}
+          </span>
         </Tooltip>
       </div>
     </div>
