@@ -26,9 +26,7 @@ const ChatModePromptEditor: FC<Props> = ({ initialMessage }) => {
   const [dirty, setDirty] = useState(false);
   const [rawHistory, setRawHistory] = useState("");
 
-  return (
-    <ChatBox initialMessage={initialMessage} />
-  );
+  return <ChatBox initialMessage={initialMessage} />;
 };
 
 export default ChatModePromptEditor;
@@ -196,7 +194,7 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
 
   const [messagesHistory, setMessagesHistory] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [buffMessage, setBuffMessage] = useState("");
   const [inProcessingMessage, setInProcessingMessage] = useState(false);
 
@@ -332,14 +330,16 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
           .map((message) => (
             <div
               key={message.id}
-              className={`flex flex-col p-2 rounded-lg mb-2 ${message.creator !== "me" ? "" : "bg-gray-200 dark:bg-gray-600"
-                }`}
+              className={`flex flex-col p-2 rounded-lg mb-2 ${
+                message.creator !== "me" ? "" : "bg-gray-200 dark:bg-gray-600"
+              }`}
             >
               <span
-                className={`${message.creator !== "me"
-                  ? ""
-                  : "text-gray-600 dark:text-gray-300"
-                  } font-semibol`}
+                className={`${
+                  message.creator !== "me"
+                    ? ""
+                    : "text-gray-600 dark:text-gray-300"
+                } font-semibol`}
               >
                 {message.creator === CHAT_BOT_NAME
                   ? CHAT_BOT_NAME
@@ -347,10 +347,11 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
                 :
               </span>
               <p
-                className={`text-lg ${message.creator !== "me"
-                  ? "dark:text-green-500"
-                  : "dark:text-gray-300"
-                  }`}
+                className={`text-lg ${
+                  message.creator !== "me"
+                    ? "dark:text-green-500"
+                    : "dark:text-gray-300"
+                }`}
                 dangerouslySetInnerHTML={{
                   __html: formatMessageOutput(message.content),
                 }}
@@ -383,12 +384,13 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
           radius="md"
           multiple
           classNames={{
-            inputWrapper: "border dark:border-none pr-0 dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+            inputWrapper:
+              "border dark:border-none pr-0 dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
             input: "bg-transparent",
           }}
           value={inputMessage}
           onValueChange={setInputMessage}
-          ref={inputRef}
+          ref={inputRef as any}
           autoFocus
           disabled={inProcessingMessage}
           onKeyDown={(e) => {
