@@ -71,7 +71,14 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                     }
                 })
                 .filter(Boolean) as ImportedRecord[]
-            opts.addData(...data)
+            const unique = data.filter((rec, idx) => idx === data.findIndex(o => rec.id === o.id));
+
+            if (unique.length !== data.length) {
+                const diff = data.length - unique.length
+                Notify.info(`${diff} duplicate records found and removed`)
+            }
+
+            opts.addData(...unique)
             Loading.remove(500)
         }
         reader.readAsText(file)
