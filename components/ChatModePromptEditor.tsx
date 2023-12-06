@@ -390,7 +390,7 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
           }}
           value={inputMessage}
           onValueChange={setInputMessage}
-          ref={inputRef}
+          ref={inputRef as any}
           autoFocus
           disabled={inProcessingMessage}
           onKeyDown={(e) => {
