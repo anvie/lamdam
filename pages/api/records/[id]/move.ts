@@ -6,7 +6,6 @@ import { getCurrentTimeMillis } from "@/lib/timeutil";
 import { Collection } from "@/models/Collection";
 import type { NextApiRequest, NextApiResponse } from "next/types";
 import mongoose, { Types } from "mongoose";
-const db = require("../../lib/db");
 
 type Data = {
   error?: string;
@@ -33,8 +32,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
       return res.status(404).end();
     }
 
-    const colSrcObj = mongoose.connection.db.collection(colSrc.name);
-    const colDstObj = mongoose.connection.db.collection(colDest.name);
+    const colSrcObj = mongoose.connection.collection(colSrc.name);
+    const colDstObj = mongoose.connection.collection(colDest.name);
 
     const doc = await colSrcObj.findOne({ _id: new Types.ObjectId(id) });
 

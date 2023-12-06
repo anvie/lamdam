@@ -4,7 +4,7 @@ import { User } from "@/models/User";
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 
-import db from "@/lib/db";
+import db, { createConnection } from "@/lib/db";
 import mongoose from "mongoose";
 
 async function populateRecordStatus() {
@@ -12,7 +12,7 @@ async function populateRecordStatus() {
         const collections = await Collection.find({});
 
         for (const { name } of collections) {
-            const model = mongoose.models[name] || db.model(name, DataRecordModel, name)
+            const model = mongoose.models[name] || mongoose.connection.model(name, DataRecordModel, name)
             const docsToUpdate = await model.find({ createdAt: { $exists: false } });
 
             const updatePromises = docsToUpdate.map(async (doc) => {
@@ -50,6 +50,7 @@ async function populateRole() {
 }
 
 async function main() {
+    await createConnection()
     return Promise.all([
         populateRecordStatus(),
         populateRole(),
@@ -65,4 +66,4 @@ main()
         console.log("Error", err);
         process.exit(1);
     })
-    .finally(() => db.close())
+    .finally(() => db?.close())

@@ -1,6 +1,5 @@
 import { get, post } from "@/lib/FetchWrapper";
 import { __debug } from "@/lib/logger";
-import { getLocalStorage } from "@/lib/state";
 import { truncate } from "@/lib/stringutil";
 import { Collection, DataRecord } from "@/types";
 import { Button } from "@nextui-org/button";
@@ -8,11 +7,12 @@ import { Input, ModalBody, ModalContent, ModalFooter, Spinner, cn } from "@nextu
 import moment from "moment";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
 import { Report } from "notiflix/build/notiflix-report-aio";
-import { FC, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
+import { HiArrowLeft, HiArrowRight, HiOutlineXMark } from "react-icons/hi2";
 import { SearchSetting } from "../SearchSetting";
 import ExportProvider, { ExportConsumer, ExportConsumerProps, useExport } from "../hooks/useExport";
 import { ModalProps } from "../hooks/useModal";
-import { CloseIcon } from "../icon/CloseIcon";
+import usePagination from "../hooks/usePagination";
 import { SearchIcon } from "../icons";
 
 interface Props extends ModalProps {
@@ -20,12 +20,24 @@ interface Props extends ModalProps {
 }
 
 type SearchData = {
-    id: string;
+    collectionId: string;
 } & Partial<{
-    keyword: string;
+    keyword: string | null;
     toId: string;
     fromId: string;
+    status: string | string[];
+    features: string[];
+    creators: string[];
+    sort: string;
 }>;
+
+type DataFilter = Partial<{
+    status: string | string[];
+    keyword: string;
+    features: string[];
+    creators: string[];
+    sort: string;
+}>
 
 type ExportedRecord = {
     instruction: string,
@@ -34,29 +46,23 @@ type ExportedRecord = {
     history: [string, string][],
 }
 
-const revalidateSearch = ({ id, keyword, toId, fromId }: SearchData) => {
-    let uri = new URL(`/api/records?collectionId=${id}`, window.origin);
+const revalidateSearch = async (params: SearchData) => {
+    let uri = new URL(`/api/records`, window.origin);
 
-    const creators = getLocalStorage<string[]>("search-settings.creator", []);
-    const features = getLocalStorage<string[]>("search-settings.features", []);
+    Object.entries(params).forEach(([key, value]) => {
+        if (!value) return;
 
-    if (keyword) {
-        uri.searchParams.set("q", keyword);
-    }
+        if (Array.isArray(value)) {
+            value.forEach((v) => {
+                uri.searchParams.append(key, v);
+            })
+        } else {
+            uri.searchParams.set(key, value);
+        }
+    })
 
-    for (const creator of creators) {
-        uri.searchParams.append("creators", creator);
-    }
-
-    for (const feature of features) {
-        uri.searchParams.append("features", feature);
-    }
-
-    if (toId) uri.searchParams.set("toId", toId);
-    if (fromId) uri.searchParams.set("fromId", fromId);
-
-    return uri.toString();
-};
+    return await get(uri.toString());
+}
 
 const ExportModal: FC<Props> = ({ currentCollection, ...props }) => {
     const doExportData = async (ids: string[]) => {
@@ -65,7 +71,7 @@ const ExportModal: FC<Props> = ({ currentCollection, ...props }) => {
         }
 
         Loading.hourglass(`Exporting ${ids.length > 0 ? ids.length : 'all'} records from collection ${currentCollection.name}...`);
-        await post(`/api/exportRecords`, {
+        await post(`/api/records/export`, {
             ids,
             collection_id: currentCollection.id,
         })
@@ -140,14 +146,14 @@ const ExportModal: FC<Props> = ({ currentCollection, ...props }) => {
 }
 
 const RecordsToExport: FC<{ doExportAll: () => void }> = ({ doExportAll }) => {
-    const { exportData, canExport, removeData, clearData } = useExport<DataRecord>()
+    const { exportData, dataCount, canExport, removeData, clearData } = useExport<DataRecord>()
 
     return (
         <div className="flex flex-col w-full col-span-2">
             <div className="w-full border-b dark:border-b-black/30 py-3 px-4 flex justify-between items-center">
                 <div>
                     <div className="text-lg font-bold">Records to Export</div>
-                    <div className="text-sm opacity-80">{exportData.length} records</div>
+                    <div className="text-sm opacity-80">{exportData.length}/{dataCount} records</div>
                 </div>
                 <div className="inline-flex gap-2 items-center">
                     <Button
@@ -172,10 +178,10 @@ const RecordsToExport: FC<{ doExportAll: () => void }> = ({ doExportAll }) => {
                 {exportData.map((data, index) => {
                     return (
                         <div
-                            className="shadow-none border dark:border-black/40 h-fit rounded-md"
                             key={index}
+                            className="shadow-none border dark:border-divider/30 h-fit rounded-md dark:bg-slate-700"
                         >
-                            <div className="inline-flex items-center w-full justify-between border-b dark:border-b-black/40 px-4 py-2">
+                            <div className="inline-flex items-center w-full justify-between border-b dark:border-b-divider/30 px-4 py-2">
                                 <div className="text-base font-medium leading-none">{truncate(data.prompt, 100)}</div>
                                 <Button
                                     isIconOnly
@@ -184,7 +190,7 @@ const RecordsToExport: FC<{ doExportAll: () => void }> = ({ doExportAll }) => {
                                     size="sm"
                                     className="text-current"
                                 >
-                                    <CloseIcon />
+                                    <HiOutlineXMark className="w-5 h-5" />
                                 </Button>
                             </div>
                             <div className="px-4 py-3 text-sm h-fit overflow-hidden">
@@ -200,158 +206,84 @@ const RecordsToExport: FC<{ doExportAll: () => void }> = ({ doExportAll }) => {
 
 
 const RecordsExplorer: FC<{ className: string; currentCollection?: Collection }> = ({ className, currentCollection }) => {
-    const [data, setData] = useState<DataRecord[]>([]);
-    const [query, setQuery] = useState<string>("");
-    const [lastId, setLastId] = useState<string[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const { exportData, addData, removeData, setCanExport } = useExport<DataRecord>();
+    const [dataFilter, setDataFilter] = useState<DataFilter>({})
+    const { data, ...paging } = usePagination<DataRecord, SearchData>(revalidateSearch, {
+        ...dataFilter,
+        collectionId: currentCollection?.id || "0",
+        status: 'approved',
+    });
+    const { exportData, addData, removeData, setCanExport } = useExport<DataRecord>(paging.count);
 
-    const refreshData = async (
-        query?: string | undefined,
-        noLastId: boolean = false
-    ) => {
-        try {
-            if (!currentCollection) {
-                return;
-            }
-            setIsLoading(true);
-            let options: SearchData = {
-                id: currentCollection.id,
-            };
+    const loadRecords = useCallback(async (blockLoading = true) => {
+        if (!currentCollection) return;
 
-            if (query) options.keyword = query;
-            if (lastId.length > 0 && !noLastId) {
-                if (lastId[1] !== "") {
-                    options.toId = lastId[1];
-                }
-                if (lastId[0] !== "") {
-                    options.fromId = lastId[0];
-                }
-            }
-
-            return await get(revalidateSearch(options)).then((data) => {
-                setData(data.result);
-                if (data.result.length > 0) {
-                    setCanExport(true);
-                    setLastId([
-                        data.result[0].id,
-                        data.result[data.result.length - 1].id,
-                    ]);
-                } else {
-                    setCanExport(false);
-                }
-            });
-        } catch (error) {
-            console.log("🚀 ~ file: ExportModal.tsx:185 ~ error:", error)
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        await paging.fetchData({
+            collectionId: currentCollection.id,
+            ...dataFilter,
+        }, { blockLoading })
+            .then((result) => setCanExport((result?.paging.count || 0) > 0))
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentCollection, dataFilter])
 
     useEffect(() => {
-        refreshData(undefined, true);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        if (!currentCollection) return;
 
-    const onPrevPage = () => {
-        if (!currentCollection) {
-            return;
-        }
-        let options: SearchData = {
-            id: currentCollection!.id,
-        };
-        if (query) options.keyword = query;
-        if (lastId.length > 0) options.toId = lastId[1];
-        void get(revalidateSearch(options))
-            .then((data) => {
-                setData(data.result);
-                if (data.result.length > 0) {
-                    setLastId([
-                        data.result[0].id,
-                        data.result[data.result.length - 1].id,
-                    ]);
-                } else {
-                    // setLastId([lastId.shift() as string, lastId[0]]);
-                }
-            })
-            .catch((err) => {
-                __debug("error", err);
-            });
-    };
-
-    const onNextPage = () => {
-        if (!currentCollection) {
-            return;
-        }
-        let options: SearchData = {
-            id: currentCollection!.id,
-        };
-        if (query) options.keyword = query;
-        if (lastId.length > 0) options.fromId = lastId[0];
-        void get(revalidateSearch(options))
-            .then((data) => {
-                setData(data.result);
-                if (data.result.length > 0) {
-                    setLastId([
-                        data.result[0].id,
-                        data.result[data.result.length - 1].id,
-                    ]);
-                } else {
-                    setLastId([lastId[1], ""]);
-                }
-            })
-            .catch((err) => {
-                __debug("error", err);
-            });
-    };
+        loadRecords();
+    }, [currentCollection, loadRecords]);
 
     return (
         <div className={className}>
-            <div className="pb-2 p-2 flex gap-1 border-b-1 dark:border-b-black/30">
+            <div className="py-4 px-5 flex gap-2 border-b-1 dark:border-b-black/30">
                 <Input
-                    className="pb-2 p-2"
-                    type="email"
-                    placeholder="search records"
-                    labelPlacement="outside"
+                    isClearable
+                    placeholder="Search"
+                    aria-labelledby="search"
                     startContent={
                         <SearchIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
                     }
-                    isClearable
-                    value={query}
-                    onClear={() => {
-                        setQuery("")
-                        refreshData(undefined, true)
+                    classNames={{
+                        inputWrapper: "border dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+                        input: "bg-transparent",
                     }}
+                    defaultValue={dataFilter.keyword}
+                    onClear={() => setDataFilter((old) => ({ ...old, keyword: undefined }))}
                     onKeyUp={(e) => {
-                        if (e.key === "Enter") {
-                            refreshData(query, true);
+                        if (e.key === "Enter" && "value" in e.target) {
+                            const keyword = String(e.target.value)
+                            setDataFilter((old) => ({ ...old, keyword }))
                         }
                     }}
-                    onChange={(e) => {
-                        setQuery(e.currentTarget.value);
+                />
+                <SearchSetting
+                    onSaveSearch={(filters) => {
+                        setDataFilter((old) => ({ ...old, ...filters }))
                     }}
                 />
-                <SearchSetting />
             </div>
 
-            <div className="h-[600px] overflow-scroll">
-                {isLoading && (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <Spinner color="primary" size="lg" />
+            <div className="h-[calc(100vh/2.2)] overflow-y-auto custom-scrollbar">
+                {paging.isLoading && (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center">
+                        <div className="flex flex-col gap-2">
+                            <Spinner color="secondary" size="lg" />
+                            <div className="text-base leading-none text-gray-400">
+                                Loading records...
+                            </div>
+                        </div>
                     </div>
                 )}
-                {(!isLoading && data.length === 0) && (
+                {(!paging.isLoading && data.length === 0) && (
                     <div className="w-full h-full flex items-center justify-center text-center">
-                        <p>No Records in {currentCollection?.name}</p>
+                        <p>No <span className="font-medium">Approved</span> Records in {currentCollection?.name}</p>
                     </div>
                 )}
-                {!isLoading && data.map((data, index) => {
+                {!paging.isLoading && data.map((data, index) => {
                     const isSelected = exportData.find((d) => d.id === data.id);
 
                     return (
                         <div
-                            className={cn("border-b-1 pb-1 dark:border-b-black/30 dark:border-l-black/30 cursor-pointer dark:hover:bg-gray-600 hover:bg-slate-200 dark:hover:dark:text-black border-l-8 pl-2", {
-                                "border-l-primary bg-primary bg-opacity-10": isSelected,
+                            className={cn("group py-2.5 pr-2 border-b data-[active=true]:bg-secondary/25 hover:bg-secondary/25 data-[dirty=true]:bg-orange-400 dark:data-[dirty=true]:bg-orange-600 dark:hover:bg-[#374151] dark:data-[active=true]:bg-[#374151] border-divider cursor-pointer select-none flex flex-col gap-1 border-l-8 pl-3", {
+                                "border-l-secondary bg-secondary bg-opacity-10 dark:bg-opacity-20": isSelected,
                             })}
                             key={index}
                             onClick={() => {
@@ -362,21 +294,36 @@ const RecordsExplorer: FC<{ className: string; currentCollection?: Collection }>
                                 }
                             }}
                         >
-                            <div>{truncate(data.prompt, 100)}</div>
-                            <div className="text-sm">{truncate(data.response, 100)}</div>
-                            <div className="text-xs inline-flex space-x-2 items-center opacity-80">
-                                <span>{moment(data.createdAt).format("YYYY/MM/DD")}</span>
-                                <span>-</span>
-                                <span>{data.creator ?? "?"}</span>
+                            <h1 className="font-medium group-data-[active=true]:font-semibold text-sm">{truncate(data.prompt, 100)}</h1>
+                            <span className="text-sm leading-tight text-gray-500 dark:group-data-[active=true]:text-gray-100 group-data-[active=true]:text-gray-900 dark:text-gray-400">{truncate(data.response, 100)}</span>
+                            <div className="text-xs inline-flex space-x-1.5 items-center mt-1">
+                                <span className="opacity-60">{moment(data.createdAt).format("YYYY/MM/DD")}</span>
+                                <span className="text-base opacity-60">•</span>
+                                <span className="opacity-60">{(data.creator || "?").split(" ")[0]}</span>
                             </div>
                         </div>
                     );
                 })}
             </div>
 
-            <div className="flex justify-between p-2">
-                <Button onClick={onPrevPage}>Previous</Button>
-                <Button onClick={onNextPage}>Next</Button>
+            <div className="flex justify-between px-2.5 py-2 border-t border-divider items-center bg-gray-50 dark:bg-slate-800">
+                <Button
+                    isIconOnly
+                    isDisabled={!paging.hasPrev}
+                    onPress={paging.prevPage}
+                >
+                    <HiArrowLeft strokeWidth={1} className="w-4 h-4" />
+                </Button>
+                <div>
+                    <span className="text-xs text-current">Page {paging.currentPage}/{paging.totalPage}</span>
+                </div>
+                <Button
+                    isIconOnly
+                    isDisabled={!paging.hasNext}
+                    onPress={paging.nextPage}
+                >
+                    <HiArrowRight strokeWidth={1} className="w-4 h-4" />
+                </Button>
             </div>
         </div>
     );

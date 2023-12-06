@@ -1,6 +1,6 @@
 import { apiHandler } from "@/lib/ApiHandler";
-import db from "@/lib/db";
 import { User } from "@/models/User";
+import mongoose from "mongoose";
 
 export default apiHandler(async (req, res) => {
     try {
@@ -14,7 +14,7 @@ export default apiHandler(async (req, res) => {
         const limit = Number(perPage || 10);
         const skip = (Number(page || 1) - 1) * limit;
 
-        const collections: string[] = await db.collection("collections")
+        const collections: string[] = await mongoose.connection.collection("collections")
             .find({})
             .project({ _id: 0, name: 1 })
             .toArray()
@@ -53,10 +53,11 @@ export default apiHandler(async (req, res) => {
                                                 },
                                                 date: {
                                                     $dateToString: {
-                                                        format: "%Y-%m-%d",
                                                         date: {
                                                             $toDate: "$createdAt",
                                                         },
+                                                        format: "%Y-%m-%d",
+                                                        timezone: "Asia/Jakarta",
                                                     },
                                                 },
                                             },
@@ -103,6 +104,7 @@ export default apiHandler(async (req, res) => {
                                                             $dateToString: {
                                                                 format: "%Y-%m-%d",
                                                                 date: new Date(),
+                                                                timezone: "Asia/Jakarta",
                                                             },
                                                         },
                                                     ],
@@ -220,6 +222,7 @@ export default apiHandler(async (req, res) => {
                                                         date: {
                                                             $toDate: "$lastUpdated",
                                                         },
+                                                        timezone: "Asia/Jakarta",
                                                     },
                                                 },
                                             },
@@ -268,6 +271,7 @@ export default apiHandler(async (req, res) => {
                                                             $dateToString: {
                                                                 format: "%Y-%m-%d",
                                                                 date: new Date(),
+                                                                timezone: "Asia/Jakarta",
                                                             },
                                                         },
                                                     ],

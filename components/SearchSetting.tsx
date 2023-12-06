@@ -1,230 +1,257 @@
 "use client";
 
-import { get } from "@/lib/FetchWrapper";
-import { getLocalStorage } from "@/lib/state";
-import { useFloating } from "@floating-ui/react-dom";
+import { truncate } from "@/lib/stringutil";
 import {
+  Avatar,
   Button,
   Checkbox,
   CheckboxGroup,
-  Listbox,
-  ListboxItem,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  useDisclosure,
+  Chip,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownSection,
+  DropdownTrigger,
+  Radio,
+  RadioGroup,
+  Select,
+  SelectItem,
+  Selection,
 } from "@nextui-org/react";
-import React, { Dispatch, Key, SetStateAction, useEffect, useState } from "react";
+import { useInfiniteScroll } from "@nextui-org/use-infinite-scroll";
+import { Dispatch, FC, Fragment, SetStateAction, useState } from "react";
 import { HiOutlineAdjustmentsHorizontal } from "react-icons/hi2";
-import { CloseIcon } from "./icon/CloseIcon";
+import useSimpleUsers from "./hooks/useSimpleUsers";
 
-const Features = ({
-  state,
-}: {
-  state: [string[], Dispatch<SetStateAction<string[]>>];
-}) => {
-  const items = ["prompt", "response", "input", "history"];
-
-  const [selected, setSelected] = state;
-  useEffect(() => {
-    setSelected(getLocalStorage("search-settings.features", [items[0]]));
-  }, []);
-
-  const onValueChange: Dispatch<SetStateAction<string[]>> = (items) => {
-    if (items.length == 0) {
-      alert("there must be at least one");
-    } else {
-      setSelected(items);
-    }
-  };
-
-  return (
-    <CheckboxGroup value={selected} onValueChange={onValueChange}>
-      {items.map((item, i) => (
-        <Checkbox key={item} value={item}>
-          {item.toLocaleUpperCase()}
-        </Checkbox>
-      ))}
-    </CheckboxGroup>
-  );
-};
-
-const InputCreator = ({
-  state,
-}: {
-  state: [string[], Dispatch<SetStateAction<string[]>>];
-}) => {
-  const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState("");
-
-  const { refs, floatingStyles } = useFloating({
-    placement: "bottom-start",
-  });
+const InputCreator = ({ state }: { state: [Selection, Dispatch<SetStateAction<Selection>>] }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const { items, hasMore, isLoading, onLoadMore } = useSimpleUsers();
   const [creators, setCreators] = state;
 
-  useEffect(() => {
-    setCreators(getLocalStorage("search-settings.creators", []));
-  }, []);
-
-  const [data, setData] = useState<string[]>([]);
-  useEffect(() => {
-    get("/api/creators").then((data) => {
-      setData(data);
-    });
-  }, []);
-
-  const filteredItems = data.filter((item) => {
-    if (creators.includes(item)) return false;
-    if (item.toLowerCase().startsWith(inputValue.toLowerCase())) return true;
-    if (item.toLowerCase().includes(inputValue.toLowerCase())) return true;
-
-    return false;
+  const [_, scrollerRef] = useInfiniteScroll({
+    hasMore,
+    isEnabled: isOpen,
+    shouldUseLoader: false,
+    onLoadMore,
   });
 
-  const onInputCreatorAction = (key: Key) => {
-    if (!creators.includes(key.toString())) {
-      setCreators([...creators, key.toString()]);
-    }
-
-    setInputValue("");
-    setOpen(false);
-    document.getElementById("search-setting.creators")!.focus();
-  };
-
-  const onDeleteTagCreator = (creator: string) => {
-    setCreators(creators.filter((_creator) => _creator != creator));
-  };
+  const removeCreator = (id: string) => {
+    setCreators((prev) => {
+      (prev as Set<string>).delete(id);
+      return new Set(prev);
+    });
+  }
 
   return (
-    <>
-      <section className="flex flex-wrap border p-4 rounded-lg gap-2">
-        {creators.map((creator, i) => (
-          <div
-            key={i + creator}
-            className="flex items-center border rounded-lg px-2 py-1 pt-0 gap-2"
-          >
-            <p>{creator}</p>
-            <CloseIcon
-              className="cursor-pointer"
-              onClick={() => onDeleteTagCreator(creator)}
-            ></CloseIcon>
+    <Select
+      isMultiline
+      fullWidth
+      isLoading={isLoading}
+      items={items}
+      scrollRef={scrollerRef}
+      onOpenChange={setIsOpen}
+      onSelectionChange={setCreators}
+      selectedKeys={creators}
+      aria-labelledby="creators"
+      variant="bordered"
+      selectionMode="multiple"
+      placeholder="Select creators"
+      classNames={{
+        base: "max-w-xs",
+        trigger: "min-h-[46px] py-1.5 px-2.5",
+        value: "w-fit",
+        innerWrapper: "w-fit"
+      }}
+      selectorIcon={<Fragment />}
+      renderValue={(items: any[]) => {
+        return (
+          <div className="flex flex-wrap gap-2">
+            {items.map(({ key, data: { name } }) => (
+              <Chip
+                key={key}
+                radius="sm"
+                onClose={() => removeCreator(key)}
+              >
+                {truncate(name.split(' ')[0], 8)}
+              </Chip>
+            ))}
           </div>
-        ))}
-        <input
-          id="search-setting.creators"
-          type="text"
-          ref={refs.setReference}
-          placeholder="type  here"
-          value={inputValue}
-          className="outline-none border-0 bg-transparent flex-1 w-fit"
-          onChange={(e) => {
-            const value = e.target.value;
-            setOpen(!!value);
-            setInputValue(value || "");
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              setOpen(false);
-            }
-          }}
-        />
-        {open && filteredItems.length ? (
-          <div
-            className="absolute top-0 left-0 bg-black rounded p-2"
-            ref={refs.setFloating}
-            style={floatingStyles}
-          >
-            <Listbox aria-label="Actions" onAction={onInputCreatorAction}>
-              {filteredItems.map((item) => (
-                <ListboxItem key={item}>{item}</ListboxItem>
-              ))}
-            </Listbox>
+        );
+      }}
+    >
+      {(user) => (
+        <SelectItem
+          key={user.id}
+          textValue={user.name}
+        >
+          <div className="flex gap-2 items-center">
+            <Avatar alt={user.name} className="flex-shrink-0" size="sm" src={user.image} />
+            <div className="flex flex-col">
+              <span className="text-small">{user.name}</span>
+            </div>
           </div>
-        ) : (
-          <></>
-        )}
-      </section>
-      {filteredItems.length == 0 && inputValue ? (
-        <small>There is no more creators</small>
-      ) : (
-        ""
+        </SelectItem>
       )}
-    </>
+    </Select>
   );
-};
+}
 
-export const SearchSetting = () => {
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+type SearchSettingProps = {
+  onSaveSearch: (filters: { features: string[], creators: string[], sort: string }) => void;
+}
 
-  const featureState = useState<string[]>([]);
-  const creatorState = useState<string[]>([]);
+export const SearchSetting: FC<SearchSettingProps> = (props) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const items = ["prompt", "response", "input", "history"]
+  const [features, setFeatures] = useState<string[]>(["prompt"]);
+  const [creators, setCreators] = useState<Selection>(new Set<string>([]));
+  const [sort, setSort] = useState("desc")
 
-  const handleSubmit = (onClose: () => void) => {
-    return () => {
-      localStorage.setItem(
-        "search-settings.features",
-        JSON.stringify(featureState[0])
-      );
+  const onSave = () => {
+    props.onSaveSearch({
+      features,
+      creators: Array.from<any>(creators),
+      sort,
+    })
+    setIsOpen(false)
+  }
 
-      localStorage.setItem(
-        "search-settings.creators",
-        JSON.stringify(creatorState[0])
-      );
-      onClose();
-    };
-  };
+  const onReset = () => {
+    setFeatures(["prompt"])
+    setCreators(new Set<string>([]))
+    props.onSaveSearch({
+      features: [],
+      creators: [],
+      sort: "desc",
+    })
+    setIsOpen(false)
+  }
 
   return (
-    <React.Fragment>
-      <Button
-        type="button"
-        onPress={onOpen}
-        isIconOnly
-      >
-        <HiOutlineAdjustmentsHorizontal className="w-5 h-5" />
-      </Button>
-
-      <Modal
-        backdrop="blur"
-        isOpen={isOpen}
-        placement={"center"}
-        onOpenChange={onOpenChange}
-        isDismissable={false}
-        style={{
-          overflow: "visible",
+    <Dropdown
+      radius="md"
+      classNames={{
+        base: "p-0",
+        content: "p-0 border-none bg-background",
+      }}
+      placement="bottom-end"
+      isOpen={isOpen}
+    >
+      <DropdownTrigger>
+        <Button
+          type="button"
+          isIconOnly
+          onPress={() => setIsOpen((open) => !open)}
+        >
+          <HiOutlineAdjustmentsHorizontal className="w-5 h-5" />
+        </Button>
+      </DropdownTrigger>
+      <DropdownMenu
+        variant="flat"
+        aria-label="Dropdown menu with description"
+        classNames={{
+          base: "p-0 w-[265px]",
         }}
+        selectionMode="none"
+        closeOnSelect={false}
+        bottomContent={
+          <div className="flex justify-between gap-2.5 px-4 pb-4">
+            <Button
+              fullWidth
+              onPress={onReset}
+            >
+              Reset
+            </Button>
+            <Button
+              fullWidth
+              color="primary"
+              onPress={onSave}
+            >
+              Save
+            </Button>
+          </div>
+        }
       >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                Search Settings
-              </ModalHeader>
-              <ModalBody>
-                <Features state={featureState}></Features>
-                <label className="mt-4">
-                  <p className="mb-2">Creator</p>
-                  <InputCreator state={creatorState}></InputCreator>
-                </label>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="bordered" onPress={onClose}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="bordered"
-                  color="primary"
-                  onPress={handleSubmit(onClose)}
-                >
-                  OK
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-    </React.Fragment>
+        <DropdownSection
+          title="Search Setting"
+          classNames={{
+            heading: "border-b border-divider block w-full px-4 py-3 font-semibold text-sm text-current",
+            group: "px-2 py-2 mt-2 flex flex-col gap-1"
+          }}
+        >
+          <DropdownItem
+            key="features"
+            isReadOnly
+            hideSelectedIcon
+          >
+            <CheckboxGroup
+              aria-labelledby="features"
+              color="secondary"
+              value={features}
+              onChange={(keys) => Array.isArray(keys) && setFeatures(keys)}
+            >
+              {items.map((item) => {
+                return (
+                  <Checkbox
+                    key={item}
+                    value={item}
+                    className="capitalize font-medium"
+                    classNames={{
+                      label: "group-data-[selected=true]:text-current text-gray-500 text-sm"
+                    }}
+                  >
+                    {item}
+                  </Checkbox>
+                )
+              })}
+            </CheckboxGroup>
+          </DropdownItem>
+        </DropdownSection>
+        <DropdownSection
+          title="Creators"
+          classNames={{
+            heading: "block w-full px-4 py-0 font-semibold text-sm text-current",
+            group: "px-4"
+          }}
+        >
+          <DropdownItem
+            key="users"
+            isReadOnly
+            hideSelectedIcon
+            className="p-0"
+          >
+            <InputCreator state={[creators, setCreators]} />
+          </DropdownItem>
+        </DropdownSection>
+        <DropdownSection
+          title="Sort"
+          classNames={{
+            heading: "block w-full px-4 py-0 font-semibold text-sm text-current",
+            group: "px-2"
+          }}
+        >
+          <DropdownItem
+            key="sort"
+            isReadOnly
+            hideSelectedIcon
+          >
+            <RadioGroup
+              aria-labelledby="sort"
+              orientation="horizontal"
+              color="secondary"
+              value={sort}
+              onValueChange={setSort}
+              classNames={{
+                wrapper: "gap-4",
+                base: "font-medium",
+              }}
+            >
+              <Radio classNames={{ label: "group-data-[selected=true]:text-current text-gray-500 text-sm" }} value="asc">A-Z</Radio>
+              <Radio classNames={{ label: "group-data-[selected=true]:text-current text-gray-500 text-sm" }} value="desc">Z-A</Radio>
+            </RadioGroup>
+          </DropdownItem>
+        </DropdownSection>
+      </DropdownMenu>
+    </Dropdown>
   );
 };

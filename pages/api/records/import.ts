@@ -53,6 +53,7 @@ export default apiHandler(async (req, res: NextApiResponse<Data>, user?: User) =
                             hash,
                             creator: user?.name,
                             creatorId: user?.id,
+                            status: "pending"
                         }
                     },
                     upsert: true

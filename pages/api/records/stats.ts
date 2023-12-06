@@ -1,34 +1,64 @@
 import { apiHandler } from "@/lib/ApiHandler";
-import db from "@/lib/db";
 import { Collection } from "@/models/Collection";
 import { getRecordModel } from "@/models/DataRecordRow";
-import { User } from "@/models/User";
 
 export default apiHandler(async (req, res, user) => {
     try {
-        const { collectionId } = req.query;
+        let { collectionId, keyword, features = [], creators = [] } = req.query;
         if (req.method !== "GET") {
-            res.status(405).json({ error: "Method not allowed" });
-            return;
+            return res.status(405).json({ error: "Method not allowed" });
         } else if (!collectionId) {
-            res.status(400).json({ error: "Missing collectionId" });
-            return;
+            return res.status(400).json({ error: "Missing collectionId" });
         }
 
         const col = await Collection.findById(collectionId);
         if (!col) {
-            res.status(404).json({ error: "Collection not found" });
-            return;
+            return res.status(400).json({ error: "Collection not found" });
+        }
+
+        let filter = {}
+        if (keyword) {
+            filter = {
+                $or: [
+                    { prompt: { $regex: keyword, $options: "i" } },
+                    { response: { $regex: keyword, $options: "i" } },
+                    { input: { $regex: keyword, $options: "i" }, },
+                ]
+            }
+        }
+
+        creators = Array.isArray(creators) ? creators : [creators];
+        features = Array.isArray(features) ? features : [features];
+
+        if (creators.length) {
+            filter = {
+                ...filter,
+                creatorId: { $in: creators }
+            }
+        }
+
+        if (features.length) {
+            filter = {
+                ...filter,
+                $and: [
+                    {
+                        $or: features.map(f => {
+                            const key = f.toLowerCase().trim()
+                            return { [key]: { $nin: [null, "", []] } }
+                        })
+                    }
+                ]
+            }
         }
 
         const result = await getRecordModel(col.name).aggregate([
+            { $match: filter },
             {
                 $group: {
                     _id: "$status",
                     count: { $sum: 1 },
                 }
             },
-            //  replace newRoot with addFields
             {
                 $addFields: {
                     status: "$_id",
@@ -63,9 +93,6 @@ export default apiHandler(async (req, res, user) => {
         if (result.length == 0) {
             return res.json({
                 result: {
-                    total: 0,
-                    today: 0,
-                    thisMonth: 0,
                     pending: 0,
                     rejected: 0,
                     approved: 0,

@@ -1,6 +1,7 @@
 import { post } from "@/lib/FetchWrapper";
+import { hashString } from "@/lib/crypto";
 import { __debug, __log } from "@/lib/logger";
-import { truncate } from "@/lib/stringutil";
+import { formattedMessage, truncate } from "@/lib/stringutil";
 import { Collection } from "@/types";
 import { Button, Input, ModalBody, ModalContent, ModalFooter, cn } from "@nextui-org/react";
 import Image from "next/image";
@@ -9,6 +10,7 @@ import { Loading } from "notiflix/build/notiflix-loading-aio";
 import { Report } from "notiflix/build/notiflix-report-aio";
 import React, { FC, useRef, useState } from "react";
 import Dropzone, { FileRejection } from 'react-dropzone';
+import { HiArrowLeft, HiArrowRight } from "react-icons/hi2";
 import ImportProvider, { ImportConsumer, ImportConsumerProps, useImport } from "../hooks/useImport";
 import { ModalProps } from "../hooks/useModal";
 import { CloseIcon } from "../icon/CloseIcon";
@@ -61,7 +63,7 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                     try {
                         let data: ImportedRecord = JSON.parse(d) as ImportedRecord
 
-                        data.id = String(i)
+                        data.id = hashString(formattedMessage(data.instruction, data.input, data.response, data.history))
                         return data
                     } catch (error) {
                         __log("[ERROR]", "🚀 ~ file: ImportModal.tsx:61 ~ reader.onload= ~ error:", error)
@@ -69,7 +71,14 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                     }
                 })
                 .filter(Boolean) as ImportedRecord[]
-            opts.addData(...data)
+            const unique = data.filter((rec, idx) => idx === data.findIndex(o => rec.id === o.id));
+
+            if (unique.length !== data.length) {
+                const diff = data.length - unique.length
+                Notify.info(`${diff} duplicate records found and removed`)
+            }
+
+            opts.addData(...unique)
             Loading.remove(500)
         }
         reader.readAsText(file)
@@ -92,7 +101,7 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
 
             while (skip < total) {
                 const data = records.slice(skip, skip + take)
-                await post(`/api/importRecords`, {
+                await post(`/api/records/import`, {
                     records: data,
                     collection_id: currentCollection.id,
                 })
@@ -144,7 +153,7 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                 );
             }
         } else {
-            await post(`/api/importRecords`, {
+            await post(`/api/records/import`, {
                 records,
                 collection_id: currentCollection.id,
             })
@@ -196,7 +205,7 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                                             <div className="w-full border-b dark:border-b-black/30 py-3 px-4 flex justify-between items-center">
                                                 <div>
                                                     <div className="text-lg font-bold">Records to Import</div>
-                                                    <div className="text-sm opacity-80">{context.selectedData.length} records</div>
+                                                    <div className="text-sm opacity-80">{context.selectedData.length}/{context.importData.length} records</div>
                                                 </div>
                                                 <div className="inline-flex gap-2 items-center">
                                                     <Button
@@ -229,13 +238,13 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                                                     return (
                                                         <div
                                                             key={index}
-                                                            className="shadow-none border dark:border-black/40 h-fit rounded-md"
+                                                            className="shadow-none border dark:border-divider/30 h-fit rounded-md dark:bg-slate-700"
                                                         >
-                                                            <div className="inline-flex items-center w-full justify-between border-b dark:border-b-black/40 px-4 py-2">
+                                                            <div className="inline-flex items-center w-full justify-between border-b dark:border-b-divider/30 px-4 py-2">
                                                                 <div className="text-base font-medium leading-none">{truncate(data.instruction, 100)}</div>
                                                                 <Button
                                                                     isIconOnly
-                                                                    onPress={() => context.dispatch.removeData(index)}
+                                                                    onPress={() => context.dispatch.removeData(data.id)}
                                                                     variant="light"
                                                                     size="sm"
                                                                     className="text-current"
@@ -264,7 +273,7 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                                     >
                                         {({ getRootProps, getInputProps }) => (
                                             <section className="px-6 py-6 text-center min-h-[600px] col-span-3">
-                                                <div {...getRootProps()} className="flex w-full items-center justify-center flex-col gap-4 h-full border-2 border-dashed rounded-lg hover:bg-slate-200 hover:cursor-pointer">
+                                                <div {...getRootProps()} className="flex w-full items-center justify-center flex-col gap-4 h-full border-2 border-dashed rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 hover:cursor-pointer">
                                                     <input {...getInputProps()} className="hidden" />
                                                     <Image
                                                         width={200}
@@ -377,6 +386,10 @@ const RecordsExplorer: FC<{ className: string; }> = ({ className }) => {
                     startContent={
                         <SearchIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
                     }
+                    classNames={{
+                        inputWrapper: "border dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+                        input: "bg-transparent",
+                    }}
                     isClearable
                     value={query}
                     onClear={() => {
@@ -393,7 +406,7 @@ const RecordsExplorer: FC<{ className: string; }> = ({ className }) => {
                 />
             </div>
 
-            <div ref={listRef} className="h-[600px] overflow-auto">
+            <div ref={listRef} className="h-[600px] overflow-y-auto custom-scrollbar">
                 {(paginatedData.length === 0) && (
                     <div className="w-full h-full flex items-center justify-center text-center">
                         <p>No Records found</p>
@@ -403,7 +416,7 @@ const RecordsExplorer: FC<{ className: string; }> = ({ className }) => {
                     const isSelected = selectedData.includes(data);
                     const onClick = () => {
                         if (isSelected) {
-                            dispatch.removeData(index)
+                            dispatch.removeData(data.id)
                         } else {
                             dispatch.addSelectedData(data)
                         }
@@ -411,14 +424,14 @@ const RecordsExplorer: FC<{ className: string; }> = ({ className }) => {
 
                     return (
                         <div
-                            className={cn("border-b-1 cursor-pointer dark:hover:bg-gray-600 hover:bg-slate-200 dark:hover:dark:text-black flex flex-col gap-1.5 py-1.5 dark:border-b-black/30 dark:border-l-black/30 border-l-8 px-2", {
-                                "border-l-primary bg-primary bg-opacity-10": isSelected,
+                            className={cn("group py-2.5 pr-2 border-b data-[active=true]:bg-secondary/25 hover:bg-secondary/25 data-[dirty=true]:bg-orange-400 dark:data-[dirty=true]:bg-orange-600 dark:hover:bg-[#374151] dark:data-[active=true]:bg-[#374151] border-divider cursor-pointer select-none flex flex-col gap-1 border-l-8 pl-3", {
+                                "border-l-secondary bg-secondary bg-opacity-10 dark:bg-opacity-20": isSelected,
                             })}
                             key={index}
                             onClick={onClick}
                         >
-                            <div className="text-black">{truncate(data.instruction, 50)}</div>
-                            <div className="text-sm text-slate-600">{truncate(data.response, 100)}</div>
+                            <h1 className="font-medium group-data-[active=true]:font-semibold text-sm">{truncate(data.instruction, 100)}</h1>
+                            <span className="text-sm leading-tight text-gray-500 dark:group-data-[active=true]:text-gray-100 group-data-[active=true]:text-gray-900 dark:text-gray-400">{truncate(data.response, 100)}</span>
                         </div>
                     );
                 })}
@@ -426,9 +439,23 @@ const RecordsExplorer: FC<{ className: string; }> = ({ className }) => {
 
             {filteredData.length > 0 && (
                 <div className="flex justify-between p-2 items-center">
-                    <Button onClick={prevPage} isDisabled={disablePrevPage}>Previous</Button>
-                    <div className="text-sm">Page {currentPage}/{totalPages}</div>
-                    <Button onClick={nextPage} isDisabled={disableNextPage}>Next</Button>
+                    <Button
+                        onClick={prevPage}
+                        isDisabled={disablePrevPage}
+                        isIconOnly
+                    >
+                        <HiArrowLeft strokeWidth={1} className="w-4 h-4" />
+                    </Button>
+                    <div>
+                        <span className="text-xs text-current">Page {currentPage}/{totalPages}</span>
+                    </div>
+                    <Button
+                        onClick={nextPage}
+                        isDisabled={disableNextPage}
+                        isIconOnly
+                    >
+                        <HiArrowRight strokeWidth={1} className="w-4 h-4" />
+                    </Button>
                 </div>
             )}
         </div>

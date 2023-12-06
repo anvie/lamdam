@@ -4,13 +4,10 @@ import { DataRecordRow } from "@/models/DataRecordRow";
 import { DataRecord } from "@/types";
 import type { NextApiRequest, NextApiResponse } from "next/types";
 
-// import db from "@/lib/db";
-const db = require("../../lib/db");
-const mongoose = require("mongoose");
 
 import { Collection } from "@/models/Collection";
 import { __debug, __error } from "@/lib/logger";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { GetRecordSchema } from "@/lib/schema";
 
 type Data = {
@@ -32,14 +29,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   if (!colDoc) {
     return res.status(404).end();
   }
-  const col = mongoose.connection.db.collection(colDoc.name);
+  const col = mongoose.connection.collection(colDoc.name);
 
-  return await col.findOne({_id: new Types.ObjectId(id)})
+  return await col.findOne({ _id: new Types.ObjectId(id) })
     .then((doc: any) => {
       return res.json({ result: toApiRespDoc(doc) });
-    }).catch((err:any) => {
+    }).catch((err: any) => {
       __error('err:', err)
-     return res.status(404).json({ result: [] });
+      return res.status(404).json({ result: [] });
     })
 
   // return await DataRecordRow.find({}).sort({createdAt:-1}).then((docs: any[]) => {

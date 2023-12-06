@@ -10,8 +10,6 @@ import mongoose, { Types } from "mongoose";
 import { User as UserAuth } from "next-auth";
 import { User } from "@/models/User";
 
-const db = require("../../lib/db");
-
 type Data = {
   error?: string;
   result?: Object[];
@@ -32,7 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
     return res.status(404).end();
   }
 
-  const col = mongoose.connection.db.collection(colDoc.name);
+  const col = mongoose.connection.collection(colDoc.name);
 
   const dbUser = await User.findById(user?.id).exec();
 
