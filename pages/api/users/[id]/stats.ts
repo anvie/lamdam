@@ -39,10 +39,11 @@ export default apiHandler(async (req, res) => {
                                     },
                                     date: {
                                         $dateToString: {
-                                            format: "%Y-%m-%d",
                                             date: {
                                                 $toDate: "$createdAt",
                                             },
+                                            format: "%Y-%m-%d",
+                                            timezone: "Asia/Jakarta",
                                         },
                                     },
                                 },
@@ -77,6 +78,7 @@ export default apiHandler(async (req, res) => {
                                                 $dateToString: {
                                                     format: "%Y-%m-%d",
                                                     date: new Date(),
+                                                    timezone: "Asia/Jakarta",
                                                 },
                                             },
                                         ],

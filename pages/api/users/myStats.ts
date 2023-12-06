@@ -85,10 +85,11 @@ export default apiHandler(async (req, res, user) => {
                                     },
                                     date: {
                                         $dateToString: {
-                                            format: "%Y-%m-%d",
                                             date: {
                                                 $toDate: "$createdAt",
                                             },
+                                            format: "%Y-%m-%d",
+                                            timezone: "Asia/Jakarta",
                                         },
                                     },
                                     monthModified: {
@@ -98,10 +99,11 @@ export default apiHandler(async (req, res, user) => {
                                     },
                                     dateModified: {
                                         $dateToString: {
-                                            format: "%Y-%m-%d",
                                             date: {
                                                 $toDate: "$lastUpdated",
                                             },
+                                            format: "%Y-%m-%d",
+                                            timezone: "Asia/Jakarta",
                                         },
                                     },
                                 },
@@ -136,6 +138,7 @@ export default apiHandler(async (req, res, user) => {
                                                 $dateToString: {
                                                     format: "%Y-%m-%d",
                                                     date: new Date(),
+                                                    timezone: "Asia/Jakarta",
                                                 },
                                             },
                                         ],
