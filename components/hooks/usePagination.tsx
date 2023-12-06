@@ -6,8 +6,8 @@ type Pagination = {
     hasNext: boolean
     totalPage: number
     count: number
-    firstId?: string | null
-    lastId?: string | null
+    firstId?: string
+    lastId?: string
 }
 
 const defaultValue = {

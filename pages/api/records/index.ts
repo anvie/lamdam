@@ -54,7 +54,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
         }
 
         if (user?.role && ['annotator', 'contributor'].includes(user.role)) {
-            console.log("🚀 ~ file: index.ts:75 ~ handler ~ user?.role :", user?.role)
             filter = {
                 ...filter,
                 $and: [
@@ -99,8 +98,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
         let sortBy: any = {}
         sortBy = { _id: sort === "asc" ? 1 : -1 }
 
+        if (fromId && toId) {
+            filter = {
+                ...filter,
+                _id: sort === "asc" ? {
+                    $gte: new Types.ObjectId(String(fromId)),
+                    $lte: new Types.ObjectId(String(toId))
+                } : {
+                    $lte: new Types.ObjectId(String(fromId)),
+                    $gte: new Types.ObjectId(String(toId))
+                }
+            }
+        }
         // fromId is indicator of next page
-        if (fromId) {
+        else if (fromId) {
             filter = {
                 ...filter,
                 _id: sort === "asc" ? {
@@ -130,7 +141,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
             .limit(10)
             .sort(sortBy)
 
-        if(toId) {
+        if (toId && !fromId) {
             records = records.reverse()
         }
 

@@ -106,13 +106,19 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
 
   const recordStats = stats?.result;
 
-  const loadRecords = useCallback(async (blockLoading = true) => {
+  const loadRecords = useCallback(async (blockLoading = true, opts?: { fromId?: string; toId?: string; }) => {
     if (!currentCollection) return;
 
-    await paging.fetchData({
-      collectionId: currentCollection.id,
+    let params: SearchData = {
       ...dataFilter,
-    }, { blockLoading })
+      collectionId: currentCollection.id,
+    }
+
+    if (opts?.fromId) params.fromId = opts.fromId
+    if (opts?.toId) params.toId = opts.toId
+
+    await paging.fetchData(params, { blockLoading })
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCollection, dataFilter])
 
@@ -123,20 +129,21 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     if (globalState.newRecord) {
       __debug("globalState.newRecord changed. NewRecord:", globalState.newRecord);
       loadRecords(false);
+      setDataFilter((old) => ({ ...old, status: "pending" }))
       setGlobalState({ ...globalState, newRecord: null });
     }
     if (globalState.deleteRecord) {
       __debug("globalState.deleteRecord changed. DeleteRecord:", globalState.deleteRecord);
-      loadRecords(false);
+      loadRecords(false, { fromId: paging.firstId, toId: paging.lastId });
       setGlobalState({ ...globalState, deleteRecord: null });
     }
     if (globalState.updatedRecord) {
       __debug("globalState.updatedRecord changed. UpdatedRecord:", globalState.updatedRecord);
-      loadRecords(false);
+      loadRecords(false, { fromId: paging.firstId, toId: paging.lastId });
       setGlobalState({ ...globalState, updatedRecord: null });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [globalState, currentCollection, setGlobalState]);
+  }, [globalState, currentCollection, setGlobalState, paging.firstId, paging.lastId]);
 
   useEffect(() => {
     if (!currentCollection) return;
@@ -177,7 +184,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
         <div className="inline-flex items-center gap-2">
           <RadioGroup
             orientation="horizontal"
-            defaultValue="all"
+            value={String(dataFilter.status || "all")}
             onValueChange={(status) => setDataFilter((old) => ({ ...old, status }))}
           >
             {["all", ...RecordStatuses].map((status) => {
