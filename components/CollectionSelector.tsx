@@ -51,7 +51,8 @@ const CollectionSelector = () => {
       variant="flat"
       className="max-w-full md:max-w-xs w-full md:w-72"
       classNames={{
-        trigger: "border hover:opacity-75 rounded-lg overflow-hidden dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+        trigger:
+          "border hover:opacity-75 rounded-lg overflow-hidden dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
         popoverContent: "dark:bg-[#374151] bg-[#F9FAFB]",
         value: "font-medium text-current",
       }}
@@ -59,8 +60,12 @@ const CollectionSelector = () => {
       radius="none"
       items={data ?? []}
       placeholder="Select a collection"
-      selectedKeys={currentCollection ? new Set([currentCollection.id]) : undefined}
-      defaultSelectedKeys={currentCollection ? new Set([currentCollection.id]) : undefined}
+      selectedKeys={
+        currentCollection ? new Set([currentCollection.id]) : undefined
+      }
+      defaultSelectedKeys={
+        currentCollection ? new Set([currentCollection.id]) : undefined
+      }
       onSelectionChange={(key) => {
         const selectedId = (key as Set<string>).values().next().value;
         const col = data.find((col) => col.id === selectedId);
@@ -75,10 +80,14 @@ const CollectionSelector = () => {
       {(collection) => (
         <SelectItem
           key={collection.id}
-          textValue={`${collection.name} (${toDataTypeName(collection.meta?.dataType)})`}
+          textValue={`${collection.name} (${toDataTypeName(
+            collection.meta?.dataType
+          )})`}
           className="dark:hover:bg-white/10"
         >
-          <span>{collection.name} ({toDataTypeName(collection.meta?.dataType)})</span>
+          <span>
+            {collection.name} ({toDataTypeName(collection.meta?.dataType)})
+          </span>
         </SelectItem>
       )}
     </Select>

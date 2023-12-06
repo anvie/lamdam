@@ -31,7 +31,13 @@ type SearchData = {
   status?: string | string[];
 }>;
 
-const revalidateSearch = ({ id, keyword, toId, fromId, status }: SearchData) => {
+const revalidateSearch = ({
+  id,
+  keyword,
+  toId,
+  fromId,
+  status,
+}: SearchData) => {
   let uri = new URL(`/api/records?collectionId=${id}`, window.origin);
 
   const creators = getLocalStorage<string[]>("search-settings.creator", []);
@@ -65,12 +71,12 @@ const revalidateSearch = ({ id, keyword, toId, fromId, status }: SearchData) => 
   return uri.toString();
 };
 
-const colors: Record<string, ChipProps['color']> = {
-  all: 'primary',
-  approved: 'success',
-  rejected: 'danger',
-  pending: 'warning'
-}
+const colors: Record<string, ChipProps["color"]> = {
+  all: "primary",
+  approved: "success",
+  rejected: "danger",
+  pending: "warning",
+};
 
 const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
   const { currentCollection, setCurrentCollection } =
@@ -82,9 +88,13 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
   const [query, setQuery] = useState<string>("");
   const [lastId, setLastId] = useState<string[]>([]);
 
-  const { data: stats } = useSWR<{ result: Statistic }>(`/api/records/stats?collectionId=${currentCollection?.id}`, get, {
-    refreshInterval: 3000,
-  })
+  const { data: stats } = useSWR<{ result: Statistic }>(
+    `/api/records/stats?collectionId=${currentCollection?.id}`,
+    get,
+    {
+      refreshInterval: 3000,
+    }
+  );
 
   const recordStats = stats?.result;
 
@@ -261,14 +271,20 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
             }
             isClearable
             classNames={{
-              inputWrapper: "border dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+              inputWrapper:
+                "border dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
               input: "bg-transparent",
             }}
             value={query}
             onClear={() => {
               setQuery("");
               setLastId([]);
-              void refreshData(currentCollection?.id || "0", undefined, undefined, true);
+              void refreshData(
+                currentCollection?.id || "0",
+                undefined,
+                undefined,
+                true
+              );
             }}
             onKeyUp={(e) => {
               // setQuery(e.currentTarget.value);
@@ -288,17 +304,30 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
             orientation="horizontal"
             defaultValue="all"
             onValueChange={async (status) => {
-              await refreshData(currentCollection?.id || "0", undefined, status, true);
+              await refreshData(
+                currentCollection?.id || "0",
+                undefined,
+                status,
+                true
+              );
             }}
           >
             {["all", ...RecordStatuses].map((status) => {
-              const color = status === "approved" ? "success" : status === "rejected" ? "danger" : "warning";
-              let renderText = status
+              const color =
+                status === "approved"
+                  ? "success"
+                  : status === "rejected"
+                  ? "danger"
+                  : "warning";
+              let renderText = status;
 
-              if (status === 'pending' && (recordStats?.pending || 0) > 0) {
-                renderText = `(${recordStats?.pending}) ${status}`
-              } else if (status === 'rejected' && (recordStats?.rejected || 0) > 0) {
-                renderText = `(${recordStats?.rejected}) ${status}`
+              if (status === "pending" && (recordStats?.pending || 0) > 0) {
+                renderText = `(${recordStats?.pending}) ${status}`;
+              } else if (
+                status === "rejected" &&
+                (recordStats?.rejected || 0) > 0
+              ) {
+                renderText = `(${recordStats?.rejected}) ${status}`;
               }
 
               return (
@@ -311,7 +340,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
                 >
                   {renderText}
                 </CRadio>
-              )
+              );
             })}
           </RadioGroup>
         </div>
@@ -348,16 +377,10 @@ const Navigator: FC<{ onPrev: () => void; onNext: () => void }> = ({
 }) => {
   return (
     <div className="flex justify-between px-2.5 py-2 border-t border-divider">
-      <Button
-        isIconOnly
-        onPress={onPrev}
-      >
+      <Button isIconOnly onPress={onPrev}>
         <HiArrowLeft strokeWidth={1} className="w-4 h-4" />
       </Button>
-      <Button
-        isIconOnly
-        onPress={onNext}
-      >
+      <Button isIconOnly onPress={onNext}>
         <HiArrowRight strokeWidth={1} className="w-4 h-4" />
       </Button>
     </div>
@@ -410,7 +433,12 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
 
   if (!rec) return <React.Fragment />;
 
-  const color = rec.status === "approved" ? "success" : rec.status === "rejected" ? "danger" : "warning";
+  const color =
+    rec.status === "approved"
+      ? "success"
+      : rec.status === "rejected"
+      ? "danger"
+      : "warning";
 
   return (
     <div
@@ -419,8 +447,12 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
       className="group py-3.5 pr-3 border-b data-[active=true]:bg-primary/5 hover:bg-primary/5 data-[dirty=true]:bg-orange-400 dark:data-[dirty=true]:bg-orange-600 dark:hover:bg-[#374151] dark:data-[active=true]:bg-[#374151] border-divider pl-5 cursor-pointer select-none flex flex-col gap-1"
       onClick={onClick}
     >
-      <h1 className="font-medium group-data-[active=true]:font-semibold text-sm">{truncate(rec.prompt, 100)}</h1>
-      <span className="text-sm leading-tight text-gray-500 dark:group-data-[active=true]:text-gray-100 group-data-[active=true]:text-gray-900 dark:text-gray-400">{truncate(rec.response, 100)}</span>
+      <h1 className="font-medium group-data-[active=true]:font-semibold text-sm">
+        {truncate(rec.prompt, 100)}
+      </h1>
+      <span className="text-sm leading-tight text-gray-500 dark:group-data-[active=true]:text-gray-100 group-data-[active=true]:text-gray-900 dark:text-gray-400">
+        {truncate(rec.response, 100)}
+      </span>
       <div className="text-xs inline-flex space-x-1.5 items-center mt-2">
         {rec.status && (
           <Chip
@@ -433,10 +465,14 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
             {rec.status}
           </Chip>
         )}
-        <span className="opacity-60">{moment(rec.createdAt).format("YYYY/MM/DD")}</span>
+        <span className="opacity-60">
+          {moment(rec.createdAt).format("YYYY/MM/DD")}
+        </span>
         <span className="text-base opacity-60">•</span>
         <Tooltip placement="right" showArrow content={rec.creator || "?"}>
-          <span className="opacity-60">{(rec.creator || "?").split(" ")[0]}</span>
+          <span className="opacity-60">
+            {(rec.creator || "?").split(" ")[0]}
+          </span>
         </Tooltip>
       </div>
     </div>
