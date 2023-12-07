@@ -1,3 +1,4 @@
+import { siteConfig } from "@/config/site";
 import { apiHandler } from "@/lib/ApiHandler";
 import { hashString } from "@/lib/crypto";
 import { toApiRespDoc } from "@/lib/docutil";
@@ -94,7 +95,7 @@ async function handler(
         createdAt: getCurrentTimeMillis(),
         lastUpdated: getCurrentTimeMillis(),
         hash,
-        status: 'pending',
+        status: siteConfig.approvalMode ? 'pending' : 'approved',
         meta: {},
       })
       .then(async (resp: any) => {

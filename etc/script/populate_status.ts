@@ -25,11 +25,18 @@ async function populateRecordStatus() {
             });
 
             await Promise.all(updatePromises);
+            const approvalMode = process.env.APPROVAL_MODE === "true";
+            if (approvalMode) {
+                console.log("Populating default 'pending' status to collection:", name);
 
-            console.log("Populating default 'pending' status to collection:", name);
+                const result = await model.updateMany({}, { $set: { status: "pending" } });
+                console.log("Updated:", result.modifiedCount);
+            } else {
+                console.log("Populating default 'approved' status to collection:", name);
 
-            const result = await model.updateMany({}, { $set: { status: "pending" } });
-            console.log("Updated:", result.modifiedCount);
+                const result = await model.updateMany({}, { $set: { status: "approved" } });
+                console.log("Updated:", result.modifiedCount);
+            }
         }
     } catch (error) {
         throw error;

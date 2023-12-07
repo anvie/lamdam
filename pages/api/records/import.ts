@@ -1,3 +1,4 @@
+import { siteConfig } from "@/config/site";
 import { apiHandler } from "@/lib/ApiHandler";
 import { hashString } from "@/lib/crypto";
 import { __debug } from "@/lib/logger";
@@ -53,7 +54,7 @@ export default apiHandler(async (req, res: NextApiResponse<Data>, user?: User) =
                             hash,
                             creator: user?.name,
                             creatorId: user?.id,
-                            status: "pending"
+                            status: siteConfig.approvalMode ? "pending" : "approved"
                         }
                     },
                     upsert: true

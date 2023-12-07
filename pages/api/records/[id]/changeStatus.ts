@@ -1,3 +1,4 @@
+import { siteConfig } from "@/config/site";
 import { apiHandler } from "@/lib/ApiHandler";
 import { RecordStatusSchema } from "@/lib/schema";
 import { Collection } from "@/models/Collection";
@@ -9,8 +10,9 @@ import { User as UserAuth } from "next-auth";
 export default apiHandler(async (req: NextApiRequest, res: NextApiResponse, user?: UserAuth) => {
     try {
         if (req.method !== "POST") {
-            res.status(405).json({ error: "Method not allowed" });
-            return;
+            return res.status(405).json({ error: "Method not allowed" });
+        } else if (!siteConfig.approvalMode) {
+            return res.status(400).json({ error: "Approval mode is disabled" });
         }
 
         const { id } = req.query;
@@ -19,8 +21,7 @@ export default apiHandler(async (req: NextApiRequest, res: NextApiResponse, user
 
         const col = await Collection.findById(collectionId);
         if (!col) {
-            res.status(404).json({ error: "Collection not found" });
-            return;
+            return res.status(404).json({ error: "Collection not found" });
         }
 
         let meta: any = {
