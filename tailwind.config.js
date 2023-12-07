@@ -9,7 +9,12 @@ module.exports = {
     "./node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        'inter': ["var(--font-inter)", "sans-serif"],
+        'lato': ["var(--font-lato)", "sans-serif"],
+      },
+    },
   },
   darkMode: "class",
   plugins: [

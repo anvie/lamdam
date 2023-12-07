@@ -1,3 +1,4 @@
+import { UserRoleType } from "@/models";
 import React, { useCallback } from "react";
 export type SimpleUser = {
     name: string;
@@ -5,7 +6,7 @@ export type SimpleUser = {
     id: string;
 };
 
-export default function useSimpleUsers() {
+export default function useSimpleUsers(roles: UserRoleType[] = []) {
     const [items, setItems] = React.useState<SimpleUser[]>([]);
     const [hasMore, setHasMore] = React.useState(true);
     const [isLoading, setIsLoading] = React.useState(false);
@@ -21,19 +22,24 @@ export default function useSimpleUsers() {
         try {
             setIsLoading(true);
 
-            let res = await fetch(
-                `/api/users/simple?page=${currentPage}&perPage=${perPage}`,
-                { signal },
-            );
+            const url = new URL("/api/users/simple", window.location.origin);
+            url.searchParams.append("page", currentPage.toString());
+            url.searchParams.append("perPage", perPage.toString());
+            roles.forEach((role) => {
+                url.searchParams.append("role", role);
+            });
+
+            let res = await fetch(url.toString(), { signal });
 
             if (!res.ok) {
                 throw new Error("Network response was not ok");
             }
 
             const data = await res.json();
+            const { entries, paging: { hasNext } } = data.result;
 
-            setHasMore(data.result.length > 0);
-            setItems((prevItems) => [...prevItems, ...data.result]);
+            setHasMore(hasNext);
+            setItems((prevItems) => [...prevItems, ...entries]);
         } catch (error: any) {
             if (error.name === "AbortError") {
                 console.log("Fetch aborted");
@@ -43,6 +49,8 @@ export default function useSimpleUsers() {
         } finally {
             setIsLoading(false);
         }
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hasMore])
 
     React.useEffect(() => {
