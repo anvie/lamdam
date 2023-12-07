@@ -41,20 +41,53 @@ export default apiHandler(async (req, res) => {
                             timezone: "Asia/Jakarta",
                         },
                     },
+                    datetime: {
+                        $dateToString: {
+                            date: {
+                                $toDate: "$createdAt",
+                            },
+                            timezone: "Asia/Jakarta",
+                        },
+                    },
                 },
+            },
+            {
+                $addFields: {
+                    hour: {
+                        $hour: {
+                            $toDate: "$datetime"
+                        }
+                    }
+                }
             },
             {
                 $project: {
                     status: 1,
                     month: 1,
-                    date: 1,
+                    date: {
+                        $cond: [
+                            { $eq: ["$hour", 0] },
+                            {
+                                $dateToString: {
+                                    format: "%Y-%m-%d",
+                                    date: {
+                                        $dateSubtract: {
+                                            startDate: {
+                                                $toDate: "$datetime"
+                                            },
+                                            unit: "hour",
+                                            amount: 7,
+                                        },
+                                    },
+                                }
+                            },
+                            "$date",
+                        ]
+                    },
+                    datetime: 1
                 }
             },
-            {
-                $match: {
-                    month: month,
-                }
-            },
+            { $match: { month } },
             {
                 $group: {
                     _id: {
@@ -293,6 +326,33 @@ export default apiHandler(async (req, res) => {
                                 input: "$timeSeries",
                                 as: "ts",
                                 in: "$$ts.stats.total"
+                            }
+                        }
+                    },
+                    pendingRecords: {
+                        $sum: {
+                            $map: {
+                                input: "$timeSeries",
+                                as: "ts",
+                                in: "$$ts.stats.pending"
+                            }
+                        }
+                    },
+                    approvedRecords: {
+                        $sum: {
+                            $map: {
+                                input: "$timeSeries",
+                                as: "ts",
+                                in: "$$ts.stats.approved"
+                            }
+                        }
+                    },
+                    rejectedRecords: {
+                        $sum: {
+                            $map: {
+                                input: "$timeSeries",
+                                as: "ts",
+                                in: "$$ts.stats.rejected"
                             }
                         }
                     },

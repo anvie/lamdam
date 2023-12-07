@@ -14,7 +14,6 @@ rsync -avzrhcP --delete-after -e "ssh -i ${SSH_KEY}" ./public ${DEPLOY_SERVER}:$
 files=(
   "next.config.js"
   "package.json"
-  "yarn.lock"
 )
 
 echo "Copy files to Deployment Server"

@@ -20,7 +20,7 @@ const CRadio = (props: RadioProps) => {
         <MyComponent
             {...getBaseProps()}
             className={cn(
-                "group flex justify-center",
+                "group flex justify-center data-[disabled=true]:opacity-50",
             )}
         >
             <VisuallyHidden>
@@ -34,7 +34,7 @@ const CRadio = (props: RadioProps) => {
                 <Chip
                     variant={isSelected ? "flat" : "bordered"}
                     color={props.color}
-                    className="cursor-pointer"
+                    className="cursor-pointer group-data-[disabled=true]:cursor-not-allowed"
                     radius="md"
                     classNames={{
                         content: "text-center capitalize text-xs font-medium"

@@ -1,5 +1,6 @@
 "use client";
 
+import { siteConfig } from "@/config/site";
 import { get, post } from "@/lib/FetchWrapper";
 import {
   CollectionContext,
@@ -501,7 +502,7 @@ const RecordOps: FC<RecordOpsProps> = ({
               color="success"
               startContent={<HiOutlineCheck className="w-6 h-6 border-1.5 rounded-md p-0.5" />}
               isDisabled={
-                !enableOps || currentRecord === null || currentRecord?.id === ""
+                !enableOps || currentRecord === null || currentRecord?.id === "" || !siteConfig.approvalMode
               }
               title="Approve current record"
               onPress={() => onSetStatusClick('approved')}
@@ -515,7 +516,7 @@ const RecordOps: FC<RecordOpsProps> = ({
               color="danger"
               startContent={<HiXMark className="w-6 h-6 border-1.5 rounded-md p-0.5" />}
               isDisabled={
-                !enableOps || currentRecord === null || currentRecord?.id === ""
+                !enableOps || currentRecord === null || currentRecord?.id === "" || !siteConfig.approvalMode
               }
               title="Reject current record"
               onPress={() => onSetStatusClick('rejected')}

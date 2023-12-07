@@ -1,6 +1,7 @@
 "use client";
 
 import { SearchSetting } from "@/components/SearchSetting";
+import { siteConfig } from "@/config/site";
 import { get } from "@/lib/FetchWrapper";
 import {
   CollectionContext,
@@ -129,7 +130,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
     if (globalState.newRecord) {
       __debug("globalState.newRecord changed. NewRecord:", globalState.newRecord);
       loadRecords(false);
-      setDataFilter((old) => ({ ...old, status: "pending" }))
+      setDataFilter((old) => ({ ...old, status: siteConfig.approvalMode ? "pending" : "all" }))
       setGlobalState({ ...globalState, newRecord: null });
     }
     if (globalState.deleteRecord) {
@@ -163,12 +164,14 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
               <SearchIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
             }
             classNames={{
+              base: "",
               inputWrapper:
-                "border dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
+                "h-[40px] border dark:border-none dark:group-data-[focus=true]:bg-[#374151] dark:bg-[#374151] bg-[#F9FAFB] shadow-none",
               input: "bg-transparent",
             }}
+            size="sm"
             defaultValue={dataFilter.keyword}
-            onClear={() => setDataFilter((old) => ({ ...old, keyword: undefined }))}
+            onClear={() => setDataFilter((old) => ({ ...old, keyword: '' }))}
             onKeyUp={(e) => {
               if (e.key === "Enter" && "value" in e.target) {
                 const keyword = String(e.target.value)
@@ -187,6 +190,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
             orientation="horizontal"
             value={String(dataFilter.status || "all")}
             onValueChange={(status) => setDataFilter((old) => ({ ...old, status }))}
+            isDisabled={!siteConfig.approvalMode}
           >
             {["all", ...RecordStatuses].map((status) => {
               let renderText = status
@@ -202,7 +206,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
                   color={colors[status]}
                   key={status}
                   size="sm"
-                  classNames={{ label: "text-xs" }}
+                  classNames={{ label: "text-xs data-[disabled=true]:opacity-50" }}
                   value={status}
                 >
                   {renderText}
@@ -320,8 +324,8 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
     rec.status === "approved"
       ? "success"
       : rec.status === "rejected"
-      ? "danger"
-      : "warning";
+        ? "danger"
+        : "warning";
 
   return (
     <div

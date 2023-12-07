@@ -1,4 +1,5 @@
 import MainNavbar from "@/components/MainNavbar";
+import fonts from "@/config/fonts";
 import { siteConfig } from "@/config/site";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import "@/styles/globals.css";
@@ -32,7 +33,7 @@ export default async function RootLayout({
   const session = await getServerSession(authOptions);
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={fonts.join(' ')} suppressHydrationWarning>
       <head />
       <body className="min-h-screen lamdam-light dark:lamdam-dark bg-background text-foreground font-sans antialiased">
         <Providers
