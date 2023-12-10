@@ -13,9 +13,24 @@ import { truncate } from "@/lib/stringutil";
 import { RecordStatuses } from "@/models";
 import { DataRecord, Statistic } from "@/types";
 import { Button } from "@nextui-org/button";
-import { Chip, ChipProps, Input, RadioGroup, Spinner, Tooltip } from "@nextui-org/react";
+import {
+  Chip,
+  ChipProps,
+  Input,
+  RadioGroup,
+  Spinner,
+  Tooltip,
+} from "@nextui-org/react";
 import moment from "moment";
-import React, { FC, Fragment, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  FC,
+  Fragment,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { HiArrowLeft, HiArrowRight } from "react-icons/hi2";
 import useSWR from "swr";
 import CRadio from "./CRadio";
@@ -40,7 +55,7 @@ type DataFilter = Partial<{
   features: string[];
   creators: string[];
   sort: string;
-}>
+}>;
 
 const revalidateSearch = async (params: SearchData) => {
   let uri = new URL(`/api/records`, window.origin);
@@ -51,17 +66,18 @@ const revalidateSearch = async (params: SearchData) => {
     if (Array.isArray(value)) {
       value.forEach((v) => {
         uri.searchParams.append(key, v);
-      })
+      });
     } else {
       uri.searchParams.set(key, value);
     }
-  })
+  });
 
   return await get(uri.toString());
-}
+};
 
 const revalidateStats = (params: SearchData) => {
-  if (typeof window === 'undefined') return `/api/records/stats?collectionId=${params.collectionId}`
+  if (typeof window === "undefined")
+    return `/api/records/stats?collectionId=${params.collectionId}`;
 
   const uri = new URL(`/api/records/stats`, window.origin);
 
@@ -71,14 +87,14 @@ const revalidateStats = (params: SearchData) => {
     if (Array.isArray(value)) {
       value.forEach((v) => {
         uri.searchParams.append(key, v);
-      })
+      });
     } else {
       uri.searchParams.set(key, value);
     }
-  })
+  });
 
   return uri.toString();
-}
+};
 
 const colors: Record<string, ChipProps["color"]> = {
   all: "primary",
@@ -90,61 +106,93 @@ const colors: Record<string, ChipProps["color"]> = {
 const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
   const { currentCollection } = useContext(CollectionContext);
   const { globalState, setGlobalState } = useContext(GlobalContext);
-  const [dataFilter, setDataFilter] = useState<DataFilter>({})
-  const { data, ...paging } = usePagination<DataRecord, SearchData>(revalidateSearch, {
-    ...dataFilter,
-    collectionId: currentCollection?.id || "0",
+  const [dataFilter, setDataFilter] = useState<DataFilter>({});
+  const { data, ...paging } = usePagination<DataRecord, SearchData>(
+    revalidateSearch,
+    {
+      ...dataFilter,
+      collectionId: currentCollection?.id || "0",
+    }
+  );
+
+  const statsUrl = useMemo(
+    () =>
+      revalidateStats({
+        collectionId: currentCollection?.id || "0",
+        features: dataFilter.features,
+        creators: dataFilter.creators,
+        keyword: dataFilter.keyword,
+      }),
+    [currentCollection?.id, dataFilter]
+  );
+
+  const { data: stats } = useSWR<{ result: Statistic }>(statsUrl, get, {
+    refreshInterval: 4000,
   });
-
-  const statsUrl = useMemo(() => revalidateStats({
-    collectionId: currentCollection?.id || "0",
-    features: dataFilter.features,
-    creators: dataFilter.creators,
-    keyword: dataFilter.keyword,
-  }), [currentCollection?.id, dataFilter])
-
-  const { data: stats } = useSWR<{ result: Statistic }>(statsUrl, get, { refreshInterval: 4000 })
 
   const recordStats = stats?.result;
 
-  const loadRecords = useCallback(async (blockLoading = true, opts?: { fromId?: string; toId?: string; }) => {
-    if (!currentCollection) return;
+  const loadRecords = useCallback(
+    async (blockLoading = true, opts?: { fromId?: string; toId?: string }) => {
+      if (!currentCollection) return;
 
-    let params: SearchData = {
-      ...dataFilter,
-      collectionId: currentCollection.id,
-    }
+      let params: SearchData = {
+        ...dataFilter,
+        collectionId: currentCollection.id,
+      };
 
-    if (opts?.fromId) params.fromId = opts.fromId
-    if (opts?.toId) params.toId = opts.toId
+      if (opts?.fromId) params.fromId = opts.fromId;
+      if (opts?.toId) params.toId = opts.toId;
 
-    await paging.fetchData(params, { blockLoading })
+      await paging.fetchData(params, { blockLoading });
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentCollection, dataFilter])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [currentCollection, dataFilter]
+  );
+
+  __debug("siteConfig.approvalMode:", siteConfig.approvalMode);
 
   useEffect(() => {
     __debug("in RecordsExplorer globalState effect");
     if (!globalState || !currentCollection) return;
 
     if (globalState.newRecord) {
-      __debug("globalState.newRecord changed. NewRecord:", globalState.newRecord);
+      __debug(
+        "globalState.newRecord changed. NewRecord:",
+        globalState.newRecord
+      );
       loadRecords(false);
-      setDataFilter((old) => ({ ...old, status: siteConfig.approvalMode ? "pending" : "all" }))
+      setDataFilter((old) => ({
+        ...old,
+        status: siteConfig.approvalMode ? "pending" : "all",
+      }));
       setGlobalState({ ...globalState, newRecord: null });
     }
     if (globalState.deleteRecord) {
-      __debug("globalState.deleteRecord changed. DeleteRecord:", globalState.deleteRecord);
+      __debug(
+        "globalState.deleteRecord changed. DeleteRecord:",
+        globalState.deleteRecord
+      );
       loadRecords(false, { fromId: paging.firstId, toId: paging.lastId });
       setGlobalState({ ...globalState, deleteRecord: null });
     }
     if (globalState.updatedRecord) {
-      __debug("globalState.updatedRecord changed. UpdatedRecord:", globalState.updatedRecord);
+      __debug(
+        "globalState.updatedRecord changed. UpdatedRecord:",
+        globalState.updatedRecord
+      );
       loadRecords(false, { fromId: paging.firstId, toId: paging.lastId });
       setGlobalState({ ...globalState, updatedRecord: null });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [globalState, currentCollection, setGlobalState, paging.firstId, paging.lastId]);
+  }, [
+    globalState,
+    currentCollection,
+    setGlobalState,
+    paging.firstId,
+    paging.lastId,
+  ]);
 
   useEffect(() => {
     if (!currentCollection) return;
@@ -171,50 +219,57 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
             }}
             size="sm"
             defaultValue={dataFilter.keyword}
-            onClear={() => setDataFilter((old) => ({ ...old, keyword: '' }))}
+            onClear={() => setDataFilter((old) => ({ ...old, keyword: "" }))}
             onKeyUp={(e) => {
               if (e.key === "Enter" && "value" in e.target) {
-                const keyword = String(e.target.value)
-                setDataFilter((old) => ({ ...old, keyword }))
+                const keyword = String(e.target.value);
+                setDataFilter((old) => ({ ...old, keyword }));
               }
             }}
           />
           <SearchSetting
             onSaveSearch={(filters) => {
-              setDataFilter((old) => ({ ...old, ...filters }))
+              setDataFilter((old) => ({ ...old, ...filters }));
             }}
           />
         </div>
-        <div className="inline-flex items-center gap-2">
-          <RadioGroup
-            orientation="horizontal"
-            value={String(dataFilter.status || "all")}
-            onValueChange={(status) => setDataFilter((old) => ({ ...old, status }))}
-            isDisabled={!siteConfig.approvalMode}
-          >
-            {["all", ...RecordStatuses].map((status) => {
-              let renderText = status
 
-              if (status === 'pending') {
-                renderText = `(${(recordStats?.pending || 0)}) ${status}`
-              } else if (status === 'rejected') {
-                renderText = `(${(recordStats?.rejected || 0)}) ${status}`
+        {siteConfig.approvalMode && (
+          <div className="inline-flex items-center gap-2">
+            <RadioGroup
+              orientation="horizontal"
+              value={String(dataFilter.status || "all")}
+              onValueChange={(status) =>
+                setDataFilter((old) => ({ ...old, status }))
               }
+              isDisabled={!siteConfig.approvalMode}
+            >
+              {["all", ...RecordStatuses].map((status) => {
+                let renderText = status;
 
-              return (
-                <CRadio
-                  color={colors[status]}
-                  key={status}
-                  size="sm"
-                  classNames={{ label: "text-xs data-[disabled=true]:opacity-50" }}
-                  value={status}
-                >
-                  {renderText}
-                </CRadio>
-              );
-            })}
-          </RadioGroup>
-        </div>
+                if (status === "pending") {
+                  renderText = `(${recordStats?.pending || 0}) ${status}`;
+                } else if (status === "rejected") {
+                  renderText = `(${recordStats?.rejected || 0}) ${status}`;
+                }
+
+                return (
+                  <CRadio
+                    color={colors[status]}
+                    key={status}
+                    size="sm"
+                    classNames={{
+                      label: "text-xs data-[disabled=true]:opacity-50",
+                    }}
+                    value={status}
+                  >
+                    {renderText}
+                  </CRadio>
+                );
+              })}
+            </RadioGroup>
+          </div>
+        )}
       </div>
 
       <div className="h-[calc(100vh-310px)] overflow-y-auto overflow-x-hidden custom-scrollbar">
@@ -248,7 +303,6 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
             })}
           </Fragment>
         )}
-
       </div>
 
       <div className="flex justify-between px-2.5 py-2 border-t border-divider items-center bg-gray-50 dark:bg-slate-800">
@@ -260,7 +314,9 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
           <HiArrowLeft strokeWidth={1} className="w-4 h-4" />
         </Button>
         <div>
-          <span className="text-xs text-current">Page {paging.currentPage}/{paging.totalPage}</span>
+          <span className="text-xs text-current">
+            Page {paging.currentPage}/{paging.totalPage}
+          </span>
         </div>
         <Button
           isIconOnly
@@ -324,8 +380,8 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
     rec.status === "approved"
       ? "success"
       : rec.status === "rejected"
-        ? "danger"
-        : "warning";
+      ? "danger"
+      : "warning";
 
   return (
     <div
@@ -341,7 +397,7 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
         {truncate(rec.response, 100)}
       </span>
       <div className="text-xs inline-flex space-x-1.5 items-center mt-2">
-        {rec.status && (
+        {siteConfig.approvalMode && rec.status && (
           <Chip
             size="sm"
             variant="flat"

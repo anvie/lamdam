@@ -35,7 +35,14 @@ import { Confirm } from "notiflix/build/notiflix-confirm-aio";
 import { Notify } from "notiflix/build/notiflix-notify-aio";
 import { FC, Key, useContext, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { HiArrowRightOnRectangle, HiOutlineCheck, HiOutlineDocumentCheck, HiOutlineDocumentPlus, HiOutlineTrash, HiXMark } from "react-icons/hi2";
+import {
+  HiArrowRightOnRectangle,
+  HiOutlineCheck,
+  HiOutlineDocumentCheck,
+  HiOutlineDocumentPlus,
+  HiOutlineTrash,
+  HiXMark,
+} from "react-icons/hi2";
 import { ErrorLabel } from "./ErrorLabel";
 import { useModal } from "./hooks/useModal";
 import RejectReasonModal from "./modals/RejectReasonModal";
@@ -113,18 +120,32 @@ const RecordOps: FC<RecordOpsProps> = ({
   let { currentRecord, setCurrentRecord } = useContext(SelectedRecordContext);
   const modalState = useDisclosure();
   const [useEmbedding, setUseEmbedding] = useState(false);
-  const modal = useModal()
+  const modal = useModal();
 
-  const session = useSession()
-  const user = session.data?.user
+  const session = useSession();
+  const user = session.data?.user;
 
-  const basicRole = ["contributor", "annotator"].includes(user?.role!) || typeof user?.role === 'undefined';
+  const basicRole =
+    ["contributor", "annotator"].includes(user?.role!) ||
+    typeof user?.role === "undefined";
 
-  const canUpdate = (basicRole && currentRecord?.creatorId === user?.id && currentRecord?.status != 'approved') || !basicRole
+  const canUpdate =
+    !siteConfig.approvalMode ||
+    (basicRole &&
+      currentRecord?.creatorId === user?.id &&
+      currentRecord?.status != "approved") ||
+    !basicRole;
 
-  const canReview = ["superuser", "corrector"].includes(user?.role!) && currentRecord?.status === "pending"
-  const canDelete = (user?.role === "superuser" || currentRecord?.creatorId === user?.id) && currentRecord !== null && currentRecord?.status === 'pending';
-  const canMoveRecord = ["superuser", "corrector"].includes(user?.role!) || currentRecord?.creatorId === user?.id
+  const canReview =
+    ["superuser", "corrector"].includes(user?.role!) &&
+    currentRecord?.status === "pending";
+  const canDelete =
+    (user?.role === "superuser" || currentRecord?.creatorId === user?.id) &&
+    currentRecord !== null &&
+    currentRecord?.status === "pending";
+  const canMoveRecord =
+    ["superuser", "corrector"].includes(user?.role!) ||
+    currentRecord?.creatorId === user?.id;
 
   const [enableOps, setEnableOps] = useState(false);
   // const {
@@ -253,7 +274,7 @@ const RecordOps: FC<RecordOpsProps> = ({
           outputPositive: rec.outputPositive,
           outputNegative: rec.outputNegative,
           dirty: false,
-          status: 'pending'
+          status: "pending",
         };
         setCurrentRecord!(updatedRecord);
         setGlobalState({
@@ -341,7 +362,7 @@ const RecordOps: FC<RecordOpsProps> = ({
             status,
             meta: {
               rejectReason: data.rejectReason,
-            }
+            },
           };
           setCurrentRecord!(updatedRecord);
           setGlobalState({
@@ -355,31 +376,33 @@ const RecordOps: FC<RecordOpsProps> = ({
             __error(typeof err);
             Notify.failure("Cannot update record :(. " + errorMessage(err));
           }
-        })
-    }
+        });
+    };
 
-    if (status === 'rejected') {
-      modal.showModal('Reject Reason', RejectReasonModal, {
-        size: 'xl',
-        onSubmit: (rejectReason) => onStatusChange({
-          status,
-          collectionId: currentCollection?.id,
-          rejectReason,
-        }),
-      })
+    if (status === "rejected") {
+      modal.showModal("Reject Reason", RejectReasonModal, {
+        size: "xl",
+        onSubmit: (rejectReason) =>
+          onStatusChange({
+            status,
+            collectionId: currentCollection?.id,
+            rejectReason,
+          }),
+      });
     } else {
       Confirm.show(
         "Confirmation",
         `Are you sure you want to mark this record as ${status} "${rec.prompt}"?`,
         "Yes",
         "No",
-        () => onStatusChange({
-          status,
-          collectionId: currentCollection?.id,
-        })
+        () =>
+          onStatusChange({
+            status,
+            collectionId: currentCollection?.id,
+          })
       );
     }
-  }
+  };
 
   // const onCopyLLMResponse = (data: LLMResponseData) => {
   //   console.log("data:", data);
@@ -454,10 +477,22 @@ const RecordOps: FC<RecordOpsProps> = ({
         </div>
 
         <div className="px-4 py-5 flex flex-col self-stretch items-start justify-start gap-3">
-          <Button size="lg" radius="md" color="primary" fullWidth onClick={llmResponseViewDisclosure.onOpen}>
+          <Button
+            size="lg"
+            radius="md"
+            color="primary"
+            fullWidth
+            onClick={llmResponseViewDisclosure.onOpen}
+          >
             Get {process.env.NEXT_PUBLIC_INTERNAL_MODEL_NAME} Response
           </Button>
-          <Button size="lg" radius="md" color="primary" fullWidth onClick={gptResponseViewDisclosure.onOpen}>
+          <Button
+            size="lg"
+            radius="md"
+            color="primary"
+            fullWidth
+            onClick={gptResponseViewDisclosure.onOpen}
+          >
             Get GPT Response
           </Button>
           <Checkbox
@@ -500,12 +535,17 @@ const RecordOps: FC<RecordOpsProps> = ({
               radius="md"
               fullWidth
               color="success"
-              startContent={<HiOutlineCheck className="w-6 h-6 border-1.5 rounded-md p-0.5" />}
+              startContent={
+                <HiOutlineCheck className="w-6 h-6 border-1.5 rounded-md p-0.5" />
+              }
               isDisabled={
-                !enableOps || currentRecord === null || currentRecord?.id === "" || !siteConfig.approvalMode
+                !enableOps ||
+                currentRecord === null ||
+                currentRecord?.id === "" ||
+                !siteConfig.approvalMode
               }
               title="Approve current record"
-              onPress={() => onSetStatusClick('approved')}
+              onPress={() => onSetStatusClick("approved")}
             >
               Approve Record
             </Button>
@@ -514,12 +554,17 @@ const RecordOps: FC<RecordOpsProps> = ({
               radius="md"
               fullWidth
               color="danger"
-              startContent={<HiXMark className="w-6 h-6 border-1.5 rounded-md p-0.5" />}
+              startContent={
+                <HiXMark className="w-6 h-6 border-1.5 rounded-md p-0.5" />
+              }
               isDisabled={
-                !enableOps || currentRecord === null || currentRecord?.id === "" || !siteConfig.approvalMode
+                !enableOps ||
+                currentRecord === null ||
+                currentRecord?.id === "" ||
+                !siteConfig.approvalMode
               }
               title="Reject current record"
-              onPress={() => onSetStatusClick('rejected')}
+              onPress={() => onSetStatusClick("rejected")}
             >
               Reject Record
             </Button>

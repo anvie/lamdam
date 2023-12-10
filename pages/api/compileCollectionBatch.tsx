@@ -1,5 +1,6 @@
 const db = require("../../lib/db");
 
+import { siteConfig } from "@/config/site";
 import { apiHandler } from "@/lib/ApiHandler";
 import { __debug, __error } from "@/lib/logger";
 import { CompileCollectionBatchSchema } from "@/lib/schema";
@@ -156,7 +157,16 @@ async function compileCollection(
   const db = mongoose.connection.db;
 
   let counter = 0;
-  const cursor = db.collection(col.name).find().sort({ _id: -1 });
+  // @TODO(*): Filter ini agar hanya compile yg status approved ketika di kondisi APPROVAL_MODE
+  let _dbQuery = {};
+  if (siteConfig.approvalMode) {
+    _dbQuery = {
+      status: "approved",
+    };
+  }
+
+  const cursor = db.collection(col.name).find(_dbQuery).sort({ _id: -1 });
+
   let fout = null;
   try {
     const hash = crypto.createHash("sha1");
