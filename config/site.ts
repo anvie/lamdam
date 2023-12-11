@@ -12,5 +12,5 @@ export const siteConfig = {
 	links: {
 
 	},
-	approvalMode: process.env.APPROVAL_MODE === "true",
+	approvalMode: process.env.NEXT_PUBLIC_APPROVAL_MODE === "true",
 };

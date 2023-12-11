@@ -15,6 +15,15 @@ export interface ProvidersProps {
 }
 
 export function Providers({ children, themeProps, session }: ProvidersProps) {
+	const [loaded, setLoaded] = React.useState(false)
+
+	React.useEffect(() => {
+		setLoaded(true)
+	}, [])
+
+	if (!loaded) {
+		return <div />
+	}
 	return (
 		<SessionProvider session={session}>
 			<NextUIProvider>

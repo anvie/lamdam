@@ -233,24 +233,21 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
             }}
           />
         </div>
-
         {siteConfig.approvalMode && (
           <div className="inline-flex items-center gap-2">
             <RadioGroup
               orientation="horizontal"
               value={String(dataFilter.status || "all")}
-              onValueChange={(status) =>
-                setDataFilter((old) => ({ ...old, status }))
-              }
+              onValueChange={(status) => setDataFilter((old) => ({ ...old, status }))}
               isDisabled={!siteConfig.approvalMode}
             >
               {["all", ...RecordStatuses].map((status) => {
-                let renderText = status;
+                let renderText = status
 
-                if (status === "pending") {
-                  renderText = `(${recordStats?.pending || 0}) ${status}`;
-                } else if (status === "rejected") {
-                  renderText = `(${recordStats?.rejected || 0}) ${status}`;
+                if (status === 'pending') {
+                  renderText = `(${(recordStats?.pending || 0)}) ${status}`
+                } else if (status === 'rejected') {
+                  renderText = `(${(recordStats?.rejected || 0)}) ${status}`
                 }
 
                 return (
@@ -258,9 +255,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
                     color={colors[status]}
                     key={status}
                     size="sm"
-                    classNames={{
-                      label: "text-xs data-[disabled=true]:opacity-50",
-                    }}
+                    classNames={{ label: "text-xs data-[disabled=true]:opacity-50" }}
                     value={status}
                   >
                     {renderText}
@@ -272,7 +267,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
         )}
       </div>
 
-      <div className="h-[calc(100vh-310px)] overflow-y-auto overflow-x-hidden custom-scrollbar">
+      <div className="max-h-[calc(100%-127px)] overflow-y-auto overflow-x-hidden custom-scrollbar">
         {paging.isLoading ? (
           <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center">
             <div className="flex flex-col gap-2">
@@ -305,7 +300,7 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
         )}
       </div>
 
-      <div className="flex justify-between px-2.5 py-2 border-t border-divider items-center bg-gray-50 dark:bg-slate-800">
+      <div className="w-full absolute left-0 bottom-0 flex justify-between px-2.5 py-2 border-t border-divider items-center bg-gray-50 dark:bg-slate-800">
         <Button
           isIconOnly
           isDisabled={!paging.hasPrev}
@@ -397,7 +392,7 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
         {truncate(rec.response, 100)}
       </span>
       <div className="text-xs inline-flex space-x-1.5 items-center mt-2">
-        {siteConfig.approvalMode && rec.status && (
+        {(rec.status && siteConfig.approvalMode) && (
           <Chip
             size="sm"
             variant="flat"

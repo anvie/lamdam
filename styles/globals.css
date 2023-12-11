@@ -95,3 +95,12 @@
 .rbc-row-segment {
     overflow-y: auto !important;
 }
+
+.markdown p, .markdown pre { margin-bottom: 16px; }
+
+.markdown p code {
+    padding: 0.1rem 0.3rem;
+    background-color: #1E293B;
+    font-family: var(--font-mono), monospace;
+    border-radius: 4px;
+}

@@ -3,7 +3,7 @@ import fonts from "@/config/fonts";
 import { siteConfig } from "@/config/site";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import "@/styles/globals.css";
-import { Metadata } from "next";
+import { Metadata, Viewport } from "next";
 import { getServerSession } from "next-auth";
 import { Providers } from "./providers";
 
@@ -13,17 +13,22 @@ export const metadata: Metadata = {
     template: `%s - ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
-  ],
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon-16x16.png",
     apple: "/apple-touch-icon.png",
   },
-  viewport: "width=device-width, initial-scale=1, user-scalable=no",
 };
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "white" },
+    { media: "(prefers-color-scheme: dark)", color: "black" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  userScalable: false,
+}
 
 export default async function RootLayout({
   children,
@@ -35,13 +40,13 @@ export default async function RootLayout({
   return (
     <html lang="en" className={fonts.join(' ')} suppressHydrationWarning>
       <head />
-      <body className="min-h-screen lamdam-light dark:lamdam-dark bg-background text-foreground font-sans antialiased">
+      <body className="min-h-screen max-h-screen overflow-hidden lamdam-light dark:lamdam-dark bg-background text-foreground font-sans antialiased">
         <Providers
           themeProps={{ attribute: "class", defaultTheme: "light" }}
           session={session}
         >
           <MainNavbar />
-          <main className="min-h-full">{children}</main>
+          <main className="h-[calc(100vh-65px)]">{children}</main>
         </Providers>
       </body>
     </html>

@@ -8,6 +8,7 @@ import { Collection, DataRecord } from "@/types";
 import { Notify } from "notiflix";
 import { Dispatch, useEffect, useState } from "react";
 
+import { siteConfig } from "@/config/site";
 import {
   CollectionContext,
   GlobalContext,
@@ -84,7 +85,7 @@ export default function Home() {
   };
 
   return (
-    <section className="flex flex-col">
+    <section className="flex flex-col h-full">
       <GlobalContext.Provider value={{ globalState, setGlobalState }}>
         <NeedUpdateContext.Provider value={needUpdateState}>
           <SelectedRecordContext.Provider
@@ -98,13 +99,17 @@ export default function Home() {
             >
               <CollectionOps />
 
-              <div className="grid grid-cols-5 relative divide-x-1 divide-divider">
-                <div className="col-span-5 md:col-span-4">
-                  <div className="grid grid-cols-3 divide-x-1 divide-divider">
+              <div className="grid grid-cols-5 relative divide-x-1 divide-divider h-full">
+                <div className="col-span-5 md:col-span-4 h-full">
+                  <div className="grid grid-cols-3 divide-x-1 divide-divider h-full">
                     <RecordsExplorer
                       className={cn(
-                        "min-h-[calc(100vh-300px)] w-full md:block bg-background md:bg-transparent absolute md:relative z-10 top-[4em] md:top-0",
-                        showExplorer ? "" : "hidden"
+                        "w-full md:block bg-background md:bg-transparent absolute md:relative z-10 top-[4em] md:top-0",
+                        showExplorer ? "" : "hidden",
+                        {
+                          "min-h-[calc(100vh-300px)] max-h-[calc(100vh-100px)]": siteConfig.approvalMode,
+                          "min-h-[calc(100vh-138px)] max-h-[calc(100vh-138px)]": !siteConfig.approvalMode,
+                        }
                       )}
                     />
                     <div className="col-span-2">

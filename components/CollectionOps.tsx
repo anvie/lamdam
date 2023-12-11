@@ -1,17 +1,18 @@
 "use client";
-import CollectionSelector from "@/components/CollectionSelector"
-import * as apiClient from "@/lib/FetchWrapper"
-import { post } from "@/lib/FetchWrapper"
+import CollectionSelector from "@/components/CollectionSelector";
+import { siteConfig } from "@/config/site";
+import * as apiClient from "@/lib/FetchWrapper";
+import { post } from "@/lib/FetchWrapper";
 import {
   CollectionContext,
   GlobalContext,
   NeedUpdateContext,
-} from "@/lib/context"
-import { __debug, __error } from "@/lib/logger"
-import { AddCollectionSchema } from "@/lib/schema"
-import { Statistic } from "@/types"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Button } from "@nextui-org/button"
+} from "@/lib/context";
+import { __debug, __error } from "@/lib/logger";
+import { AddCollectionSchema } from "@/lib/schema";
+import { Statistic } from "@/types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@nextui-org/button";
 import {
   Modal,
   ModalBody,
@@ -19,24 +20,24 @@ import {
   ModalFooter,
   ModalHeader,
   useDisclosure,
-} from "@nextui-org/modal"
-import { cn } from "@nextui-org/react"
-import { useSession } from "next-auth/react"
-import { Confirm } from "notiflix/build/notiflix-confirm-aio"
-import { Loading } from "notiflix/build/notiflix-loading-aio"
-import { Report } from "notiflix/build/notiflix-report-aio"
-import React, { FC, useContext, useEffect, useRef, useState } from "react"
-import { useForm } from "react-hook-form"
-import { HiCalculator, HiCalendarDays, HiMiniCircleStack } from "react-icons/hi2"
-import useSWR from "swr"
-import CInput from "./CInput"
-import CSelect from "./CSelect"
-import CTextarea from "./CTextarea"
-import CompileAllModal from "./CompileAllModal"
-import { ErrorLabel } from "./ErrorLabel"
-import { useModal } from "./hooks/useModal"
-import ExportModal from "./modals/ExportModal"
-import ImportModal from "./modals/ImportModal"
+} from "@nextui-org/modal";
+import { cn } from "@nextui-org/react";
+import { useSession } from "next-auth/react";
+import { Confirm } from "notiflix/build/notiflix-confirm-aio";
+import { Loading } from "notiflix/build/notiflix-loading-aio";
+import { Report } from "notiflix/build/notiflix-report-aio";
+import React, { FC, Fragment, useContext, useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { HiCalculator, HiCalendarDays, HiMiniCircleStack } from "react-icons/hi2";
+import useSWR from "swr";
+import CInput from "./CInput";
+import CSelect from "./CSelect";
+import CTextarea from "./CTextarea";
+import CompileAllModal from "./CompileAllModal";
+import { ErrorLabel } from "./ErrorLabel";
+import { useModal } from "./hooks/useModal";
+import ExportModal from "./modals/ExportModal";
+import ImportModal from "./modals/ImportModal";
 
 
 const CollectionOps: FC = () => {
@@ -239,32 +240,36 @@ const RecordsStats = () => {
 
   return (
     <div className="inline-flex items-center gap-2 md:gap-7 justify-between md:justify-start self-stretch md:self-auto">
-      <div className="flex gap-2 items-center">
-        <div className={cn("w-10 h-10 text-white dark:text-current rounded-lg flex items-center justify-center", {
-          "bg-success": (myStats?.today || 0) >= perDayTarget && perDayTarget > 0,
-          "bg-danger": (myStats?.today || 0) < perDayTarget && perDayTarget > 0,
-          "bg-primary": perDayTarget === 0,
-        })}>
-          <HiCalculator className="w-6 h-6 relative" />
-        </div>
-        <div className="flex flex-col">
-          <span className="opacity-40 text-current text-xs font-normal">Daily Target</span>
-          <span className="text-current text-sm font-medium">{myStats?.today ?? 0}/{perDayTarget}</span>
-        </div>
-      </div>
-      <div className="flex gap-2 items-center">
-        <div className={cn("w-10 h-10 text-white dark:text-current rounded-lg flex items-center justify-center", {
-          "bg-success": (myStats?.thisMonth || 0) >= monthlyTarget && monthlyTarget > 0,
-          "bg-danger": (myStats?.thisMonth || 0) < monthlyTarget && monthlyTarget > 0,
-          "bg-primary": monthlyTarget === 0,
-        })}>
-          <HiCalendarDays className="w-6 h-6 relative" />
-        </div>
-        <div className="flex flex-col">
-          <span className="opacity-40 text-current text-xs font-normal">Monthly Target</span>
-          <span className="text-current text-sm font-medium">{Number(myStats?.thisMonth ?? 0).toDisplay()}/{monthlyTarget.toDisplay()}</span>
-        </div>
-      </div>
+      {siteConfig.approvalMode && (
+        <Fragment>
+          <div className="flex gap-2 items-center">
+            <div className={cn("w-10 h-10 text-white dark:text-current rounded-lg flex items-center justify-center", {
+              "bg-success": (myStats?.today || 0) >= perDayTarget && perDayTarget > 0,
+              "bg-danger": (myStats?.today || 0) < perDayTarget && perDayTarget > 0,
+              "bg-primary": perDayTarget === 0,
+            })}>
+              <HiCalculator className="w-6 h-6 relative" />
+            </div>
+            <div className="flex flex-col">
+              <span className="opacity-40 text-current text-xs font-normal">Daily Target</span>
+              <span className="text-current text-sm font-medium">{myStats?.today ?? 0}/{perDayTarget}</span>
+            </div>
+          </div>
+          <div className="flex gap-2 items-center">
+            <div className={cn("w-10 h-10 text-white dark:text-current rounded-lg flex items-center justify-center", {
+              "bg-success": (myStats?.thisMonth || 0) >= monthlyTarget && monthlyTarget > 0,
+              "bg-danger": (myStats?.thisMonth || 0) < monthlyTarget && monthlyTarget > 0,
+              "bg-primary": monthlyTarget === 0,
+            })}>
+              <HiCalendarDays className="w-6 h-6 relative" />
+            </div>
+            <div className="flex flex-col">
+              <span className="opacity-40 text-current text-xs font-normal">Monthly Target</span>
+              <span className="text-current text-sm font-medium">{Number(myStats?.thisMonth ?? 0).toDisplay()}/{monthlyTarget.toDisplay()}</span>
+            </div>
+          </div>
+        </Fragment>
+      )}
       <div className="flex gap-2 items-center">
         <div className="w-10 h-10 bg-primary text-white dark:text-current rounded-lg flex items-center justify-center">
           <HiMiniCircleStack className="w-6 h-6 relative" />

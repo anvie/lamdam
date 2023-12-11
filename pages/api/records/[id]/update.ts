@@ -1,14 +1,15 @@
 import { apiHandler } from "@/lib/ApiHandler";
 import { toApiRespDoc } from "@/lib/docutil";
-import { __debug, __error } from "@/lib/logger";
+import { __error } from "@/lib/logger";
 import { UpdateRecordSchema } from "@/lib/schema";
 import { getCurrentTimeMillis } from "@/lib/timeutil";
 import { Collection } from "@/models/Collection";
 import type { NextApiRequest, NextApiResponse } from "next/types";
 
+import { siteConfig } from "@/config/site";
+import { User } from "@/models/User";
 import mongoose, { Types } from "mongoose";
 import { User as UserAuth } from "next-auth";
-import { User } from "@/models/User";
 
 type Data = {
   error?: string;
@@ -74,7 +75,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
           history,
           lastUpdated: getCurrentTimeMillis(),
           collectionId,
-          status: 'pending'
+          status: siteConfig.approvalMode ? "pending" : "approved",
         },
       }
     )

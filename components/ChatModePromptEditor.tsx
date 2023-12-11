@@ -9,6 +9,8 @@ import { Button, Textarea } from "@nextui-org/react";
 import moment from "moment";
 import { FC, useContext, useEffect, useRef, useState } from "react";
 import { HiMiniPaperAirplane } from "react-icons/hi2";
+import Markdown from "react-markdown";
+
 
 const CHAT_BOT_NAME =
   process.env.NEXT_PUBLIC_INTERNAL_MODEL_NAME || "Lamdam-AI";
@@ -185,6 +187,21 @@ const formatMessageOutput = (message: string) => {
   );
 };
 
+const mdComponents = {
+  code: ({ ...props }) => (
+    <code
+      {...props}
+      className="text-green-400 text-sm font-mono whitespace-pre-wrap"
+    />
+  ),
+  pre: ({ ...props }) => (
+    <pre
+      {...props}
+      className="bg-slate-800 py-2 px-3 text-green-400 rounded-lg text-sm mt-4 font-mono whitespace-pre-wrap"
+    />
+  ),
+}
+
 interface ChatBoxProps {
   initialMessage?: string;
 }
@@ -320,63 +337,57 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
   };
 
   return (
-    <div className="p-4 w-full h-full min-h-full">
+    <div className="w-full h-full max-h-full relative">
       <div
         id="ChatBox"
-        className="overflow-y-scroll border border-divider rounded-lg p-4 h-full min-h-[calc(100vh-350px)]"
+        className="overflow-y-auto custom-scrollbar rounded-lg p-4 max-h-[calc(100vh-330px)] min-h-[calc(100vh-330px)] flex flex-col gap-4"
       >
         {messagesHistory
           .filter((m) => m.content.trim().length > 0)
           .map((message) => (
             <div
               key={message.id}
-              className={`flex flex-col p-2 rounded-lg mb-2 ${
-                message.creator !== "me" ? "" : "bg-gray-200 dark:bg-gray-600"
-              }`}
+              className={`flex flex-col px-6 py-4 gap-2 rounded-xl ${message.creator !== "me" ? "border-l-4 border-l-primary dark:bg-primary/10 bg-primary/5" : "border-2 border-divider"
+                }`}
             >
               <span
-                className={`${
-                  message.creator !== "me"
-                    ? ""
-                    : "text-gray-600 dark:text-gray-300"
-                } font-semibol`}
+                className={`${message.creator !== "me"
+                  ? ""
+                  : "text-gray-600 dark:text-gray-300"
+                  } font-semibold`}
               >
                 {message.creator === CHAT_BOT_NAME
                   ? CHAT_BOT_NAME
                   : message.creator}
                 :
               </span>
-              <p
-                className={`text-lg ${
-                  message.creator !== "me"
-                    ? "dark:text-green-500"
-                    : "dark:text-gray-300"
-                }`}
-                dangerouslySetInnerHTML={{
-                  __html: formatMessageOutput(message.content),
-                }}
-              ></p>
+              <Markdown
+                className="markdown"
+                components={mdComponents}
+              >
+                {message.content}
+              </Markdown>
               <span className="dark:text-gray-400 text-gray-700 text-sm">
-                {formatDistanceToNow(message.date)} ago
+                {formatDistanceToNow(message.date)}
               </span>
             </div>
           ))}
 
         {buffMessage && (
-          <div key={0} className="flex flex-col p-2 rounded mb-2">
-            <span className="dark:text-gray-600 font-semibol">
+          <div key={0} className="flex flex-col px-6 py-4 gap-2 rounded-xl border-l-4 border-l-primary dark:bg-primary/10 bg-primary/5">
+            <p className="dark:text-gray-600 font-semibold">
               {CHAT_BOT_NAME}:
-            </span>
-            <p
-              className="text-gray-500 dark:text-green-500 text-lg"
-              dangerouslySetInnerHTML={{
-                __html: formatMessageOutput(buffMessage),
-              }}
-            ></p>
+            </p>
+            <Markdown
+              className="markdown"
+              components={mdComponents}
+            >
+              {buffMessage}
+            </Markdown>
           </div>
         )}
       </div>
-      <div className="mt-4 flex gap-2 justify-between items-start">
+      <div className="sticky left-0 p-4 bottom-0 w-full flex gap-2 justify-between items-start">
         <Textarea
           size="lg"
           placeholder="Enter your prompt"
@@ -405,6 +416,7 @@ const ChatBox: FC<ChatBoxProps> = ({ initialMessage }) => {
         />
         <Button
           isIconOnly
+          isLoading={inProcessingMessage}
           variant="solid"
           color="success"
           onPress={handleSendMessage}

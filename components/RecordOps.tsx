@@ -455,7 +455,7 @@ const RecordOps: FC<RecordOpsProps> = ({
             size="lg"
             radius="md"
             variant="bordered"
-            isDisabled={!enableOps || !canUpdate}
+            isDisabled={(!enableOps || !canUpdate) && siteConfig.approvalMode}
             startContent={<HiOutlineDocumentCheck className="w-6 h-6" />}
             fullWidth
             onClick={onUpdateClick}
@@ -464,7 +464,7 @@ const RecordOps: FC<RecordOpsProps> = ({
           </Button>
 
           <MoveRecordButton
-            disabled={!enableOps || !canMoveRecord}
+            disabled={(!enableOps || !canMoveRecord) && siteConfig.approvalMode}
             currentRecord={currentRecord}
             onMoveSuccess={() => {
               setGlobalState({
@@ -528,7 +528,7 @@ const RecordOps: FC<RecordOpsProps> = ({
           </div>
         )}
 
-        {canReview && (
+        {(canReview && siteConfig.approvalMode) && (
           <div className="px-4 py-5 flex flex-col self-stretch items-start justify-start gap-3">
             <Button
               size="lg"

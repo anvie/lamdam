@@ -349,7 +349,7 @@ const PromptEditor: FC<PromptEditorProps> = ({
   }
 
   return (
-    <div className="pb-4 min-h-full">
+    <div className="min-h-full max-h-full">
       {/* ID */}
 
       <div className="border-b border-divider p-4 flex gap-8 items-center align-middle justify-between">
