@@ -10,7 +10,8 @@ Lamdam (Language Model Dataset Manager) is a web UI tool designed to facilitate 
 - **Dataset Management**: Easily upload, delete, and update datasets with Lamdam. The tool offers seamless navigation and a smooth data management workflow.
 - **Fast Search**: Quickly navigate through vast amounts of data.
 - **Duplicate & Modify Record**: Use existing data to build more variative data.
-- **Export & Import**: You can export or import dataset into various format (soon).
+- **User Role Management**: Manage user roles and permissions. Track user activity and view revision history.
+- **Export & Import**: You can export or import dataset into various format.
 - **Revision History**: View the modifications to the data and who made them (soon).
 
 ## Requirements
@@ -40,13 +41,26 @@ To get started with Lamdam, follow the steps below:
    yarn install
    ```
 
-4. Start the development server:
+4. _(Optional)_ If you want to use Approval Mode, Set this in your `.env` file:
+
+   ```
+   ADMIN_EMAIL="superuser@xxx.com"
+   NEXT_PUBLIC_APPROVAL_MODE=true
+   ```
+
+   Then run this script below to create the superuser and add default `pending` status to existing Record(s):
+
+   ```
+   yarn db:populate
+   ```
+
+5. Start the development server:
 
    ```
    yarn dev
    ```
 
-5. Access Lamdam in your web browser:
+6. Access Lamdam in your web browser:
 
    ```
    http://localhost:3000
