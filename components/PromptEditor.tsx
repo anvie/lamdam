@@ -416,7 +416,6 @@ const PromptEditor: FC<PromptEditorProps> = ({
               size="sm"
               title="Add to history"
               onClick={onAddToHistory}
-              isDisabled={!chatMode}
             >
               Add History
             </Button>
