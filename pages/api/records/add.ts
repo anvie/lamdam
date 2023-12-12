@@ -2,7 +2,7 @@ import { siteConfig } from "@/config/site";
 import { apiHandler } from "@/lib/ApiHandler";
 import { hashString } from "@/lib/crypto";
 import { toApiRespDoc } from "@/lib/docutil";
-import { __debug, __error } from "@/lib/logger";
+import { __error } from "@/lib/logger";
 import { AddRecordSchema } from "@/lib/schema";
 import { getCurrentTimeMillis } from "@/lib/timeutil";
 import { Collection } from "@/models/Collection";
@@ -73,11 +73,11 @@ async function handler(
     }
 
     const hash = hashString(formattedMessage(prompt, input, response, history));
-    __debug("hash:", hash);
+    // __debug("hash:", hash);
 
     // get collection's indices
     const indices = await col.indexes();
-    __debug("indices:", indices);
+    // __debug("indices:", indices);
 
     // create index `hash` if not exists, and make it unique
     if (!indices.find((index: any) => index.name === "hash_1")) {

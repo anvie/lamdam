@@ -140,7 +140,7 @@ const LLMResponseView: FC<Props> = ({
     let query: any = {
       model: "llama-2",
       messages,
-      temperature: 0.01,
+      temperature: 0.65,
       top_p: 0.1,
       n: 1,
       max_tokens: 1024,

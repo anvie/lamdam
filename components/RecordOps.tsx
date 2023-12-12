@@ -140,9 +140,10 @@ const RecordOps: FC<RecordOpsProps> = ({
     ["superuser", "corrector"].includes(user?.role!) &&
     currentRecord?.status === "pending";
   const canDelete =
-    (user?.role === "superuser" || currentRecord?.creatorId === user?.id) &&
-    currentRecord !== null &&
-    currentRecord?.status === "pending";
+    !siteConfig.approvalMode ||
+    ((user?.role === "superuser" || currentRecord?.creatorId === user?.id) &&
+      currentRecord !== null &&
+      currentRecord?.status === "pending");
   const canMoveRecord =
     ["superuser", "corrector"].includes(user?.role!) ||
     currentRecord?.creatorId === user?.id;
@@ -528,7 +529,7 @@ const RecordOps: FC<RecordOpsProps> = ({
           </div>
         )}
 
-        {(canReview && siteConfig.approvalMode) && (
+        {canReview && siteConfig.approvalMode && (
           <div className="px-4 py-5 flex flex-col self-stretch items-start justify-start gap-3">
             <Button
               size="lg"
