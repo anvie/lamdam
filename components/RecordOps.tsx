@@ -234,17 +234,17 @@ const RecordOps: FC<RecordOpsProps> = ({
     }
   };
 
-  const onUpdateClick = () => {
+  const onUpdateClick = async (): Promise<void> => {
     setError("");
 
     if (!currentRecord) {
-      alert("Please specify record first");
+      Notify.failure("Please specify record first");
       return;
     }
     const rec: DataRecord = currentRecord!;
 
     if (!rec.id) {
-      alert("Please specify record first");
+      Notify.failure("Please specify record first");
       return;
     }
 
@@ -254,7 +254,7 @@ const RecordOps: FC<RecordOpsProps> = ({
       currentCollection?.meta?.dataType || "sft"
     );
 
-    post(`/api/records/${rec.id}/update`, {
+    return await post(`/api/records/${rec.id}/update`, {
       id: rec.id,
       prompt: rec.prompt,
       input: rec.input,
@@ -474,6 +474,7 @@ const RecordOps: FC<RecordOpsProps> = ({
               });
               setCurrentRecord!(null);
             }}
+            onUpdateClick={onUpdateClick}
           />
         </div>
 
@@ -607,7 +608,8 @@ const MoveRecordButton: FC<{
   disabled: boolean;
   currentRecord: DataRecord | null;
   onMoveSuccess: () => void;
-}> = ({ disabled, currentRecord, onMoveSuccess }) => {
+  onUpdateClick: () => Promise<void>;
+}> = ({ disabled, currentRecord, onMoveSuccess, onUpdateClick }) => {
   const { currentCollection, setCurrentCollection } =
     useContext(CollectionContext);
   const [data, setData] = useState<Collection[]>([]);
@@ -627,11 +629,10 @@ const MoveRecordButton: FC<{
       });
   }, [currentCollection]);
 
-  const onAction = (key: Key) => {
+  const doMoveRecord = (key: Key) => {
     if (!currentRecord) {
       return;
     }
-
     post(`/api/records/${currentRecord.id}/move`, {
       id: currentRecord.id,
       colSrcId: currentCollection?.id,
@@ -639,12 +640,36 @@ const MoveRecordButton: FC<{
     })
       .then((response) => {
         onMoveSuccess();
-        Notify.success("Move record success");
+        Notify.success("Record moved successfully");
       })
       .catch((err) => {
         __error("Cannot move record.", err);
         Notify.failure("Cannot move record");
       });
+  };
+
+  const onAction = (key: Key) => {
+    if (!currentRecord) {
+      return;
+    }
+    // check apakah record dirty? kalau dirty maka auto-save dulu
+    if (currentRecord.dirty) {
+      // Notify.failure("Please save current record first");
+      Confirm.show(
+        "Confirmation",
+        `Current record is dirty, do you want to save it first?`,
+        "Yes",
+        "No",
+        () => {
+          onUpdateClick().then(() => {
+            doMoveRecord(key);
+          });
+        }
+      );
+      return;
+    }
+
+    doMoveRecord(key);
   };
 
   return (
