@@ -3,15 +3,15 @@ import { hashString } from "@/lib/crypto";
 import { __debug, __log } from "@/lib/logger";
 import { formattedMessage, truncate } from "@/lib/stringutil";
 import { Collection } from "@/types";
-import { Button, Input, ModalBody, ModalContent, ModalFooter, cn } from "@nextui-org/react";
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, ModalBody, ModalContent, ModalFooter, cn } from "@nextui-org/react";
 import Image from "next/image";
 import { Notify } from "notiflix";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
 import { Report } from "notiflix/build/notiflix-report-aio";
 import React, { FC, useRef, useState } from "react";
 import Dropzone, { FileRejection } from 'react-dropzone';
-import { HiArrowLeft, HiArrowRight } from "react-icons/hi2";
-import ImportProvider, { ImportConsumer, ImportConsumerProps, useImport } from "../hooks/useImport";
+import { HiArrowLeft, HiArrowRight, HiOutlineAdjustmentsHorizontal } from "react-icons/hi2";
+import ImportProvider, { Features, ImportConsumer, ImportConsumerProps, useImport } from "../hooks/useImport";
 import { ModalProps } from "../hooks/useModal";
 import { CloseIcon } from "../icon/CloseIcon";
 import { SearchIcon } from "../icons";
@@ -193,6 +193,8 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
         <ImportProvider>
             <ImportConsumer>
                 {(context: ImportConsumerProps<ImportedRecord>) => {
+                    const totalData = context.currentFilter ? context.filteredData.length : context.importData.length
+
                     return (
                         <ModalContent>
                             <ModalBody className="p-0 grid grid-cols-3 divide-x-1 gap-0 dark:divide-black/30">
@@ -205,7 +207,7 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                                             <div className="w-full border-b dark:border-b-black/30 py-3 px-4 flex justify-between items-center">
                                                 <div>
                                                     <div className="text-lg font-bold">Records to Import</div>
-                                                    <div className="text-sm opacity-80">{context.selectedData.length}/{context.importData.length} records</div>
+                                                    <div className="text-sm opacity-80">{context.selectedData.length}/{totalData} records</div>
                                                 </div>
                                                 <div className="inline-flex gap-2 items-center">
                                                     <Button
@@ -308,6 +310,16 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
                                 >
                                     Import Selected
                                 </Button>
+                                {context.currentFilter && (
+                                    <Button
+                                        color="secondary"
+                                        radius="sm"
+                                        isDisabled={context.filteredData.length === 0}
+                                        onPress={() => doImportData(context.filteredData)}
+                                    >
+                                        Import Filtered
+                                    </Button>
+                                )}
                             </ModalFooter>
                         </ModalContent>
                     )
@@ -319,43 +331,38 @@ const ImportModal: FC<ImportModalProps> = ({ currentCollection, ...props }) => {
 
 const RecordsExplorer: FC<{ className: string; }> = ({ className }) => {
     const perPage = 50
-    const { importData, selectedData, dispatch } = useImport<ImportedRecord>()
+    const { importData, filteredData, selectedData, currentFilter, dispatch } = useImport<ImportedRecord>()
     const [query, setQuery] = useState<string>("");
     const [skip, setSkip] = useState(0)
     const listRef = useRef<HTMLDivElement>(null)
+    const [features, setFeatures] = useState<Set<Features>>(new Set([]))
 
-    const filteredData = React.useMemo(() => {
-        if (query.trim().length === 0) return importData
-        const keyword = query.trim().toLowerCase()
-        return importData
-            .filter(d => {
-                return d.instruction.toLowerCase().includes(keyword)
-                    || d.response.toLowerCase().includes(keyword)
-            })
-    }, [importData, query])
+    const showData = React.useMemo(() => {
+        return currentFilter ? filteredData : importData
+    }, [importData, filteredData, currentFilter])
 
     const paginatedData = React.useMemo(() => {
-        return filteredData.slice(skip, skip + perPage)
-    }, [filteredData, skip])
+        return showData.slice(skip, skip + perPage)
+    }, [showData, skip])
 
     const disableNextPage = React.useMemo(() => {
-        return skip + perPage >= filteredData.length
-    }, [filteredData, skip])
+        return skip + perPage >= showData.length
+    }, [showData, skip])
 
     const disablePrevPage = React.useMemo(() => {
         return skip === 0
     }, [skip])
 
     const totalPages = React.useMemo(() => {
-        return Math.ceil(filteredData.length / perPage)
-    }, [filteredData])
+        return Math.ceil(showData.length / perPage)
+    }, [showData])
 
     const currentPage = React.useMemo(() => {
         return Math.ceil((skip + 1) / perPage)
     }, [skip])
 
     const nextPage = () => {
-        if (skip + perPage >= filteredData.length) return
+        if (skip + perPage >= showData.length) return
         setSkip(s => s + perPage)
         listRef.current?.scrollTo({
             top: 0,
@@ -375,9 +382,13 @@ const RecordsExplorer: FC<{ className: string; }> = ({ className }) => {
         })
     }
 
+    const onFilter = (keyword: string) => {
+        dispatch.filterData({ keyword, features: Array.from<Features>(features) })
+    }
+
     return (
         <div className={className}>
-            <div className="pb-2 p-2 flex gap-1 border-b-1 dark:border-b-black/30">
+            <div className="pb-2 p-2 flex gap-1 border-b-1 dark:border-b-black/30 items-center">
                 <Input
                     className="pb-2 p-2"
                     type="email"
@@ -394,16 +405,50 @@ const RecordsExplorer: FC<{ className: string; }> = ({ className }) => {
                     value={query}
                     onClear={() => {
                         setQuery("")
+                        dispatch.filterData({ keyword: undefined, features: [] })
                     }}
                     onKeyUp={(e) => {
                         if (e.key === "Enter") {
                             setQuery(e.currentTarget.value);
+                            onFilter(e.currentTarget.value);
                         }
                     }}
                     onChange={(e) => {
                         setQuery(e.currentTarget.value);
+                        onFilter(e.currentTarget.value);
                     }}
                 />
+                <Dropdown
+                    radius="md"
+                    classNames={{
+                        base: "p-0",
+                        content: "p-0 border-none bg-background",
+                    }}
+                    placement="bottom-end"
+                >
+                    <DropdownTrigger>
+                        <Button
+                            type="button"
+                            isIconOnly
+                        >
+                            <HiOutlineAdjustmentsHorizontal className="w-5 h-5" />
+                        </Button>
+                    </DropdownTrigger>
+                    <DropdownMenu
+                        closeOnSelect={false}
+                        disallowEmptySelection={false}
+                        selectionMode="multiple"
+                        selectedKeys={features}
+                        onSelectionChange={(keys) => {
+                            setFeatures(keys as any)
+                            dispatch.filterData({ features: Array.from<Features>(keys as any), keyword: query })
+                        }}
+                    >
+                        <DropdownItem key="instruction">Instruction</DropdownItem>
+                        <DropdownItem key="response">Response</DropdownItem>
+                        <DropdownItem key="input">Input</DropdownItem>
+                    </DropdownMenu>
+                </Dropdown>
             </div>
 
             <div ref={listRef} className="h-[600px] overflow-y-auto custom-scrollbar">
@@ -437,7 +482,7 @@ const RecordsExplorer: FC<{ className: string; }> = ({ className }) => {
                 })}
             </div>
 
-            {filteredData.length > 0 && (
+            {showData.length > 0 && (
                 <div className="flex justify-between p-2 items-center">
                     <Button
                         onClick={prevPage}

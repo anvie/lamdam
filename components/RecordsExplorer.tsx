@@ -146,8 +146,8 @@ const RecordsExplorer: FC<{ className: string }> = ({ className }) => {
 
       await paging.fetchData(params, { blockLoading });
 
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentCollection, dataFilter]
   );
 
@@ -375,8 +375,8 @@ const DataRecordRow: FC<{ data: DataRecord; collectionId: string }> = ({
     rec.status === "approved"
       ? "success"
       : rec.status === "rejected"
-      ? "danger"
-      : "warning";
+        ? "danger"
+        : "warning";
 
   return (
     <div

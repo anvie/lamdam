@@ -30,7 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
         const { collectionId, keyword, fromId, toId, status } = req.query;
 
         // muttable
-        let { creators = [], features = ["prompt"], sort = "desc" } = req.query;
+        let { creators = [], features = [], sort = "desc" } = req.query;
 
         const colDoc = await Collection.findOne({ _id: collectionId });
 
@@ -43,13 +43,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
 
         let filter: any = {}
 
-        if (keyword) {
+        if (keyword && features.length === 0) {
             filter = {
                 $or: [
                     { prompt: { $regex: keyword, $options: "i" } },
                     { response: { $regex: keyword, $options: "i" } },
                     { input: { $regex: keyword, $options: "i" }, },
                 ]
+            }
+        } else if (features.length && keyword) {
+            filter = {
+                $or: features.map(f => {
+                    const key = f.toLowerCase().trim()
+                    return {
+                        [key]: { $regex: keyword, $options: "i" }
+                    }
+                })
             }
         }
 
@@ -78,20 +87,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<Data>, user?: U
             filter = {
                 ...filter,
                 creatorId: { $in: creators }
-            }
-        }
-
-        if (features.length) {
-            filter = {
-                ...filter,
-                $and: [
-                    {
-                        $or: features.map(f => {
-                            const key = f.toLowerCase().trim()
-                            return { [key]: { $nin: [null, "", []] } }
-                        })
-                    }
-                ]
             }
         }
 
